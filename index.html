@@ -2051,9 +2051,35 @@
 
             <div class="flex items-center gap-3">
                 <button class="text-xs font-bold text-pink-500 bg-pink-50 px-3 py-1.5 rounded-full">LOGIN</button>
-                <span class="material-symbols-outlined md:hidden text-gray-600">menu</span>
+                <button id="mobileMenuBtn" class="md:hidden p-2 rounded-lg hover:bg-gray-100" onclick="toggleMobileMenu()">
+                    <span class="material-symbols-outlined text-gray-600" id="menuIcon">menu</span>
+                </button>
             </div>
         </nav>
+
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="md:hidden hidden absolute top-full left-4 right-4 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50">
+            <div class="flex flex-col py-2">
+                <button onclick="switchTab('intro'); toggleMobileMenu();" class="px-6 py-4 text-left font-medium text-gray-700 hover:bg-teal-50 hover:text-[#58d3d3] flex items-center gap-3">
+                    <span class="material-symbols-outlined text-[#58d3d3]">info</span>공부방 소개
+                </button>
+                <button onclick="switchTab('notice'); toggleMobileMenu();" class="px-6 py-4 text-left font-medium text-gray-700 hover:bg-teal-50 hover:text-[#58d3d3] flex items-center gap-3">
+                    <span class="material-symbols-outlined text-[#58d3d3]">campaign</span>공지사항
+                </button>
+                <button onclick="switchTab('attendance'); toggleMobileMenu();" class="px-6 py-4 text-left font-medium text-gray-700 hover:bg-teal-50 hover:text-[#58d3d3] flex items-center gap-3">
+                    <span class="material-symbols-outlined text-[#58d3d3]">how_to_reg</span>출결현황
+                </button>
+                <button onclick="switchTab('seats'); toggleMobileMenu();" class="px-6 py-4 text-left font-medium text-gray-700 hover:bg-teal-50 hover:text-[#58d3d3] flex items-center gap-3">
+                    <span class="material-symbols-outlined text-[#58d3d3]">chair</span>좌석모니터링
+                </button>
+                <button onclick="switchTab('payment'); toggleMobileMenu();" class="px-6 py-4 text-left font-medium text-gray-700 hover:bg-teal-50 hover:text-[#58d3d3] flex items-center gap-3">
+                    <span class="material-symbols-outlined text-[#58d3d3]">payments</span>결제
+                </button>
+                <button onclick="switchTab('help'); toggleMobileMenu();" class="px-6 py-4 text-left font-medium text-gray-700 hover:bg-teal-50 hover:text-[#58d3d3] flex items-center gap-3">
+                    <span class="material-symbols-outlined text-[#58d3d3]">help</span>도움말
+                </button>
+            </div>
+        </div>
     </header>
 
     <!-- Main Content Area -->
@@ -3460,6 +3486,24 @@
                 initMap();
             }
         }
+
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            const icon = document.getElementById('menuIcon');
+            menu.classList.toggle('hidden');
+            icon.textContent = menu.classList.contains('hidden') ? 'menu' : 'close';
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('mobileMenu');
+            const btn = document.getElementById('mobileMenuBtn');
+            if (menu && btn && !menu.contains(e.target) && !btn.contains(e.target)) {
+                menu.classList.add('hidden');
+                document.getElementById('menuIcon').textContent = 'menu';
+            }
+        });
 
         // Attendance Data Mockup
         const students = [
