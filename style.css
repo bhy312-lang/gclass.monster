@@ -1,6 +1,6 @@
 
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
-        
+
         :root {
             --brand-mint: #58d3d3;
             --brand-dark: #1e293b;
@@ -105,4 +105,3 @@
             background: linear-gradient(135deg, #ec4899, #a855f7);
             border-radius: 10px;
         }
-    
