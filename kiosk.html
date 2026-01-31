@@ -24,10 +24,21 @@
                 <span class="material-symbols-outlined text-pink-600 text-6xl">touch_app</span>
             </div>
             <h1 class="text-4xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-3">키오스크</h1>
-            <p class="text-gray-400 text-lg">부모님 휴대폰 번호 4자리</p>
+            <p class="text-gray-400 text-lg">부모님 휴대폰 번호 뒷자리 4자리</p>
         </div>
 
-        <!-- 학번 입력 표시 -->
+        <!-- 학생 정보 표시 영역 -->
+        <div id="student-info" class="hidden mb-6">
+            <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 border-2 border-emerald-200">
+                <div class="text-center">
+                    <span class="material-symbols-outlined text-emerald-500 text-4xl mb-2">person</span>
+                    <div id="student-name" class="text-2xl font-bold text-emerald-700"></div>
+                    <div id="student-status" class="text-sm text-emerald-500 mt-1"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 번호 입력 표시 -->
         <div class="mb-10">
             <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-8 text-center shadow-inner border-2 border-purple-100">
                 <div class="flex justify-center gap-4 mb-3">
@@ -90,51 +101,51 @@
         </div>
     </div>
 
+    <!-- 학생 선택 모달 (같은 번호로 여러 학생이 있을 경우) -->
+    <div id="student-select-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">학생 선택</h3>
+            <div id="student-select-list" class="space-y-3 max-h-60 overflow-y-auto">
+                <!-- 학생 버튼들이 동적으로 추가됨 -->
+            </div>
+            <button onclick="closeStudentSelectModal()" class="w-full mt-4 px-6 py-3 bg-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-300 transition">취소</button>
+        </div>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+
     <script>
-        // 초기 학생 데이터 (index.html과 동기화 필요 시 localStorage 사용)
-        let students = [
-            { name: "김민준", status: "present", checkInTime: "14:20", checkOutTime: "-", id: "0001" },
-            { name: "이서윤", status: "present", checkInTime: "14:45", checkOutTime: "-", id: "0002" },
-            { name: "박하준", status: "absent", checkInTime: "-", checkOutTime: "16:10", id: "0003" },
-            { name: "최지우", status: "present", checkInTime: "15:05", checkOutTime: "-", id: "0004" },
-            { name: "정우진", status: "absent", checkInTime: "-", checkOutTime: "15:50", id: "0005" },
-            { name: "유나", status: "present", checkInTime: "15:30", checkOutTime: "-", id: "0006" }
-        ];
-
-        // 로컬 스토리지에서 학생 목록 불러오기
-        function loadStudents() {
-            try {
-                const storedStudents = localStorage.getItem('students');
-                if (storedStudents) {
-                    students = JSON.parse(storedStudents);
-                }
-            } catch (e) {
-                console.error('Error loading students:', e);
-            }
-        }
-
-        // 로컬 스토리지에 학생 목록 저장하기
-        function saveStudents() {
-            localStorage.setItem('students', JSON.stringify(students));
-        }
-
         let kioskInput = '';
+        let foundStudents = [];
+        let selectedStudent = null;
+        let pendingAction = null; // 'checkIn' or 'checkOut'
 
         function kioskPressKey(key) {
             if (kioskInput.length < 4) {
                 kioskInput += key;
                 updateKioskDisplay();
+
+                // 4자리 입력 완료 시 자동 검색
+                if (kioskInput.length === 4) {
+                    searchStudents();
+                }
             }
         }
 
         function kioskBackspace() {
             kioskInput = kioskInput.slice(0, -1);
             updateKioskDisplay();
+            hideStudentInfo();
         }
 
         function kioskClearInput() {
             kioskInput = '';
             updateKioskDisplay();
+            hideStudentInfo();
+            foundStudents = [];
+            selectedStudent = null;
         }
 
         function updateKioskDisplay() {
@@ -146,6 +157,246 @@
             }
         }
 
+        function showStudentInfo(student, statusText) {
+            const infoEl = document.getElementById('student-info');
+            const nameEl = document.getElementById('student-name');
+            const statusEl = document.getElementById('student-status');
+
+            nameEl.textContent = student.name;
+            statusEl.textContent = statusText;
+            infoEl.classList.remove('hidden');
+        }
+
+        function hideStudentInfo() {
+            document.getElementById('student-info').classList.add('hidden');
+        }
+
+        // Supabase에서 학생 검색
+        async function searchStudents() {
+            if (!isSupabaseConfigured()) {
+                // Supabase 미설정 시 데모 모드
+                showAlert('warning', '데모 모드', 'Supabase가 설정되지 않았습니다. supabase-config.js를 확인하세요.');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('students')
+                    .select('id, name, parent_id, parent_phone_last4')
+                    .eq('parent_phone_last4', kioskInput);
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    foundStudents = data;
+
+                    if (data.length === 1) {
+                        // 학생이 1명이면 바로 선택
+                        selectedStudent = data[0];
+                        showStudentInfo(selectedStudent, '학생을 찾았습니다');
+                    } else {
+                        // 여러 명이면 선택 모달 표시 (등원/하원 버튼 클릭 시)
+                        selectedStudent = null;
+                        showStudentInfo({ name: `${data.length}명의 학생` }, '등원/하원 버튼을 눌러주세요');
+                    }
+                } else {
+                    foundStudents = [];
+                    selectedStudent = null;
+                    showAlert('error', '검색 결과 없음', '등록되지 않은 번호입니다.\n회원가입 후 이용해주세요.');
+                    kioskClearInput();
+                }
+            } catch (error) {
+                console.error('학생 검색 오류:', error);
+                showAlert('error', '오류', '검색 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 학생 선택 모달 표시
+        function showStudentSelectModal(action) {
+            pendingAction = action;
+            const modal = document.getElementById('student-select-modal');
+            const list = document.getElementById('student-select-list');
+
+            list.innerHTML = foundStudents.map(student => `
+                <button onclick="selectStudent('${student.id}')"
+                    class="w-full px-6 py-4 bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-gray-700 font-bold rounded-xl transition-all">
+                    ${escapeHtml(student.name)}
+                </button>
+            `).join('');
+
+            modal.style.display = 'flex';
+            modal.classList.remove('hidden');
+        }
+
+        function closeStudentSelectModal() {
+            const modal = document.getElementById('student-select-modal');
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+            pendingAction = null;
+        }
+
+        function selectStudent(studentId) {
+            selectedStudent = foundStudents.find(s => s.id === studentId);
+            closeStudentSelectModal();
+
+            if (pendingAction === 'checkIn') {
+                performCheckIn();
+            } else if (pendingAction === 'checkOut') {
+                performCheckOut();
+            }
+        }
+
+        // 등원 처리
+        async function kioskCheckIn() {
+            if (kioskInput.length !== 4) {
+                showAlert('warning', '알림', '번호 4자리를 모두 입력해주세요.');
+                return;
+            }
+
+            if (foundStudents.length === 0) {
+                showAlert('error', '오류', '학생을 먼저 검색해주세요.');
+                return;
+            }
+
+            if (foundStudents.length > 1 && !selectedStudent) {
+                showStudentSelectModal('checkIn');
+                return;
+            }
+
+            await performCheckIn();
+        }
+
+        async function performCheckIn() {
+            if (!selectedStudent) {
+                selectedStudent = foundStudents[0];
+            }
+
+            try {
+                // 이미 등원했는지 확인
+                const { data: existing } = await supabase
+                    .from('attendance')
+                    .select('*')
+                    .eq('student_id', selectedStudent.id)
+                    .eq('status', 'waiting')
+                    .single();
+
+                if (existing) {
+                    showAlert('info', '알림', `${selectedStudent.name}님은 이미 등원 처리되었습니다.`);
+                    kioskClearInput();
+                    return;
+                }
+
+                // 등원 기록 추가
+                const now = new Date();
+                const alarmTime = new Date(now.getTime() + 60 * 60 * 1000); // +60분
+
+                const { error } = await supabase
+                    .from('attendance')
+                    .insert({
+                        student_id: selectedStudent.id,
+                        student_name: selectedStudent.name,
+                        type: 'check_in',
+                        check_in_time: now.toISOString(),
+                        alarm_time: alarmTime.toISOString(),
+                        status: 'waiting'
+                    });
+
+                if (error) throw error;
+
+                const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+                const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+                showAlert('success', '등원 완료',
+                    `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}`);
+                kioskClearInput();
+
+            } catch (error) {
+                console.error('등원 처리 오류:', error);
+                showAlert('error', '오류', '등원 처리 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 하원 처리
+        async function kioskCheckOut() {
+            if (kioskInput.length !== 4) {
+                showAlert('warning', '알림', '번호 4자리를 모두 입력해주세요.');
+                return;
+            }
+
+            if (foundStudents.length === 0) {
+                showAlert('error', '오류', '학생을 먼저 검색해주세요.');
+                return;
+            }
+
+            if (foundStudents.length > 1 && !selectedStudent) {
+                showStudentSelectModal('checkOut');
+                return;
+            }
+
+            await performCheckOut();
+        }
+
+        async function performCheckOut() {
+            if (!selectedStudent) {
+                selectedStudent = foundStudents[0];
+            }
+
+            try {
+                // 등원 기록 찾기
+                const { data: attendance, error: findError } = await supabase
+                    .from('attendance')
+                    .select('*')
+                    .eq('student_id', selectedStudent.id)
+                    .in('status', ['waiting', 'seated'])
+                    .order('check_in_time', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                if (findError || !attendance) {
+                    showAlert('info', '알림', `${selectedStudent.name}님은 등원 기록이 없습니다.`);
+                    kioskClearInput();
+                    return;
+                }
+
+                // 하원 처리 (상태 업데이트)
+                const { error } = await supabase
+                    .from('attendance')
+                    .update({
+                        type: 'check_out',
+                        status: 'completed'
+                    })
+                    .eq('id', attendance.id);
+
+                if (error) throw error;
+
+                // 좌석에 배정되어 있었다면 좌석도 비우기
+                if (attendance.seat_id) {
+                    await supabase
+                        .from('seats')
+                        .update({
+                            occupied: false,
+                            student_id: null,
+                            student_name: null,
+                            alarm_time: null,
+                            alarming: false,
+                            alarm_stopped: false
+                        })
+                        .eq('id', attendance.seat_id);
+                }
+
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+                showAlert('success', '하원 완료',
+                    `${selectedStudent.name}님, 하원 완료되었습니다!\n안녕히 가세요!\n\n하원시간: ${timeStr}`);
+                kioskClearInput();
+
+            } catch (error) {
+                console.error('하원 처리 오류:', error);
+                showAlert('error', '오류', '하원 처리 중 오류가 발생했습니다.');
+            }
+        }
+
         function showAlert(type, title, message) {
             const modal = document.getElementById('alert-modal');
             const icon = document.getElementById('alert-icon');
@@ -153,7 +404,7 @@
             const messageEl = document.getElementById('alert-message');
 
             titleEl.textContent = title;
-            messageEl.textContent = message;
+            messageEl.innerHTML = message.replace(/\n/g, '<br>');
 
             // 아이콘 스타일 설정
             if (type === 'success') {
@@ -180,67 +431,21 @@
             modal.classList.add('hidden');
         }
 
-        function kioskCheckIn() {
-            if (kioskInput.length !== 4) {
-                showAlert('warning', '알림', '학번 4자리를 모두 입력해주세요.');
-                return;
-            }
-
-            const studentId = kioskInput.trim();
-            const student = students.find(s => s.id === studentId);
-
-            if (student) {
-                if (student.status === 'present') {
-                    showAlert('info', '알림', `${student.name}님은 이미 등원하셨습니다.`);
-                    kioskClearInput();
-                } else {
-                    student.status = 'present';
-                    student.checkInTime = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-                    student.checkOutTime = '-';
-                    saveStudents();
-                    showAlert('success', '등원 완료', `${student.name}님, 등원이 완료되었습니다!`);
-                    kioskClearInput();
-                }
-            } else {
-                showAlert('error', '오류', '등록되지 않은 학번입니다.');
-                kioskClearInput();
-            }
-        }
-
-        function kioskCheckOut() {
-            if (kioskInput.length !== 4) {
-                showAlert('warning', '알림', '학번 4자리를 모두 입력해주세요.');
-                return;
-            }
-
-            const studentId = kioskInput.trim();
-            const student = students.find(s => s.id === studentId);
-
-            if (student) {
-                if (student.status === 'absent') {
-                    showAlert('info', '알림', `${student.name}님은 등원되지 않았습니다.`);
-                    kioskClearInput();
-                } else {
-                    student.status = 'absent';
-                    student.checkOutTime = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-                    saveStudents();
-                    showAlert('success', '하원 완료', `${student.name}님, 하원 완료되었습니다! 안녕히 가세요!`);
-                    kioskClearInput();
-                }
-            } else {
-                showAlert('error', '오류', '등록되지 않은 학번입니다.');
-                kioskClearInput();
-            }
+        // XSS 방지
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // 초기화
-        loadStudents();
         updateKioskDisplay();
 
-        // ESC 키로 알림 모달 닫기
+        // ESC 키로 모달 닫기
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeAlertModal();
+                closeStudentSelectModal();
             }
         });
     </script>

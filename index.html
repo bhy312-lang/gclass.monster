@@ -2047,6 +2047,9 @@
             color: white;
         }
     </style>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
 </head>
 
 <body class="overflow-x-hidden">
@@ -2071,7 +2074,11 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <button class="text-xs font-bold text-pink-500 bg-pink-50 px-3 py-1.5 rounded-full">LOGIN</button>
+                <button id="login-btn" onclick="window.location.href='login.html'" class="text-xs font-bold text-pink-500 bg-pink-50 px-3 py-1.5 rounded-full hover:bg-pink-100 transition">LOGIN</button>
+                <div id="user-info" class="hidden items-center gap-2">
+                    <span id="user-name" class="text-xs font-semibold text-gray-600"></span>
+                    <button id="logout-btn" class="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full hover:bg-gray-200 transition">LOGOUT</button>
+                </div>
                 <button id="mobileMenuBtn" class="md:hidden p-2 rounded-lg hover:bg-gray-100" onclick="toggleMobileMenu()">
                     <span class="material-symbols-outlined text-gray-600" id="menuIcon">menu</span>
                 </button>
@@ -2396,33 +2403,62 @@
             </div>
 
             <!-- 좌석 영역 -->
-            <div class="bg-white rounded-3xl p-8 shadow-lg border border-teal-50 mb-8">
-                <div class="mb-6 flex flex-wrap gap-3">
-                    <button onclick="addSeat();"
-                        class="px-6 py-2.5 bg-gradient-to-r from-teal-400 to-teal-500 text-white font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
-                        <span class="material-symbols-outlined inline mr-1 text-sm">add</span>좌석 추가
-                    </button>
-                    <button onclick="resetAllSeats()"
-                        class="px-6 py-2.5 bg-gradient-to-r from-purple-400 to-purple-500 text-white font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
-                        <span class="material-symbols-outlined inline mr-1 text-sm">restart_alt</span>모든 좌석 초기화
-                    </button>
-                    <button onclick="stopAllAlarms()"
-                        class="px-6 py-2.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
-                        <span class="material-symbols-outlined inline mr-1 text-sm">alarm_off</span>모든 알람중지
-                    </button>
-                    <button onclick="clearAllSeats()"
-                        class="px-6 py-2.5 bg-gradient-to-r from-red-400 to-red-500 text-white font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
-                        <span class="material-symbols-outlined inline mr-1 text-sm">delete_sweep</span>전부 삭제
-                    </button>
-                    <a href="kiosk.html" target="_blank"
-                        class="px-6 py-2.5 bg-gradient-to-r from-indigo-400 to-indigo-500 text-white font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105 inline-flex items-center">
-                        <span class="material-symbols-outlined inline mr-1 text-sm">touch_app</span>키오스크
-                    </a>
+            <div class="flex gap-6">
+                <!-- 왼쪽: 등원 목록 패널 -->
+                <div id="check-in-panel" class="w-72 shrink-0">
+                    <div class="bg-white rounded-3xl p-6 shadow-lg border border-pink-100 sticky top-4">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="w-10 h-10 bg-gradient-to-br from-pink-400 to-purple-400 rounded-xl flex items-center justify-center">
+                                <span class="material-symbols-outlined text-white">school</span>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-800">등원 목록</h3>
+                                <p class="text-xs text-gray-400">드래그하여 좌석 배정</p>
+                            </div>
+                        </div>
+                        <div id="check-in-list" class="space-y-3 max-h-[900px] overflow-y-auto pr-1">
+                            <!-- 등원 학생 카드들이 동적으로 추가됨 -->
+                            <div class="text-center text-gray-400 text-sm py-8">
+                                <span class="material-symbols-outlined text-4xl mb-2 block">hourglass_empty</span>
+                                등원한 학생이 없습니다
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="bg-gradient-to-br from-teal-50 to-blue-50 rounded-2xl p-8 border-2 border-dashed border-teal-300 min-h-[1050px] relative seat-map-container"
-                    id="seat-container">
-                    <!-- 좌석들이 동적으로 추가됨 -->
+                <!-- 오른쪽: 좌석 영역 -->
+                <div class="flex-1">
+                    <div class="bg-white rounded-3xl p-8 shadow-lg border border-teal-50 mb-8">
+                        <div class="mb-6 flex flex-wrap gap-3">
+                            <button onclick="addSeat();"
+                                class="px-6 py-2.5 bg-gradient-to-r from-teal-400 to-teal-500 text-white font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
+                                <span class="material-symbols-outlined inline mr-1 text-sm">add</span>좌석 추가
+                            </button>
+                            <button onclick="resetAllSeats()"
+                                class="px-6 py-2.5 bg-gradient-to-r from-purple-400 to-purple-500 text-white font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
+                                <span class="material-symbols-outlined inline mr-1 text-sm">restart_alt</span>모든 좌석 초기화
+                            </button>
+                            <button onclick="stopAllAlarms()"
+                                class="px-6 py-2.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
+                                <span class="material-symbols-outlined inline mr-1 text-sm">alarm_off</span>모든 알람중지
+                            </button>
+                            <button onclick="clearAllSeats()"
+                                class="px-6 py-2.5 bg-gradient-to-r from-red-400 to-red-500 text-white font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
+                                <span class="material-symbols-outlined inline mr-1 text-sm">delete_sweep</span>전부 삭제
+                            </button>
+                            <a href="kiosk.html" target="_blank"
+                                class="px-6 py-2.5 bg-gradient-to-r from-indigo-400 to-indigo-500 text-white font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105 inline-flex items-center">
+                                <span class="material-symbols-outlined inline mr-1 text-sm">touch_app</span>키오스크
+                            </a>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-teal-50 to-blue-50 rounded-2xl p-8 border-2 border-dashed border-teal-300 min-h-[1050px] relative seat-map-container"
+                            id="seat-container"
+                            ondragover="handleDragOver(event)"
+                            ondrop="handleDropOnContainer(event)">
+                            <!-- 좌석들이 동적으로 추가됨 -->
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -2740,7 +2776,9 @@
             } else {
                 dateTodos.forEach((todo, index) => {
                     const todoItem = document.createElement('div');
-                    todoItem.className = `flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-xl group hover:bg-purple-50 transition w-full ${todo.completed ? 'opacity-60' : ''}`;
+                    const bgColor = todo.color || 'bg-gray-50';
+                    todoItem.className = `flex items-center gap-2 px-4 py-2 rounded-xl group hover:bg-purple-50 transition w-full ${todo.completed ? 'opacity-60' : ''}`;
+                    todoItem.style.backgroundColor = bgColor;
                     todoItem.innerHTML = `
                         <button onclick="toggleTodo(${index})" class="w-5 h-5 rounded border-2 flex items-center justify-center transition shrink-0 ${todo.completed ? 'bg-purple-500 border-purple-500' : 'border-gray-300 hover:border-purple-400'}">
                             ${todo.completed ? '<span class="material-symbols-outlined text-white text-sm">check</span>' : ''}
@@ -2757,6 +2795,12 @@
             updateTodoCount();
         }
 
+        // 파스텔 톤 랜덤 색상 생성
+        function getRandomPastelColor() {
+            const hue = Math.floor(Math.random() * 360);
+            return `hsl(${hue}, 85%, 92%)`;
+        }
+
         // 할 일 추가
         function addTodo() {
             const input = document.getElementById('todo-input');
@@ -2771,6 +2815,7 @@
             todos[currentDate].push({
                 text: text,
                 completed: false,
+                color: getRandomPastelColor(),
                 createdAt: new Date().toISOString()
             });
 
@@ -2955,7 +3000,7 @@
             const seatListHtml = alarmSeats.map(seat =>
                 `<div class="mb-2">
                     <span class="font-bold text-red-500">${seat.number}번 좌석</span>
-                    ${seat.name ? `<span class="text-gray-800 font-bold"> - ${seat.name}</span>` : ''}
+                    ${seat.name ? `<span class="text-gray-800 font-bold"> - ${escapeHtml(seat.name)}</span>` : ''}
                 </div>`
             ).join('');
 
@@ -3716,10 +3761,10 @@
                 <div class="bg-gray-50 p-6 rounded-3xl flex justify-between items-center">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
-                            <span class="font-bold text-lg">${s.name}</span>
+                            <span class="font-bold text-lg">${escapeHtml(s.name)}</span>
                             <span class="text-[10px] px-2 py-0.5 ${statusClass} rounded-full font-bold">학생</span>
                         </div>
-                        <p class="text-xs text-gray-400">${timeText}</p>
+                        <p class="text-xs text-gray-400">${escapeHtml(timeText)}</p>
                     </div>
                     <button class="bg-white p-2 rounded-2xl shadow-sm text-gray-400 hover:text-[#58d3d3]">
                         <span class="material-symbols-outlined">more_vert</span>

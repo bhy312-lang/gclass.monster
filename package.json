@@ -1,0 +1,25 @@
+{
+  "name": "study-room-homepage",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "dev": "live-server",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bhy312-lang/Study-room-homepage2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/bhy312-lang/Study-room-homepage2/issues"
+  },
+  "homepage": "https://github.com/bhy312-lang/Study-room-homepage2#readme",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}
