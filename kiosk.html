@@ -122,6 +122,12 @@
         let selectedStudent = null;
         let pendingAction = null; // 'checkIn' or 'checkOut'
 
+        // Demo mode students (local testing without Supabase)
+        const DEMO_STUDENTS = [
+            { id: 'demo-1', name: '강지민', parent_phone_last4: '5100' },
+            { id: 'demo-2', name: '강서준', parent_phone_last4: '4397' }
+        ];
+
         function kioskPressKey(key) {
             if (kioskInput.length < 4) {
                 kioskInput += key;
@@ -173,42 +179,68 @@
 
         // Supabase에서 학생 검색
         async function searchStudents() {
-            if (!isSupabaseConfigured()) {
-                // Supabase 미설정 시 데모 모드
-                showAlert('warning', '데모 모드', 'Supabase가 설정되지 않았습니다. supabase-config.js를 확인하세요.');
-                return;
-            }
+            console.log('[searchStudents] 시작, 입력값:', kioskInput);
 
-            try {
-                const { data, error } = await supabase
-                    .from('students')
-                    .select('id, name, parent_id, parent_phone_last4')
-                    .eq('parent_phone_last4', kioskInput);
+            // isSupabaseConfigured 함수가 없으면 항상 false 처리 (데모 모드)
+            const hasConfigFunction = typeof window.isSupabaseConfigured === 'function';
+            const supabaseOk = hasConfigFunction && window.isSupabaseConfigured();
+            console.log('[searchStudents] 데모 모드:', !supabaseOk);
 
-                if (error) throw error;
+            if (supabaseOk) {
+                // Supabase 모드
+                try {
+                    const { data, error } = await supabase
+                        .from('students')
+                        .select('id, name, parent_id, parent_phone_last4')
+                        .eq('parent_phone_last4', kioskInput);
 
-                if (data && data.length > 0) {
-                    foundStudents = data;
+                    if (error) throw error;
 
-                    if (data.length === 1) {
-                        // 학생이 1명이면 바로 선택
-                        selectedStudent = data[0];
-                        showStudentInfo(selectedStudent, '학생을 찾았습니다');
+                    if (data && data.length > 0) {
+                        foundStudents = data;
+
+                        if (data.length === 1) {
+                            // 학생이 1명이면 바로 선택
+                            selectedStudent = data[0];
+                            showStudentInfo(selectedStudent, '학생을 찾았습니다');
+                        } else {
+                            // 여러 명이면 선택 모달 표시 (등원/하원 버튼 클릭 시)
+                            selectedStudent = null;
+                            showStudentInfo({ name: `${data.length}명의 학생` }, '등원/하원 버튼을 눌러주세요');
+                        }
                     } else {
-                        // 여러 명이면 선택 모달 표시 (등원/하원 버튼 클릭 시)
+                        foundStudents = [];
                         selectedStudent = null;
-                        showStudentInfo({ name: `${data.length}명의 학생` }, '등원/하원 버튼을 눌러주세요');
+                        showAlert('error', '검색 결과 없음', '등록되지 않은 번호입니다.\n회원가입 후 이용해주세요.');
+                        kioskClearInput();
+                    }
+                } catch (error) {
+                    console.error('학생 검색 오류:', error);
+                    showAlert('error', '오류', '검색 중 오류가 발생했습니다.');
+                }
+            } else {
+                // 데모 모드 - 로컬 학생 데이터 검색
+                console.log('[searchStudents] 데모 모드 실행, DEMO_STUDENTS:', DEMO_STUDENTS);
+                const matched = DEMO_STUDENTS.filter(s => s.parent_phone_last4 === kioskInput);
+                console.log('[searchStudents] matched 결과:', matched);
+
+                if (matched.length > 0) {
+                    foundStudents = matched;
+                    if (matched.length === 1) {
+                        selectedStudent = matched[0];
+                        showStudentInfo(selectedStudent, '학생을 찾았습니다 (데모 모드)');
+                    } else {
+                        selectedStudent = null;
+                        showStudentInfo({ name: `${matched.length}명의 학생` }, '등원/하원 버튼을 눌러주세요 (데모 모드)');
                     }
                 } else {
                     foundStudents = [];
                     selectedStudent = null;
-                    showAlert('error', '검색 결과 없음', '등록되지 않은 번호입니다.\n회원가입 후 이용해주세요.');
+                    showAlert('error', '검색 결과 없음', '등록되지 않은 번호입니다.\n데모 모드: 5100(강지민), 4397(강서준)');
                     kioskClearInput();
                 }
-            } catch (error) {
-                console.error('학생 검색 오류:', error);
-                showAlert('error', '오류', '검색 중 오류가 발생했습니다.');
             }
+            console.log('[searchStudents] 완료, foundStudents:', foundStudents, 'selectedStudent:', selectedStudent);
         }
 
         // 학생 선택 모달 표시
@@ -248,6 +280,11 @@
 
         // 등원 처리
         async function kioskCheckIn() {
+            console.log('[kioskCheckIn] 시작');
+            console.log('[kioskCheckIn] kioskInput:', kioskInput, 'length:', kioskInput.length);
+            console.log('[kioskCheckIn] foundStudents:', foundStudents);
+            console.log('[kioskCheckIn] selectedStudent:', selectedStudent);
+
             if (kioskInput.length !== 4) {
                 showAlert('warning', '알림', '번호 4자리를 모두 입력해주세요.');
                 return;
@@ -271,48 +308,92 @@
                 selectedStudent = foundStudents[0];
             }
 
-            try {
-                // 이미 등원했는지 확인
-                const { data: existing } = await supabase
-                    .from('attendance')
-                    .select('*')
-                    .eq('student_id', selectedStudent.id)
-                    .eq('status', 'waiting')
-                    .single();
+            const supabaseOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
 
-                if (existing) {
+            if (supabaseOk) {
+                // Supabase 모드
+                try {
+                    // 이미 등원했는지 확인
+                    const { data: existing } = await supabase
+                        .from('attendance')
+                        .select('*')
+                        .eq('student_id', selectedStudent.id)
+                        .eq('status', 'waiting')
+                        .single();
+
+                    if (existing) {
+                        showAlert('info', '알림', `${selectedStudent.name}님은 이미 등원 처리되었습니다.`);
+                        kioskClearInput();
+                        return;
+                    }
+
+                    // 등원 기록 추가
+                    const now = new Date();
+                    const alarmTime = new Date(now.getTime() + 60 * 60 * 1000); // +60분
+
+                    const { error } = await supabase
+                        .from('attendance')
+                        .insert({
+                            student_id: selectedStudent.id,
+                            student_name: selectedStudent.name,
+                            type: 'check_in',
+                            check_in_time: now.toISOString(),
+                            alarm_time: alarmTime.toISOString(),
+                            status: 'waiting'
+                        });
+
+                    if (error) throw error;
+
+                    const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+                    const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+                    showAlert('success', '등원 완료',
+                        `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}`);
+                    kioskClearInput();
+
+                } catch (error) {
+                    console.error('등원 처리 오류:', error);
+                    showAlert('error', '오류', '등원 처리 중 오류가 발생했습니다.');
+                }
+            } else {
+                // 데모 모드 - localStorage에 저장
+                const now = new Date();
+                const alarmTime = new Date(now.getTime() + 60 * 60 * 1000); // +60분
+
+                // 이미 등원했는지 확인
+                const existingAttendance = getLocalAttendance();
+                const alreadyCheckedIn = existingAttendance.some(
+                    a => a.student_id === selectedStudent.id && a.status === 'waiting'
+                );
+
+                if (alreadyCheckedIn) {
                     showAlert('info', '알림', `${selectedStudent.name}님은 이미 등원 처리되었습니다.`);
                     kioskClearInput();
                     return;
                 }
 
-                // 등원 기록 추가
-                const now = new Date();
-                const alarmTime = new Date(now.getTime() + 60 * 60 * 1000); // +60분
+                // 새 등원 기록 생성
+                const attendanceId = `demo-attendance-${Date.now()}`;
+                const newAttendance = {
+                    id: attendanceId,
+                    student_id: selectedStudent.id,
+                    student_name: selectedStudent.name,
+                    type: 'check_in',
+                    check_in_time: now.toISOString(),
+                    alarm_time: alarmTime.toISOString(),
+                    status: 'waiting'
+                };
 
-                const { error } = await supabase
-                    .from('attendance')
-                    .insert({
-                        student_id: selectedStudent.id,
-                        student_name: selectedStudent.name,
-                        type: 'check_in',
-                        check_in_time: now.toISOString(),
-                        alarm_time: alarmTime.toISOString(),
-                        status: 'waiting'
-                    });
-
-                if (error) throw error;
+                // localStorage에 저장
+                existingAttendance.push(newAttendance);
+                localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
 
                 const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
                 const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
-                showAlert('success', '등원 완료',
+                showAlert('success', '등원 완료 (데모 모드)',
                     `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}`);
                 kioskClearInput();
-
-            } catch (error) {
-                console.error('등원 처리 오류:', error);
-                showAlert('error', '오류', '등원 처리 중 오류가 발생했습니다.');
             }
         }
 
@@ -341,59 +422,124 @@
                 selectedStudent = foundStudents[0];
             }
 
-            try {
-                // 등원 기록 찾기
-                const { data: attendance, error: findError } = await supabase
-                    .from('attendance')
-                    .select('*')
-                    .eq('student_id', selectedStudent.id)
-                    .in('status', ['waiting', 'seated'])
-                    .order('check_in_time', { ascending: false })
-                    .limit(1)
-                    .single();
+            const supabaseOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
 
-                if (findError || !attendance) {
+            if (supabaseOk) {
+                // Supabase 모드
+                try {
+                    // 등원 기록 찾기
+                    const { data: attendance, error: findError } = await supabase
+                        .from('attendance')
+                        .select('*')
+                        .eq('student_id', selectedStudent.id)
+                        .in('status', ['waiting', 'seated'])
+                        .order('check_in_time', { ascending: false })
+                        .limit(1)
+                        .single();
+
+                    if (findError || !attendance) {
+                        showAlert('info', '알림', `${selectedStudent.name}님은 등원 기록이 없습니다.`);
+                        kioskClearInput();
+                        return;
+                    }
+
+                    // 하원 처리 (상태 업데이트)
+                    const { error } = await supabase
+                        .from('attendance')
+                        .update({
+                            type: 'check_out',
+                            status: 'completed'
+                        })
+                        .eq('id', attendance.id);
+
+                    if (error) throw error;
+
+                    // 좌석에 배정되어 있었다면 좌석도 비우기
+                    if (attendance.seat_id) {
+                        await supabase
+                            .from('seats')
+                            .update({
+                                occupied: false,
+                                student_id: null,
+                                student_name: null,
+                                alarm_time: null,
+                                alarming: false,
+                                alarm_stopped: false
+                            })
+                            .eq('id', attendance.seat_id);
+                    }
+
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+                    showAlert('success', '하원 완료',
+                        `${selectedStudent.name}님, 하원 완료되었습니다!\n안녕히 가세요!\n\n하원시간: ${timeStr}`);
+                    kioskClearInput();
+
+                } catch (error) {
+                    console.error('하원 처리 오류:', error);
+                    showAlert('error', '오류', '하원 처리 중 오류가 발생했습니다.');
+                }
+            } else {
+                // 데모 모드 - localStorage 업데이트
+                const existingAttendance = getLocalAttendance();
+                const attendanceIndex = existingAttendance.findIndex(
+                    a => a.student_id === selectedStudent.id &&
+                         (a.status === 'waiting' || a.status === 'seated')
+                );
+
+                if (attendanceIndex === -1) {
                     showAlert('info', '알림', `${selectedStudent.name}님은 등원 기록이 없습니다.`);
                     kioskClearInput();
                     return;
                 }
 
-                // 하원 처리 (상태 업데이트)
-                const { error } = await supabase
-                    .from('attendance')
-                    .update({
-                        type: 'check_out',
-                        status: 'completed'
-                    })
-                    .eq('id', attendance.id);
+                const attendance = existingAttendance[attendanceIndex];
 
-                if (error) throw error;
+                // 상태를 completed로 업데이트
+                existingAttendance[attendanceIndex].status = 'completed';
+                existingAttendance[attendanceIndex].type = 'check_out';
 
-                // 좌석에 배정되어 있었다면 좌석도 비우기
+                localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
+
+                // 좌석에 배정되어 있었다면 좌석 비우기
                 if (attendance.seat_id) {
-                    await supabase
-                        .from('seats')
-                        .update({
-                            occupied: false,
-                            student_id: null,
-                            student_name: null,
-                            alarm_time: null,
-                            alarming: false,
-                            alarm_stopped: false
-                        })
-                        .eq('id', attendance.seat_id);
+                    try {
+                        const seatsData = localStorage.getItem('seats');
+                        if (seatsData) {
+                            const seats = JSON.parse(seatsData);
+                            const seatIndex = seats.findIndex(s => s.id == attendance.seat_id);
+                            if (seatIndex !== -1) {
+                                seats[seatIndex].name = '';
+                                seats[seatIndex].occupied = false;
+                                seats[seatIndex].alarmTime = null;
+                                seats[seatIndex].alarming = false;
+                                seats[seatIndex].alarmStopped = false;
+                                localStorage.setItem('seats', JSON.stringify(seats));
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error clearing seat:', e);
+                    }
                 }
 
                 const now = new Date();
                 const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
-                showAlert('success', '하원 완료',
+                showAlert('success', '하원 완료 (데모 모드)',
                     `${selectedStudent.name}님, 하원 완료되었습니다!\n안녕히 가세요!\n\n하원시간: ${timeStr}`);
                 kioskClearInput();
+            }
+        }
 
-            } catch (error) {
-                console.error('하원 처리 오류:', error);
-                showAlert('error', '오류', '하원 처리 중 오류가 발생했습니다.');
+        // Helper function to get demo attendance from localStorage
+        function getLocalAttendance() {
+            try {
+                const stored = localStorage.getItem('demo_attendance');
+                return stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                console.error('Error reading demo attendance:', e);
+                return [];
             }
         }
 

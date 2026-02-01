@@ -1,10 +1,23 @@
 // ========== 좌석 모니터링 시스템 (Supabase 연동) ==========
-let seats = [];
-let checkInList = []; // 등원 목록
-let seatCounter = 1;
-let alarmIntervals = {};
-let currentSeatId = null;
-let useSupabase = false; // Supabase 사용 여부
+// index.html에서 이미 선언되었는지 확인 후 선언
+if (typeof seats === 'undefined') {
+    var seats = [];
+}
+if (typeof checkInList === 'undefined') {
+    var checkInList = []; // 등원 목록
+}
+if (typeof seatCounter === 'undefined') {
+    var seatCounter = 1;
+}
+if (typeof alarmIntervals === 'undefined') {
+    var alarmIntervals = {};
+}
+if (typeof currentSeatId === 'undefined') {
+    var currentSeatId = null;
+}
+if (typeof useSupabase === 'undefined') {
+    var useSupabase = false; // Supabase 사용 여부
+}
 
 // XSS 방지를 위한 HTML 이스케이프 함수
 function escapeHtml(text) {
@@ -200,31 +213,76 @@ async function saveSeatToSupabase(seat) {
 
 // ========== 등원 목록 로드/렌더링 ==========
 async function loadCheckInList() {
-    if (!useSupabase) {
-        renderCheckInList([]);
-        return;
-    }
+    if (useSupabase) {
+        try {
+            const { data, error } = await supabase
+                .from('attendance')
+                .select('*')
+                .eq('status', 'waiting')
+                .order('check_in_time', { ascending: true });
 
-    try {
-        const { data, error } = await supabase
-            .from('attendance')
-            .select('*')
-            .eq('status', 'waiting')
-            .order('check_in_time', { ascending: true });
+            if (error) throw error;
 
-        if (error) throw error;
+            checkInList = data || [];
+            renderCheckInList(checkInList);
+        } catch (error) {
+            console.error('등원 목록 로드 실패:', error);
+            renderCheckInList([]);
+        }
+    } else {
+        // 데모 모드 - localStorage에서 로드
+        try {
+            const stored = localStorage.getItem('demo_attendance');
+            const demoAttendance = stored ? JSON.parse(stored) : [];
+            console.log('[loadCheckInList] 데모 모드, 전체 데이터:', demoAttendance);
+            // waiting 상태인 학생만 표시 (좌석에 배정된 seated는 제외)
+            checkInList = demoAttendance.filter(a => a.status === 'waiting');
+            console.log('[loadCheckInList] 필터링 후 (waiting만):', checkInList);
+            renderCheckInList(checkInList);
 
-        checkInList = data || [];
-        renderCheckInList(checkInList);
-    } catch (error) {
-        console.error('등원 목록 로드 실패:', error);
-        renderCheckInList([]);
+            // localStorage에서 좌석 데이터 다시 읽어오기 (동기화)
+            const seatsData = localStorage.getItem('seats');
+            if (seatsData) {
+                try {
+                    const updatedSeats = JSON.parse(seatsData);
+                    // 좌석 데이터가 변경되었는지 확인
+                    const seatsChanged = JSON.stringify(seats) !== JSON.stringify(updatedSeats);
+                    if (seatsChanged) {
+                        // seats 배열 업데이트
+                        seats.length = 0;
+                        seats.push(...updatedSeats);
+                        console.log('[loadCheckInList] 좌석 동기화 완료, seats 변경됨');
+                        renderSeats();
+                    }
+                } catch (e) {
+                    console.error('[loadCheckInList] 좌석 동기화 실패:', e);
+                }
+            }
+        } catch (error) {
+            console.error('데모 등원 목록 로드 실패:', error);
+            renderCheckInList([]);
+        }
     }
 }
 
 function renderCheckInList(list) {
     const container = document.getElementById('check-in-list');
-    if (!container) return;
+    if (!container) {
+        console.log('[renderCheckInList] check-in-list 컨테이너를 찾을 수 없음');
+        return;
+    }
+
+    console.log('[renderCheckInList] 렌더링 할 리스트:', list);
+    console.log('[renderCheckInList] 리스트 길이:', list ? list.length : 0);
+
+    // 새로고침 아이콘에 업데이트 효과
+    const refreshIcon = document.getElementById('refresh-icon');
+    if (refreshIcon) {
+        refreshIcon.style.color = '#10b981'; // emerald-500
+        setTimeout(() => {
+            refreshIcon.style.color = ''; // 원래 색상으로 복원
+        }, 500);
+    }
 
     if (!list || list.length === 0) {
         container.innerHTML = `
@@ -247,7 +305,8 @@ function renderCheckInList(list) {
                 draggable="true"
                 ondragstart="handleCheckInDragStart(event, '${item.id}')"
                 ondragend="handleDragEnd(event)"
-                data-attendance-id="${item.id}">
+                data-attendance-id="${item.id}"
+                data-alarm-time="${alarmTime.toISOString()}">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 bg-gradient-to-br from-pink-400 to-purple-400 rounded-full flex items-center justify-center text-white font-bold text-sm">
                         ${escapeHtml(item.student_name?.charAt(0) || '?')}
@@ -262,11 +321,59 @@ function renderCheckInList(list) {
                         <span class="material-symbols-outlined text-sm">alarm</span>
                         ${alarmStr}
                     </span>
-                    <span class="text-gray-400">좌석으로 드래그</span>
+                    <span class="text-orange-500 font-bold flex items-center gap-1 countdown-badge">
+                        <span class="material-symbols-outlined text-sm">schedule</span>
+                        <span class="countdown-timer" data-attendance-id="${item.id}">--:--:--</span>
+                    </span>
                 </div>
             </div>
         `;
     }).join('');
+
+    // 카운트다운 초기 업데이트
+    updateCheckInCountdowns();
+}
+
+// 등원 목록 카운트다운 업데이트
+function updateCheckInCountdowns() {
+    const countdownElements = document.querySelectorAll('.countdown-timer');
+    countdownElements.forEach(el => {
+        const attendanceId = el.dataset.attendanceId;
+        const card = el.closest('.check-in-card');
+        const alarmTimeStr = card?.dataset.alarmTime;
+
+        if (alarmTimeStr) {
+            const alarmTime = new Date(alarmTimeStr);
+            const now = new Date();
+            const diff = alarmTime - now;
+
+            if (diff <= 0) {
+                el.textContent = '시간 도래';
+                el.parentElement.classList.add('text-red-500');
+                el.parentElement.classList.remove('text-orange-500');
+            } else {
+                const totalSeconds = Math.floor(diff / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+
+                if (hours > 0) {
+                    el.textContent = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                } else {
+                    el.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }
+
+                // 1분 미만일 때 빨간색 경고
+                if (totalSeconds < 60) {
+                    el.parentElement.classList.add('text-red-500');
+                    el.parentElement.classList.remove('text-orange-500');
+                } else {
+                    el.parentElement.classList.remove('text-red-500');
+                    el.parentElement.classList.add('text-orange-500');
+                }
+            }
+        }
+    });
 }
 
 // ========== 드래그 앤 드롭 ==========
@@ -355,90 +462,31 @@ async function assignStudentToSeat(attendanceId, seatId) {
         // localStorage 모드
         seat.occupied = true;
         seat.name = attendance.student_name;
-        seat.alarmTime = formatTimeFromISO(attendance.alarm_time);
+        seat.alarmTimeISO = attendance.alarm_time;  // ISO 시간 저장 (카운트다운 계산용)
+        seat.alarmTime = formatTimeFromISO(attendance.alarm_time);  // 표시용
         saveSeats();
+
+        // demo_attendance 업데이트
+        try {
+            const stored = localStorage.getItem('demo_attendance');
+            const demoAttendance = stored ? JSON.parse(stored) : [];
+            const idx = demoAttendance.findIndex(a => a.id === attendanceId);
+            if (idx !== -1) {
+                demoAttendance[idx].status = 'seated';
+                demoAttendance[idx].seat_id = String(seatId);
+                localStorage.setItem('demo_attendance', JSON.stringify(demoAttendance));
+                loadCheckInList();
+            }
+        } catch (e) {
+            console.error('Error updating demo attendance:', e);
+        }
+
         renderSeats();
     }
 }
 
-// ========== 좌석 렌더링 ==========
-function renderSeats() {
-    console.log('=== renderSeats 함수 시작 ===');
-
-    const container = document.getElementById('seat-container');
-    if (!container) {
-        console.error('❌ seat-container를 찾을 수 없습니다');
-        return;
-    }
-
-    container.innerHTML = '';
-
-    if (seats.length === 0) {
-        console.log('⚠️ 렌더링할 좌석이 없습니다');
-        return;
-    }
-
-    seats.forEach((seat, index) => {
-        const seatDiv = document.createElement('div');
-        seatDiv.id = 'seat-' + seat.id;
-        seatDiv.className = `absolute w-24 h-28 rounded-2xl flex flex-col items-center justify-center text-white font-bold text-sm shadow-lg cursor-move transition-all overflow-hidden`;
-        seatDiv.dataset.seatId = seat.id;
-
-        // 드롭 대상으로 설정
-        seatDiv.ondragover = (e) => {
-            e.preventDefault();
-            if (!seat.occupied) {
-                seatDiv.classList.add('ring-4', 'ring-pink-400', 'scale-105');
-            }
-        };
-        seatDiv.ondragleave = (e) => {
-            seatDiv.classList.remove('ring-4', 'ring-pink-400', 'scale-105');
-        };
-        seatDiv.ondrop = (e) => {
-            seatDiv.classList.remove('ring-4', 'ring-pink-400', 'scale-105');
-            handleDropOnSeat(e, seat.id);
-        };
-
-        // 상태에 따라 색상 변경
-        if (seat.occupied) {
-            seatDiv.classList.add('bg-gradient-to-br', 'from-red-400', 'to-red-500');
-        } else {
-            seatDiv.classList.add('bg-gradient-to-br', 'from-emerald-400', 'to-emerald-500');
-        }
-
-        const x = (seat.x !== undefined && !isNaN(seat.x)) ? seat.x : 0;
-        const y = (seat.y !== undefined && !isNaN(seat.y)) ? seat.y : 0;
-
-        seatDiv.style.left = x + 'px';
-        seatDiv.style.top = y + 'px';
-        seatDiv.style.userSelect = 'none';
-
-        seatDiv.innerHTML = `
-            <div class="text-lg font-bold">좌석 ${seat.number}</div>
-            ${seat.name ? `<div class="text-xs mt-1">${escapeHtml(seat.name)}</div>` : ''}
-            ${seat.alarmTime ? `<div class="text-xs text-yellow-200 mt-1">⏰ ${escapeHtml(seat.alarmTime)}</div>` : ''}
-        `;
-
-        // 더블클릭: 편집
-        seatDiv.addEventListener('dblclick', (e) => {
-            e.stopPropagation();
-            openEditSeatModal(seat.id);
-        });
-
-        // 마우스 다운: 드래그 시작
-        seatDiv.addEventListener('mousedown', (e) => {
-            if (e.button !== 0) return;
-            e.preventDefault();
-            makeSeatDraggable(seatDiv, seat.id);
-        });
-
-        container.appendChild(seatDiv);
-    });
-
-    console.log('✓ renderSeats 함수 완료. 총 ' + seats.length + '개 좌석 렌더링됨');
-}
-
 // 좌석 드래그 앤 드롭 기능
+// NOTE: renderSeats()는 index.html에 정의되어 있음
 function makeSeatDraggable(seatElement, seatId) {
     let isDragging = true;
     const rect = seatElement.getBoundingClientRect();
@@ -855,4 +903,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadSeats();
     await loadCheckInList();
     console.log('%c=== 초기화 완료 ===', 'color: green; font-weight: bold; font-size: 14px;');
+
+    // 등원 목록 실시간 업데이트 (1초마다)
+    setInterval(async () => {
+        await loadCheckInList();
+    }, 1000);
+
+    // 1초마다 카운트다운 업데이트
+    setInterval(updateCheckInCountdowns, 1000);
+
+    // 다른 탭에서 localStorage 변경 시 자동 업데이트
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'demo_attendance') {
+            console.log('[storage 이벤트] demo_attendance 변경됨, 등원 목록 새로고침');
+            loadCheckInList();
+        } else if (e.key === 'seats') {
+            console.log('[storage 이벤트] seats 변경됨, 좌석 새로고침');
+            // 좌석 데이터 다시 로드
+            const seatsData = localStorage.getItem('seats');
+            if (seatsData) {
+                try {
+                    const updatedSeats = JSON.parse(seatsData);
+                    seats.length = 0;
+                    seats.push(...updatedSeats);
+                    renderSeats();
+                } catch (e) {
+                    console.error('[storage 이벤트] 좌석 동기화 실패:', e);
+                }
+            }
+        }
+    });
 });
