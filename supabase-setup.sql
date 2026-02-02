@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   name TEXT,
   phone TEXT,
   phone_last4 TEXT,
+  role TEXT CHECK (role IN ('Admin', 'User') OR role IS NULL),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -60,6 +61,7 @@ CREATE TABLE IF NOT EXISTS seats (
 -- ================================================
 
 CREATE INDEX IF NOT EXISTS idx_profiles_phone_last4 ON profiles(phone_last4);
+CREATE INDEX IF NOT EXISTS idx_profiles_role ON profiles(role);
 CREATE INDEX IF NOT EXISTS idx_students_parent_phone_last4 ON students(parent_phone_last4);
 CREATE INDEX IF NOT EXISTS idx_attendance_status ON attendance(status);
 CREATE INDEX IF NOT EXISTS idx_attendance_created ON attendance(created_at DESC);
@@ -71,6 +73,18 @@ CREATE INDEX IF NOT EXISTS idx_attendance_created ON attendance(created_at DESC)
 -- profiles 테이블 RLS
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
+-- Admin 권한: 모든 프로필 조회 가능
+DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
+CREATE POLICY "Admins can view all profiles" ON profiles
+  FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND role = 'Admin'
+    )
+  );
+
+-- 일반 사용자: 본인 프로필만 조회 가능
 DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
 CREATE POLICY "Users can view own profile" ON profiles
   FOR SELECT USING (auth.uid() = id);
@@ -79,9 +93,23 @@ DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
 CREATE POLICY "Users can insert own profile" ON profiles
   FOR INSERT WITH CHECK (auth.uid() = id);
 
+-- Admin 권한: 모든 프로필 수정 가능
+DROP POLICY IF EXISTS "Admins can update any profile" ON profiles;
+CREATE POLICY "Admins can update any profile" ON profiles
+  FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND role = 'Admin'
+    )
+  );
+
+-- 일반 사용자: 본인 프로필만 수정 가능 (role 제외)
 DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 CREATE POLICY "Users can update own profile" ON profiles
-  FOR UPDATE USING (auth.uid() = id);
+  FOR UPDATE
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id AND (old.role IS NOT DISTINCT FROM new.role OR new.role IS NULL));
 
 -- students 테이블 RLS
 ALTER TABLE students ENABLE ROW LEVEL SECURITY;
@@ -149,11 +177,12 @@ CREATE POLICY "Anyone can delete seats" ON seats
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, name)
+  INSERT INTO public.profiles (id, email, name, role)
   VALUES (
     new.id,
     new.email,
-    COALESCE(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', '')
+    COALESCE(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', ''),
+    'User'  -- 기본 권한은 'User'
   );
   RETURN new;
 END;
@@ -172,6 +201,32 @@ CREATE TRIGGER on_auth_user_created
 -- attendance 테이블 실시간 변경 감지
 ALTER PUBLICATION supabase_realtime ADD TABLE attendance;
 ALTER PUBLICATION supabase_realtime ADD TABLE seats;
+
+-- ================================================
+-- 6. 편의 함수: 사용자 role 확인
+-- ================================================
+
+-- 현재 사용자의 role을 반환하는 함수
+CREATE OR REPLACE FUNCTION public.get_current_user_role()
+RETURNS TEXT AS $$
+BEGIN
+  RETURN (
+    SELECT role FROM public.profiles
+    WHERE id = auth.uid()
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 특정 사용자가 Admin인지 확인하는 함수
+CREATE OR REPLACE FUNCTION public.is_admin(user_id UUID DEFAULT auth.uid())
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = user_id AND role = 'Admin'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ================================================
 -- 설정 완료!
