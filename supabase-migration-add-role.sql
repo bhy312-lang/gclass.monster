@@ -133,41 +133,22 @@ BEGIN
   END IF;
 END $$;
 
--- Admin 권한: 모든 프로필 조회 가능
+-- Admin 권한: 모든 프로필 조회 가능 (is_admin 함수 사용으로 무한 재귀 방지)
 CREATE POLICY "Admins can view all profiles" ON profiles
   FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role = 'Admin'
-    )
-  );
+  USING (public.is_admin(auth.uid()));
 
--- Admin 권한: 모든 프로필 수정 가능
+-- Admin 권한: 모든 프로필 수정 가능 (is_admin 함수 사용으로 무한 재귀 방지)
 CREATE POLICY "Admins can update any profile" ON profiles
   FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role = 'Admin'
-    )
-  );
+  USING (public.is_admin(auth.uid()))
+  WITH CHECK (public.is_admin(auth.uid()));
 
--- Admin 권한: 모든 사용자의 role 변경 가능
+-- Admin 권한: 모든 사용자의 role 변경 가능 (is_admin 함수 사용으로 무한 재귀 방지)
 CREATE POLICY "Admins can change user roles" ON profiles
   FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role = 'Admin'
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role = 'Admin'
-    )
-  );
+  USING (public.is_admin(auth.uid()))
+  WITH CHECK (public.is_admin(auth.uid()));
 
 -- ================================================
 -- 트리거 함수 업데이트 (새 사용자 role 기본값 설정)

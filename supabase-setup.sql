@@ -93,16 +93,12 @@ DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
 CREATE POLICY "Users can insert own profile" ON profiles
   FOR INSERT WITH CHECK (auth.uid() = id);
 
--- Admin 권한: 모든 프로필 수정 가능
+-- Admin 권한: 모든 프로필 수정 가능 (is_admin 함수 사용으로 무한 재귀 방지)
 DROP POLICY IF EXISTS "Admins can update any profile" ON profiles;
 CREATE POLICY "Admins can update any profile" ON profiles
   FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = auth.uid() AND role = 'Admin'
-    )
-  );
+  USING (public.is_admin(auth.uid()))
+  WITH CHECK (public.is_admin(auth.uid()));
 
 -- 일반 사용자: 본인 프로필만 수정 가능 (role 제외)
 DROP POLICY IF EXISTS "Users can update own profile" ON profiles;

@@ -177,6 +177,7 @@
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
 
     <script>
         // URL에서 redirect 파라미터 추출
@@ -201,22 +202,8 @@
         async function checkAuth() {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
-                // 프로필 확인
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('phone')
-                    .eq('id', session.user.id)
-                    .single();
-
                 const redirectUrl = getRedirectUrl('index.html');
-
-                if (profile?.phone) {
-                    // 이미 프로필이 완료된 경우 목적 페이지로 이동
-                    window.location.href = redirectUrl;
-                } else {
-                    // 프로필이 미완료된 경우 등록 페이지로 이동 (redirect URL 유지)
-                    window.location.href = `register.html?redirect=${encodeURIComponent(redirectUrl)}`;
-                }
+                window.location.href = redirectUrl;
             }
         }
 
@@ -237,7 +224,7 @@
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: window.location.origin + `/register.html?redirect=${encodeURIComponent(redirectUrl)}`
+                    redirectTo: window.location.origin + `/${redirectUrl}`
                 }
             });
 
@@ -259,7 +246,7 @@
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'kakao',
                 options: {
-                    redirectTo: window.location.origin + `/register.html?redirect=${encodeURIComponent(redirectUrl)}`
+                    redirectTo: window.location.origin + `/${redirectUrl}`
                 }
             });
 

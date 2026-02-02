@@ -50,12 +50,6 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         currentUser = session.user;
         await loadUserProfile();
         updateAuthUI();
-
-        // 프로필에 전화번호가 없으면 등록 페이지로 리다이렉트 (redirect URL 유지)
-        if (currentProfile && !currentProfile.phone && !window.location.pathname.includes('register.html')) {
-            const redirectUrl = getRedirectUrl('index.html');
-            window.location.href = `register.html?redirect=${encodeURIComponent(redirectUrl)}`;
-        }
     } else {
         currentUser = null;
         currentProfile = null;
@@ -90,7 +84,7 @@ async function signInWithGoogle(redirectUrl = null) {
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-            redirectTo: window.location.origin + `/register.html?redirect=${encodeURIComponent(redirectUrl)}`
+            redirectTo: window.location.origin + `/${redirectUrl}`
         }
     });
 
@@ -111,7 +105,7 @@ async function signInWithKakao(redirectUrl = null) {
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'kakao',
         options: {
-            redirectTo: window.location.origin + `/register.html?redirect=${encodeURIComponent(redirectUrl)}`
+            redirectTo: window.location.origin + `/${redirectUrl}`
         }
     });
 
