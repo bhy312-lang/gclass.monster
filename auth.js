@@ -68,6 +68,26 @@ async function loadUserProfile() {
         .single();
 
     if (error) {
+        // 프로필이 없으면 자동 생성
+        if (error.code === 'PGRST116') {
+            console.log('프로필이 없어서 자동 생성합니다.');
+            const { data: newProfile, error: createError } = await supabase
+                .from('profiles')
+                .insert({
+                    id: currentUser.id,
+                    email: currentUser.email
+                })
+                .select()
+                .single();
+
+            if (createError) {
+                console.error('프로필 생성 실패:', createError);
+                return null;
+            }
+
+            currentProfile = newProfile;
+            return newProfile;
+        }
         console.error('프로필 로드 실패:', error);
         return null;
     }
@@ -233,7 +253,7 @@ function updateAuthUI() {
     const logoutBtn = document.getElementById('logout-btn');
     const profileDropdown = document.getElementById('profile-dropdown');
 
-    if (currentUser && currentProfile) {
+    if (currentUser) {
         // 로그인 상태
         if (loginBtn) loginBtn.style.display = 'none';
         if (userInfo) userInfo.style.display = 'block';
