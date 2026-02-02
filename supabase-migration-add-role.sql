@@ -9,58 +9,101 @@
 ALTER TABLE public.profiles
 ADD COLUMN IF NOT EXISTS role TEXT;
 
--- 2. role 컬럼에 제약조건 추가 (Admin, User, null만 허용)
+-- 2. 기존 제약조건이 있다면 삭제
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'check_role'
+    AND conrelid = 'public.profiles'::regclass
+  ) THEN
+    ALTER TABLE public.profiles DROP CONSTRAINT check_role;
+  END IF;
+END $$;
+
+-- 3. role 컬럼에 제약조건 추가 (Admin, User, null만 허용)
 ALTER TABLE public.profiles
 ADD CONSTRAINT check_role
 CHECK (role IN ('Admin', 'User') OR role IS NULL);
 
--- 3. 기존 사용자들의 role을 기본값 'User'로 설정 (선택사항)
+-- 4. 기존 사용자들의 role을 기본값 'User'로 설정
 UPDATE public.profiles
 SET role = 'User'
 WHERE role IS NULL;
 
--- 4. 인덱스 생성 (role으로 빠르게 검색하기 위해)
+-- 5. 인덱스 생성 (role으로 빠르게 검색하기 위해)
 CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
 
 -- ================================================
 -- RLS 정책 업데이트 (관리자 권한 추가)
 -- ================================================
 
+-- Policy 삭제 안전하게 처리 (PostgreSQL 버전 호환)
+DO $$
+BEGIN
+  -- "Admins can view all profiles" 정책 삭제
+  IF EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE policyname = 'Admins can view all profiles'
+    AND schemaname = 'public'
+    AND tablename = 'profiles'
+  ) THEN
+    DROP POLICY "Admins can view all profiles" ON profiles;
+  END IF;
+
+  -- "Admins can update any profile" 정책 삭제
+  IF EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE policyname = 'Admins can update any profile'
+    AND schemaname = 'public'
+    AND tablename = 'profiles'
+  ) THEN
+    DROP POLICY "Admins can update any profile" ON profiles;
+  END IF;
+
+  -- "Admins can change user roles" 정책 삭제
+  IF EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE policyname = 'Admins can change user roles'
+    AND schemaname = 'public'
+    AND tablename = 'profiles'
+  ) THEN
+    DROP POLICY "Admins can change user roles" ON profiles;
+  END IF;
+END $$;
+
 -- Admin 권한: 모든 프로필 조회 가능
-DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
 CREATE POLICY "Admins can view all profiles" ON profiles
   FOR SELECT
   USING (
     EXISTS (
-      SELECT 1 FROM public.profiles
+      SELECT 1 FROM profiles
       WHERE id = auth.uid() AND role = 'Admin'
     )
   );
 
 -- Admin 권한: 모든 프로필 수정 가능
-DROP POLICY IF EXISTS "Admins can update any profile" ON profiles;
 CREATE POLICY "Admins can update any profile" ON profiles
   FOR UPDATE
   USING (
     EXISTS (
-      SELECT 1 FROM public.profiles
+      SELECT 1 FROM profiles
       WHERE id = auth.uid() AND role = 'Admin'
     )
   );
 
 -- Admin 권한: 모든 사용자의 role 변경 가능
-DROP POLICY IF EXISTS "Admins can change user roles" ON profiles;
 CREATE POLICY "Admins can change user roles" ON profiles
   FOR UPDATE
   USING (
     EXISTS (
-      SELECT 1 FROM public.profiles
+      SELECT 1 FROM profiles
       WHERE id = auth.uid() AND role = 'Admin'
     )
   )
   WITH CHECK (
     EXISTS (
-      SELECT 1 FROM public.profiles
+      SELECT 1 FROM profiles
       WHERE id = auth.uid() AND role = 'Admin'
     )
   );
