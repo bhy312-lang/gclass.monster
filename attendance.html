@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>출결 관리 - 꿈터공부방</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Symbols+Outlined" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .nav-tab {
+            padding: 12px 24px;
+            border-radius: 999px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .nav-tab.active {
+            background-color: #4285f4;
+            color: white;
+        }
+        .nav-tab:not(.active) {
+            background-color: transparent;
+            color: #6b7280;
+        }
+        .nav-tab:not(.active):hover {
+            background-color: #f3f4f6;
+        }
+        .calendar-day {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .calendar-day:hover {
+            background-color: #e5e7eb;
+        }
+        .calendar-day.selected {
+            background-color: #4285f4;
+            color: white;
+        }
+        .calendar-day.today {
+            border: 2px solid #4285f4;
+        }
+        .calendar-day.has-data::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 4px;
+            height: 4px;
+            background-color: #34a853;
+            border-radius: 50%;
+        }
+        .student-row {
+            transition: all 0.2s ease;
+        }
+        .student-row:hover {
+            background-color: #f9fafb;
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-present {
+            background-color: #d1fae5;
+            color: #059669;
+        }
+        .status-absent {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+        .status-late {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+        .time-badge {
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .time-in {
+            background-color: #dcfce7;
+            color: #16a34a;
+        }
+        .time-out {
+            background-color: #e9d5ff;
+            color: #9333ea;
+        }
+        .action-btn {
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+        .btn-checkin {
+            background-color: #d1fae5;
+            color: #059669;
+        }
+        .btn-checkin:hover {
+            background-color: #10b981;
+            color: white;
+        }
+        .btn-checkout {
+            background-color: #e9d5ff;
+            color: #7c3aed;
+        }
+        .btn-checkout:hover {
+            background-color: #8b5cf6;
+            color: white;
+        }
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            min-width: 320px;
+            max-width: 400px;
+            width: 90%;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .time-input {
+            width: 80px;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .time-input:focus {
+            border-color: #4285f4;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 28px;
+            background-color: #d1d5db;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .toggle-switch.active {
+            background-color: #4285f4;
+        }
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 24px;
+            height: 24px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .toggle-switch.active::after {
+            transform: translateX(20px);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: #9ca3af;
+        }
+        .empty-state span {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-white sticky top-0 z-50 border-b border-gray-200">
+        <div class="max-w-4xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between mb-4">
+                <h1 class="text-xl font-bold text-gray-800">출결 관리</h1>
+                <button onclick="goToKiosk()" class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full text-sm font-medium transition-colors">
+                    <span class="material-symbols-outlined text-lg">qr_code_scanner</span>
+                    키오스크
+                </button>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex gap-2 bg-gray-100 p-1 rounded-full">
+                <button class="nav-tab" onclick="window.location.href='index.html'">일정관리</button>
+                <button class="nav-tab">업무활동일지</button>
+                <button class="nav-tab active">출결관리</button>
+                <button class="nav-tab">출결통계</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 py-6">
+        <!-- Date Navigation -->
+        <section class="bg-white rounded-2xl shadow-sm p-6 mb-6">
+            <div class="flex items-center justify-between mb-6">
+                <button onclick="changeMonth(-1)" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                <div class="flex items-center gap-4">
+                    <span id="current-month" class="text-lg font-bold text-gray-800"></span>
+                </div>
+                <button onclick="changeMonth(1)" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="mb-6">
+                <div class="grid grid-cols-7 gap-1 mb-2">
+                    <div class="text-center text-xs font-medium text-red-500 py-2">일</div>
+                    <div class="text-center text-xs font-medium text-gray-500 py-2">월</div>
+                    <div class="text-center text-xs font-medium text-gray-500 py-2">화</div>
+                    <div class="text-center text-xs font-medium text-gray-500 py-2">수</div>
+                    <div class="text-center text-xs font-medium text-gray-500 py-2">목</div>
+                    <div class="text-center text-xs font-medium text-gray-500 py-2">금</div>
+                    <div class="text-center text-xs font-medium text-blue-500 py-2">토</div>
+                </div>
+                <div id="calendar-grid" class="grid grid-cols-7 gap-1">
+                    <!-- Calendar days will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="flex flex-wrap items-center gap-4 pt-4 border-t border-gray-100">
+                <div class="relative">
+                    <select id="status-filter" onchange="filterAttendance()" class="appearance-none bg-gray-100 hover:bg-gray-200 px-4 py-2 pr-10 rounded-full text-sm font-medium cursor-pointer transition-colors">
+                        <option value="all">전체 상태</option>
+                        <option value="present">출석</option>
+                        <option value="absent">결석</option>
+                        <option value="late">지각</option>
+                    </select>
+                    <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-sm">expand_more</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div id="toggle-all-students" class="toggle-switch active" onclick="toggleAllStudents()"></div>
+                    <span class="text-sm text-gray-600">전체학생</span>
+                </div>
+                <div class="flex-1 relative">
+                    <input type="text" id="search-input" onkeyup="searchStudents()" placeholder="이름으로 검색하세요" class="w-full bg-gray-100 hover:bg-gray-200 px-4 py-2 pl-10 rounded-full text-sm transition-colors">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Attendance List -->
+        <section class="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <!-- List Header -->
+            <div class="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-medium text-gray-500">
+                <div class="col-span-3">학생 이름</div>
+                <div class="col-span-2 text-center">상태</div>
+                <div class="col-span-2 text-center">등원 시간</div>
+                <div class="col-span-2 text-center">하원 시간</div>
+                <div class="col-span-3 text-center">입력</div>
+            </div>
+
+            <!-- Student List -->
+            <div id="student-list">
+                <!-- Students will be rendered here -->
+                <div class="empty-state">
+                    <span class="material-symbols-outlined">person_off</span>
+                    <p>학생 정보가 없습니다</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer Settings -->
+        <section class="mt-6 bg-white rounded-2xl shadow-sm p-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-2">
+                        <div class="toggle-switch" id="toggle-daily-report"></div>
+                        <span class="text-sm text-gray-600">출결일보 기능</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="toggle-switch" id="toggle-missing-time"></div>
+                        <span class="text-sm text-gray-600">시간누락 기능</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Time Picker Modal -->
+    <div id="time-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 id="modal-title" class="text-lg font-bold text-gray-800">시간 설정</h3>
+                <button onclick="closeModal()" class="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <p id="modal-student-name" class="text-sm text-gray-500 mb-6"></p>
+
+            <div class="flex items-center justify-center gap-2 mb-8">
+                <input type="number" id="modal-hour" class="time-input" min="0" max="23" placeholder="00">
+                <span class="text-2xl font-bold text-gray-400">:</span>
+                <input type="number" id="modal-minute" class="time-input" min="0" max="59" placeholder="00">
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors">취소</button>
+                <button onclick="saveTime()" class="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="attendance.js"></script>
+</body>
+</html>

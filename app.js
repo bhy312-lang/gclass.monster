@@ -700,10 +700,17 @@ function cancelSeatSettings() {
 async function resetAllSeats() {
     if (!confirm('모든 좌석의 정보를 초기화하시겠습니까?')) return;
 
+    // 모든 알람 인터벌 정리 (먼저 실행)
+    Object.keys(alarmIntervals).forEach(key => {
+        clearInterval(alarmIntervals[key]);
+        delete alarmIntervals[key];
+    });
+
     for (const seat of seats) {
         seat.occupied = false;
         seat.name = '';
         seat.alarmTime = null;
+        seat.alarmTimeISO = null;  // ISO 시간도 초기화
         seat.alarming = false;
         seat.alarmStopped = false;
 
@@ -747,17 +754,17 @@ async function clearAllSeats() {
 }
 
 function stopAllAlarms() {
+    // 모든 알람 인터벌 정리 (먼저 실행)
+    Object.keys(alarmIntervals).forEach(key => {
+        clearInterval(alarmIntervals[key]);
+        delete alarmIntervals[key];
+    });
+
     seats.forEach(seat => {
         if (seat.alarming) {
             seat.alarming = false;
             seat.alarmStopped = true;
         }
-    });
-
-    // 모든 알람 인터벌 정리
-    Object.keys(alarmIntervals).forEach(key => {
-        clearInterval(alarmIntervals[key]);
-        delete alarmIntervals[key];
     });
 
     saveSeats();

@@ -1,0 +1,22 @@
+{
+  "env": {},
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd mobile navigation menu\n\n- Add responsive hamburger menu for mobile devices\n- Menu toggles open/close with icon animation\n- Closes automatically when clicking outside\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(start \"\" \"C:\\\\coding\\\\Study-room-homepage\\\\index.html\")",
+      "Bash(git commit:*)",
+      "Bash(start:*)",
+      "Bash(git pull:*)",
+      "Skill(glm-plan-usage:usage-query-skill)",
+      "Bash(curl:*)",
+      "Bash(claude config show:*)",
+      "Bash(echo:*)",
+      "Bash(env:*)",
+      "Bash(code:*)",
+      "Bash(claude auth:*)",
+      "Bash(where:*)"
+    ]
+  }
+}

@@ -28,12 +28,10 @@
         </div>
 
         <!-- 학생 정보 표시 영역 -->
-        <div id="student-info" class="hidden mb-6">
-            <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 border-2 border-emerald-200">
+        <div id="student-info" class="hidden mb-2">
+            <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-2 border-2 border-emerald-200">
                 <div class="text-center">
-                    <span class="material-symbols-outlined text-emerald-500 text-4xl mb-2">person</span>
-                    <div id="student-name" class="text-2xl font-bold text-emerald-700"></div>
-                    <div id="student-status" class="text-sm text-emerald-500 mt-1"></div>
+                    <div id="student-name" class="text-lg font-bold text-emerald-700"></div>
                 </div>
             </div>
         </div>
@@ -166,10 +164,8 @@
         function showStudentInfo(student, statusText) {
             const infoEl = document.getElementById('student-info');
             const nameEl = document.getElementById('student-name');
-            const statusEl = document.getElementById('student-status');
 
             nameEl.textContent = student.name;
-            statusEl.textContent = statusText;
             infoEl.classList.remove('hidden');
         }
 
@@ -313,16 +309,17 @@
             if (supabaseOk) {
                 // Supabase 모드
                 try {
-                    // 이미 등원했는지 확인
+                    // 이미 등원했는지 확인 (waiting 또는 seated 상태)
                     const { data: existing } = await supabase
                         .from('attendance')
                         .select('*')
                         .eq('student_id', selectedStudent.id)
-                        .eq('status', 'waiting')
-                        .single();
+                        .in('status', ['waiting', 'seated'])
+                        .maybeSingle();
 
                     if (existing) {
-                        showAlert('info', '알림', `${selectedStudent.name}님은 이미 등원 처리되었습니다.`);
+                        const statusText = existing.status === 'seated' ? '이미 좌석에 배정되었습니다' : '이미 등원 처리되었습니다';
+                        showAlert('info', '알림', `${selectedStudent.name}님은 ${statusText}.`);
                         kioskClearInput();
                         return;
                     }
@@ -360,14 +357,15 @@
                 const now = new Date();
                 const alarmTime = new Date(now.getTime() + 60 * 60 * 1000); // +60분
 
-                // 이미 등원했는지 확인
+                // 이미 등원했는지 확인 (waiting 또는 seated 상태)
                 const existingAttendance = getLocalAttendance();
-                const alreadyCheckedIn = existingAttendance.some(
-                    a => a.student_id === selectedStudent.id && a.status === 'waiting'
+                const existingRecord = existingAttendance.find(
+                    a => a.student_id === selectedStudent.id && (a.status === 'waiting' || a.status === 'seated')
                 );
 
-                if (alreadyCheckedIn) {
-                    showAlert('info', '알림', `${selectedStudent.name}님은 이미 등원 처리되었습니다.`);
+                if (existingRecord) {
+                    const statusText = existingRecord.status === 'seated' ? '이미 좌석에 배정되었습니다' : '이미 등원 처리되었습니다';
+                    showAlert('info', '알림', `${selectedStudent.name}님은 ${statusText}.`);
                     kioskClearInput();
                     return;
                 }
@@ -427,6 +425,22 @@
             if (supabaseOk) {
                 // Supabase 모드
                 try {
+                    // 이미 하원했는지 확인 (completed 상태)
+                    const { data: completedRecord } = await supabase
+                        .from('attendance')
+                        .select('*')
+                        .eq('student_id', selectedStudent.id)
+                        .eq('status', 'completed')
+                        .order('check_in_time', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+
+                    if (completedRecord) {
+                        showAlert('info', '알림', `${selectedStudent.name}님은 이미 하원 처리되었습니다.`);
+                        kioskClearInput();
+                        return;
+                    }
+
                     // 등원 기록 찾기
                     const { data: attendance, error: findError } = await supabase
                         .from('attendance')
@@ -483,6 +497,17 @@
             } else {
                 // 데모 모드 - localStorage 업데이트
                 const existingAttendance = getLocalAttendance();
+
+                // 이미 하원했는지 확인 (completed 상태)
+                const completedIndex = existingAttendance.findIndex(
+                    a => a.student_id === selectedStudent.id && a.status === 'completed'
+                );
+                if (completedIndex !== -1) {
+                    showAlert('info', '알림', `${selectedStudent.name}님은 이미 하원 처리되었습니다.`);
+                    kioskClearInput();
+                    return;
+                }
+
                 const attendanceIndex = existingAttendance.findIndex(
                     a => a.student_id === selectedStudent.id &&
                          (a.status === 'waiting' || a.status === 'seated')
