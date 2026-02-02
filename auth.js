@@ -233,17 +233,45 @@ async function deleteStudent(studentId) {
 function updateAuthUI() {
     const loginBtn = document.getElementById('login-btn');
     const userInfo = document.getElementById('user-info');
-    const userName = document.getElementById('user-name');
+    const profileBtn = document.getElementById('profile-btn');
+    const profileInitial = document.getElementById('profile-initial');
+    const dropdownEmail = document.getElementById('dropdown-email');
     const logoutBtn = document.getElementById('logout-btn');
+    const profileDropdown = document.getElementById('profile-dropdown');
 
     if (currentUser && currentProfile) {
         // 로그인 상태
         if (loginBtn) loginBtn.style.display = 'none';
-        if (userInfo) userInfo.style.display = 'flex';
-        if (userName) userName.textContent = currentProfile.name || currentUser.email;
+        if (userInfo) userInfo.style.display = 'block';
+
+        // 이메일 첫 글자 추출 (대문자)
+        if (profileInitial && currentUser.email) {
+            const firstLetter = currentUser.email.charAt(0).toUpperCase();
+            profileInitial.textContent = firstLetter;
+        }
+
+        // 드롭다운 메뉴 이메일 표시
+        if (dropdownEmail) {
+            dropdownEmail.textContent = currentUser.email;
+        }
+
+        // 로그아웃 버튼
         if (logoutBtn) {
-            logoutBtn.style.display = 'block';
             logoutBtn.onclick = signOut;
+        }
+
+        // 프로필 버튼 클릭 시 드롭다운 토글
+        if (profileBtn) {
+            // 기존 리스너 제거
+            const newProfileBtn = profileBtn.cloneNode(true);
+            profileBtn.parentNode.replaceChild(newProfileBtn, profileBtn);
+
+            newProfileBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (profileDropdown) {
+                    profileDropdown.classList.toggle('hidden');
+                }
+            });
         }
     } else {
         // 로그아웃 상태
@@ -252,8 +280,21 @@ function updateAuthUI() {
             loginBtn.onclick = () => window.location.href = 'login.html';
         }
         if (userInfo) userInfo.style.display = 'none';
+        if (profileDropdown) profileDropdown.classList.add('hidden');
     }
 }
+
+// 드롭다운 메뉴 외부 클릭 시 닫기
+document.addEventListener('click', function(e) {
+    const profileDropdown = document.getElementById('profile-dropdown');
+    const profileBtn = document.getElementById('profile-btn');
+
+    if (profileDropdown && !profileDropdown.classList.contains('hidden')) {
+        if (!profileBtn || !profileBtn.contains(e.target)) {
+            profileDropdown.classList.add('hidden');
+        }
+    }
+});
 
 // 알림 표시 함수
 function showAlert(message, type = 'info') {
