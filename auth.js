@@ -4,6 +4,44 @@
 let currentUser = null;
 let currentProfile = null;
 
+// ================================================
+// Redirect URL 관리 함수들
+// ================================================
+
+// URL에서 redirect 파라미터 추출
+function getRedirectUrl(defaultUrl = 'index.html') {
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect');
+    // 외부 URL 방지: 같은 도메인인지 확인
+    if (redirect) {
+        try {
+            const url = new URL(redirect, window.location.origin);
+            if (url.origin === window.location.origin) {
+                return redirect;
+            }
+        } catch (e) {
+            // 무효한 URL이면 기본값 사용
+        }
+    }
+    return defaultUrl;
+}
+
+// 로그인이 필요한 경우 redirect URL과 함께 login.html로 이동
+function requireAuth() {
+    const currentPath = window.location.pathname + window.location.search;
+    window.location.href = `login.html?redirect=${encodeURIComponent(currentPath)}`;
+}
+
+// 로그인이 필요한지 확인하고 필요하면 로그인 페이지로 이동
+async function checkAuthAndRedirect() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+        requireAuth();
+        return false;
+    }
+    return true;
+}
+
 // 인증 상태 변경 리스너
 supabase.auth.onAuthStateChange(async (event, session) => {
     console.log('Auth state changed:', event);
@@ -13,9 +51,10 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         await loadUserProfile();
         updateAuthUI();
 
-        // 프로필에 전화번호가 없으면 등록 페이지로 리다이렉트
+        // 프로필에 전화번호가 없으면 등록 페이지로 리다이렉트 (redirect URL 유지)
         if (currentProfile && !currentProfile.phone && !window.location.pathname.includes('register.html')) {
-            window.location.href = 'register.html';
+            const redirectUrl = getRedirectUrl('index.html');
+            window.location.href = `register.html?redirect=${encodeURIComponent(redirectUrl)}`;
         }
     } else {
         currentUser = null;
@@ -44,16 +83,40 @@ async function loadUserProfile() {
 }
 
 // Google 로그인
-async function signInWithGoogle() {
+async function signInWithGoogle(redirectUrl = null) {
+    if (!redirectUrl) {
+        redirectUrl = getRedirectUrl('index.html');
+    }
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-            redirectTo: window.location.origin + '/register.html'
+            redirectTo: window.location.origin + `/register.html?redirect=${encodeURIComponent(redirectUrl)}`
         }
     });
 
     if (error) {
         console.error('Google 로그인 실패:', error);
+        showAlert('로그인에 실패했습니다.', 'error');
+        return false;
+    }
+
+    return true;
+}
+
+// Kakao 로그인
+async function signInWithKakao(redirectUrl = null) {
+    if (!redirectUrl) {
+        redirectUrl = getRedirectUrl('index.html');
+    }
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'kakao',
+        options: {
+            redirectTo: window.location.origin + `/register.html?redirect=${encodeURIComponent(redirectUrl)}`
+        }
+    });
+
+    if (error) {
+        console.error('Kakao 로그인 실패:', error);
         showAlert('로그인에 실패했습니다.', 'error');
         return false;
     }

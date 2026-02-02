@@ -179,6 +179,24 @@
     <script src="supabase-config.js"></script>
 
     <script>
+        // URL에서 redirect 파라미터 추출
+        function getRedirectUrl(defaultUrl = 'index.html') {
+            const params = new URLSearchParams(window.location.search);
+            const redirect = params.get('redirect');
+            // 외부 URL 방지: 같은 도메인인지 확인
+            if (redirect) {
+                try {
+                    const url = new URL(redirect, window.location.origin);
+                    if (url.origin === window.location.origin) {
+                        return redirect;
+                    }
+                } catch (e) {
+                    // 무효한 URL이면 기본값 사용
+                }
+            }
+            return defaultUrl;
+        }
+
         // 이미 로그인된 경우 리다이렉트
         async function checkAuth() {
             const { data: { session } } = await supabase.auth.getSession();
@@ -190,10 +208,14 @@
                     .eq('id', session.user.id)
                     .single();
 
+                const redirectUrl = getRedirectUrl('index.html');
+
                 if (profile?.phone) {
-                    window.location.href = 'index.html';
+                    // 이미 프로필이 완료된 경우 목적 페이지로 이동
+                    window.location.href = redirectUrl;
                 } else {
-                    window.location.href = 'register.html';
+                    // 프로필이 미완료된 경우 등록 페이지로 이동 (redirect URL 유지)
+                    window.location.href = `register.html?redirect=${encodeURIComponent(redirectUrl)}`;
                 }
             }
         }
@@ -210,10 +232,12 @@
                 return;
             }
 
+            const redirectUrl = getRedirectUrl('index.html');
+
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: window.location.origin + '/register.html'
+                    redirectTo: window.location.origin + `/register.html?redirect=${encodeURIComponent(redirectUrl)}`
                 }
             });
 
@@ -230,10 +254,12 @@
                 return;
             }
 
+            const redirectUrl = getRedirectUrl('index.html');
+
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'kakao',
                 options: {
-                    redirectTo: window.location.origin + '/register.html'
+                    redirectTo: window.location.origin + `/register.html?redirect=${encodeURIComponent(redirectUrl)}`
                 }
             });
 
