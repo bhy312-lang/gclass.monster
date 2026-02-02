@@ -5,31 +5,92 @@
 -- profiles 테이블에 권한(role) 컬럼을 추가합니다
 -- ================================================
 
--- 1. role 컬럼 추가 (기존 테이블이 있는 경우)
-ALTER TABLE public.profiles
-ADD COLUMN IF NOT EXISTS role TEXT;
+-- 0. profiles 테이블이 없으면 먼저 생성
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'profiles') THEN
+    -- profiles 테이블 생성
+    CREATE TABLE public.profiles (
+      id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+      email TEXT,
+      name TEXT,
+      phone TEXT,
+      phone_last4 TEXT,
+      role TEXT CHECK (role IN ('Admin', 'User') OR role IS NULL),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    -- RLS 활성화
+    ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+    RAISE NOTICE 'profiles 테이블이 생성되었습니다.';
+  ELSE
+    RAISE NOTICE 'profiles 테이블이 이미 존재합니다.';
+  END IF;
+END $$;
+
+-- 1. role 컬럼 추가 (기존 테이블에 role 컬럼이 없는 경우)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+    AND table_name = 'profiles'
+    AND column_name = 'role'
+  ) THEN
+    ALTER TABLE public.profiles ADD COLUMN role TEXT;
+    RAISE NOTICE 'role 컬럼이 추가되었습니다.';
+  ELSE
+    RAISE NOTICE 'role 컬럼이 이미 존재합니다.';
+  END IF;
+END $$;
 
 -- 2. 기존 제약조건이 있다면 삭제
 DO $$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM pg_constraint
+    WHERE conname = 'profiles_role_check'
+    AND conrelid = 'public.profiles'::regclass
+  ) THEN
+    ALTER TABLE public.profiles DROP CONSTRAINT profiles_role_check;
+    RAISE NOTICE '기존 제약조건이 삭제되었습니다.';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint
     WHERE conname = 'check_role'
     AND conrelid = 'public.profiles'::regclass
   ) THEN
     ALTER TABLE public.profiles DROP CONSTRAINT check_role;
+    RAISE NOTICE 'check_role 제약조건이 삭제되었습니다.';
   END IF;
 END $$;
 
 -- 3. role 컬럼에 제약조건 추가 (Admin, User, null만 허용)
-ALTER TABLE public.profiles
-ADD CONSTRAINT check_role
-CHECK (role IN ('Admin', 'User') OR role IS NULL);
+DO $$
+BEGIN
+  ALTER TABLE public.profiles
+  ADD CONSTRAINT profiles_role_check
+  CHECK (role IN ('Admin', 'User') OR role IS NULL);
+  RAISE NOTICE 'role 제약조건이 추가되었습니다.';
+EXCEPTION
+  WHEN duplicate_object THEN
+    RAISE NOTICE '제약조건이 이미 존재합니다.';
+END $$;
 
 -- 4. 기존 사용자들의 role을 기본값 'User'로 설정
-UPDATE public.profiles
-SET role = 'User'
-WHERE role IS NULL;
+DO $$
+BEGIN
+  UPDATE public.profiles
+  SET role = 'User'
+  WHERE role IS NULL;
+  RAISE NOTICE '기존 사용자들의 role이 User로 설정되었습니다.';
+EXCEPTION
+  WHEN undefined_table THEN
+    RAISE NOTICE 'profiles 테이블이 없어 건너뜁니다.';
+END $$;
 
 -- 5. 인덱스 생성 (role으로 빠르게 검색하기 위해)
 CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
@@ -129,6 +190,20 @@ BEGIN
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 트리거 생성 (없는 경우에만)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'on_auth_user_created'
+  ) THEN
+    CREATE TRIGGER on_auth_user_created
+      AFTER INSERT ON auth.users
+      FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+    RAISE NOTICE '트리거가 생성되었습니다.';
+  END IF;
+END $$;
 
 -- ================================================
 -- 편의 함수: 사용자 role 확인
