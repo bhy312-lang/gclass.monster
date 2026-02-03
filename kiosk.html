@@ -346,6 +346,28 @@
 
                     if (error) throw error;
 
+                    // localStorage에도 저장 (좌석 모니터링 호환)
+                    const attendanceId = `attendance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    const newAttendance = {
+                        id: attendanceId,
+                        student_id: selectedStudent.id,
+                        student_name: selectedStudent.name,
+                        type: 'check_in',
+                        check_in_time: now.toISOString(),
+                        alarm_time: alarmTime.toISOString(),
+                        status: 'waiting'
+                    };
+
+                    const existingAttendance = getLocalAttendance();
+                    existingAttendance.push(newAttendance);
+                    localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
+
+                    // storage 이벤트 발생 (좌석 모니터링 갱신 트리거)
+                    window.dispatchEvent(new StorageEvent('storage', {
+                        key: 'demo_attendance',
+                        newValue: JSON.stringify(existingAttendance)
+                    }));
+
                     // Web Push 알림 전송
                     await sendWebPushNotification(selectedStudent.id, 'check_in');
 
