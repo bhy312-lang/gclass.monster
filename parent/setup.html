@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>프로필 설정 - 꿈터공부방</title>
+
+  <!-- 스타일시트 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/parent/parent.css">
+</head>
+<body class="bg-pink-50 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md">
+    <!-- 헤더 -->
+    <div class="text-center mb-6">
+      <div class="w-16 h-16 bg-gradient-to-br from-pink-400 to-pink-600 rounded-full mx-auto mb-3 flex items-center justify-center">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+        </svg>
+      </div>
+      <h1 class="text-xl font-bold text-gray-800">프로필 설정</h1>
+      <p class="text-sm text-gray-500 mt-1">자녀 정보를 등록해주세요</p>
+    </div>
+
+    <!-- 로딩 오버레이 -->
+    <div id="loading-overlay" class="fixed inset-0 bg-pink-50 flex items-center justify-center z-50">
+      <div class="text-center">
+        <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-pink-500 border-t-transparent"></div>
+        <p class="mt-3 text-pink-600 font-medium">로딩 중...</p>
+      </div>
+    </div>
+
+    <!-- 폼 -->
+    <form id="setup-form" class="space-y-4">
+      <!-- 핸드폰 번호 -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+          핸드폰 번호
+        </label>
+        <input
+          type="tel"
+          id="phone"
+          name="phone"
+          placeholder="010-1234-5678"
+          maxlength="13"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+          required
+        >
+        <p class="text-xs text-gray-400 mt-1">키오스크에서 등하원할 때 필요합니다</p>
+      </div>
+
+      <!-- 자녀 이름 -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+          자녀 이름
+        </label>
+        <input
+          type="text"
+          id="student-name"
+          name="student-name"
+          placeholder="홍길동"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+          required
+        >
+      </div>
+
+      <!-- 자녀 학년 (선택) -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+          학년 (선택)
+        </label>
+        <select
+          id="student-grade"
+          name="student-grade"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+        >
+          <option value="">선택 안함</option>
+          <option value="1">1학년</option>
+          <option value="2">2학년</option>
+          <option value="3">3학년</option>
+          <option value="4">4학년</option>
+          <option value="5">5학년</option>
+          <option value="6">6학년</option>
+        </select>
+      </div>
+
+      <!-- 저장 버튼 -->
+      <button
+        type="submit"
+        class="w-full bg-gradient-to-r from-pink-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-pink-600 hover:to-pink-700 transition-all shadow-md"
+      >
+        저장하고 시작하기
+      </button>
+    </form>
+
+    <!-- 안내 -->
+    <p class="text-xs text-gray-400 text-center mt-4">
+      나중에 내 정보에서 수정할 수 있습니다
+    </p>
+  </div>
+
+  <!-- 스크립트 로드 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/supabase-config.js"></script>
+  <script src="/parent/setup.js"></script>
+</body>
+</html>

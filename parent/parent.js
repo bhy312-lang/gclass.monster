@@ -34,6 +34,13 @@ async function initializeParentPortal() {
     // 자녀 데이터 로드
     await loadChildrenData();
 
+    // 자녀가 없으면 프로필 설정 페이지로 이동
+    if (childrenData.length === 0) {
+      console.log('[Parent Portal] 자녀 정보 없음, 프로필 설정 페이지로 이동');
+      window.location.href = '/parent/setup.html';
+      return;
+    }
+
     // Push 알림 상태 확인 및 설정
     await setupPushNotifications();
 
