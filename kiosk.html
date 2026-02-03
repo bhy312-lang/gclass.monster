@@ -681,17 +681,22 @@
 
             // 디버깅용 로그
             console.log('[Kiosk] Supabase 클라이언트:', sb ? '로드됨' : '로드 실패');
+            console.log('[Kiosk] sb.from 함수:', typeof sb?.from);
             console.log('[Kiosk] isSupabaseConfigured:', typeof window.isSupabaseConfigured === 'function' ? window.isSupabaseConfigured() : '함수 없음');
 
             updateKioskDisplay();
         }
 
-        // DOMContentLoaded 후 초기화
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initKiosk);
-        } else {
-            initKiosk();
-        }
+        // 스크립트 로드 후 즉시 초기화 시도
+        (function() {
+            // 약간의 지연 후 실행 (다른 스크립트가 로드될 때까지 대기)
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initKiosk);
+            } else {
+                // 이미 로드된 경우 즉시 실행
+                initKiosk();
+            }
+        })();
 
         // ESC 키로 모달 닫기
         document.addEventListener('keydown', (e) => {

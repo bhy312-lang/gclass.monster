@@ -4,22 +4,14 @@
 const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co'; // 예: https://xxxxx.supabase.co
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo'; // 예: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-// Supabase 클라이언트 생성 및 전역 노출 (DOMContentLoaded 후 실행)
-function initSupabase() {
+// Supabase 클라이언트 생성 및 전역 노출 (즉시 실행)
+(function() {
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     window.supabaseClient = supabaseClient;
     window.supabase = supabaseClient;
 
     console.log('[Supabase Config] 클라이언트 초기화 완료');
-    return supabaseClient;
-}
-
-// 즉시 실행
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initSupabase);
-} else {
-    initSupabase();
-}
+})();
 
 // 설정이 완료되었는지 확인
 function isSupabaseConfigured() {
