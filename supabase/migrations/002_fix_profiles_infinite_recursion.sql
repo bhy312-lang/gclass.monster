@@ -7,8 +7,9 @@ DROP POLICY IF EXISTS "Admins can update any profile" ON profiles;
 DROP POLICY IF EXISTS "Parents can view own profile" ON profiles;
 DROP POLICY IF EXISTS "Parents can update own profile" ON profiles;
 
--- is_admin 함수가 있으면 삭제 후 재생성
-DROP FUNCTION IF EXISTS is_admin(UUID);
+-- is_admin 함수와 의존하는 정책들을 모두 삭제
+DROP POLICY IF EXISTS "Admins can change user roles" ON profiles;
+DROP FUNCTION IF EXISTS is_admin(UUID) CASCADE;
 
 CREATE FUNCTION is_admin(user_id UUID)
 RETURNS BOOLEAN
