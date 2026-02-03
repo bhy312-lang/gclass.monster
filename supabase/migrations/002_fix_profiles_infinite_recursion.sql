@@ -1,30 +1,28 @@
 -- Fix infinite recursion in profiles RLS policy
 -- 실행일: 2026-02-03
 
--- 문제가 되는 정책 삭제
+-- 모든 관련 정책 삭제
 DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
 DROP POLICY IF EXISTS "Admins can update any profile" ON profiles;
 DROP POLICY IF EXISTS "Parents can view own profile" ON profiles;
 DROP POLICY IF EXISTS "Parents can update own profile" ON profiles;
-
--- is_admin 함수와 의존하는 정책들을 모두 삭제
 DROP POLICY IF EXISTS "Admins can change user roles" ON profiles;
+
+-- is_admin 함수 CASCADE 삭제
 DROP FUNCTION IF EXISTS is_admin(UUID) CASCADE;
 
+-- auth.users의 raw_user_meta_data 컬럼을 직접 확인하는 함수
 CREATE FUNCTION is_admin(user_id UUID)
 RETURNS BOOLEAN
 LANGUAGE SQL
 SECURITY DEFINER
 AS $$
 BEGIN
-  -- auth.users 테이블의 user_metadata를 확인
-  -- profiles 테이블을 조회하지 않음으로써 무한 재귀 방지
   RETURN EXISTS (
     SELECT 1
-    FROM auth.users a
-    JOIN auth.user_metadata am ON a.id = am.user_id
-    WHERE a.id = user_id
-    AND am.raw_user_metadata->>'role' = 'Admin'
+    FROM auth.users
+    WHERE id = user_id
+    AND raw_user_meta_data->>'role' = 'Admin'
   );
 END;
 $$;
@@ -41,7 +39,7 @@ CREATE POLICY "Users can update own profile"
   USING (auth.uid() = id)
   WITH CHECK (auth.uid() = id);
 
--- Admin 정책 (is_admin 함수 사용)
+-- Admin 정책
 CREATE POLICY "Admins can view all profiles"
   ON profiles
   FOR SELECT
