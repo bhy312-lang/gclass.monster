@@ -341,6 +341,9 @@
 
                     if (error) throw error;
 
+                    // Web Push 알림 전송
+                    await sendWebPushNotification(selectedStudent.id, 'check_in');
+
                     const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
                     const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
@@ -468,6 +471,9 @@
 
                     if (error) throw error;
 
+                    // Web Push 알림 전송
+                    await sendWebPushNotification(selectedStudent.id, 'check_out');
+
                     // 좌석에 배정되어 있었다면 좌석도 비우기
                     if (attendance.seat_id) {
                         await supabase
@@ -554,6 +560,59 @@
                 showAlert('success', '하원 완료 (데모 모드)',
                     `${selectedStudent.name}님, 하원 완료되었습니다!\n안녕히 가세요!\n\n하원시간: ${timeStr}`);
                 kioskClearInput();
+            }
+        }
+
+        // Web Push 알림 전송 함수
+        async function sendWebPushNotification(studentId, type) {
+            try {
+                // Supabase가 구성되어 있는지 확인
+                const supabaseOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
+
+                if (!supabaseOk) {
+                    console.log('[Kiosk] 데모 모드 - Push 알림 스킵');
+                    return;
+                }
+
+                console.log(`[Kiosk] Web Push 알림 전송 시도: student_id=${studentId}, type=${type}`);
+
+                // 학생 정보와 부모 조회
+                const { data: student, error: studentError } = await supabase
+                    .from('students')
+                    .select('id, name, parent_id')
+                    .eq('id', studentId)
+                    .single();
+
+                if (studentError || !student) {
+                    console.error('[Kiosk] 학생 조회 실패:', studentError);
+                    return;
+                }
+
+                if (!student.parent_id) {
+                    console.log('[Kiosk] 부모 ID가 없음 - 알림 스킵');
+                    return;
+                }
+
+                // Supabase Edge Function 호출
+                const { data, error } = await supabase.functions.invoke('send-web-push-notification', {
+                    body: {
+                        student_id: student.id,
+                        parent_id: student.parent_id,
+                        type: type,
+                        student_name: student.name
+                    }
+                });
+
+                if (error) {
+                    console.error('[Kiosk] Web Push 전송 실패:', error);
+                    // 알림 실패해도 키오스크 동작에는 영향 없음
+                } else {
+                    console.log('[Kiosk] Web Push 알림 전송 성공:', data);
+                }
+
+            } catch (error) {
+                console.error('[Kiosk] Push 알림 전송 중 오류:', error);
+                // 키오스크 동작에는 영향 없음
             }
         }
 

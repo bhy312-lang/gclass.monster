@@ -1,0 +1,128 @@
+/* 학부모 포털 스타일시트 */
+
+/* 기본 리셋 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 커스텀 스크롤바 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ec4899;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #db2777;
+}
+
+/* 로딩 오버레이 */
+#loading-overlay {
+  transition: opacity 0.3s ease;
+}
+
+/* 하단 탭 바 활성화 효과 */
+nav button {
+  transition: color 0.2s ease, transform 0.1s ease;
+}
+
+nav button:active {
+  transform: scale(0.95);
+}
+
+/* 자녀 카드 호버 효과 */
+#children-status > div {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#children-status > div:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.15);
+}
+
+/* 출결 기록 항목 호버 효과 */
+#attendance-history > div {
+  transition: background-color 0.2s ease;
+}
+
+/* 토글 스위치 개선 */
+input[type="checkbox"]:checked + div {
+  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+}
+
+/* iOS 대응 */
+@supports (-webkit-touch-callout: none) {
+  /* iOS 특정 스타일 */
+  body {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* PWA 설치 프롬프트 스타일 (나중에 추가) */
+.pwa-install-prompt {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 12px;
+  padding: 16px 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 100;
+}
+
+/* 토스트 알림 스타일 (나중에 추가) */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  border-radius: 8px;
+  padding: 12px 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* 다크 모드 지원 (나중에 추가) */
+@media (prefers-color-scheme: dark) {
+  /* 다크 모드 스타일 */
+}
+
+/* 프린트 스타일 */
+@media print {
+  nav,
+  #push-toggle {
+    display: none;
+  }
+}
