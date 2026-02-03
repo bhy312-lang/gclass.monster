@@ -6,8 +6,8 @@ const urlsToCache = [
   '/parent/index.html',
   '/parent/parent.js',
   '/parent/parent.css',
-  '/parent/manifest.json',
-  'https://cdn.tailwindcss.com'
+  '/parent/manifest.json'
+  // CDN 리소스는 캐시하지 않음 (CORS 문제 방지)
 ];
 
 // 설치 이벤트 - 캐싱
