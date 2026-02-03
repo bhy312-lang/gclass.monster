@@ -335,6 +335,8 @@
                             student_name: selectedStudent.name,
                             type: 'check_in',
                             check_in_time: now.toISOString(),
+                            check_in: now.toISOString(),
+                            date: now.toISOString().split('T')[0],
                             alarm_time: alarmTime.toISOString(),
                             status: 'waiting'
                         });
@@ -461,11 +463,13 @@
                     }
 
                     // 하원 처리 (상태 업데이트)
+                    const now = new Date();
                     const { error } = await supabase
                         .from('attendance')
                         .update({
                             type: 'check_out',
-                            status: 'completed'
+                            status: 'completed',
+                            check_out: now.toISOString()
                         })
                         .eq('id', attendance.id);
 
