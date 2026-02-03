@@ -463,13 +463,12 @@
                     }
 
                     // 하원 처리 (상태 업데이트)
-                    const now = new Date();
                     const { error } = await supabase
                         .from('attendance')
                         .update({
                             type: 'check_out',
                             status: 'completed',
-                            check_out: now.toISOString()
+                            check_out: new Date().toISOString()
                         })
                         .eq('id', attendance.id);
 
@@ -493,8 +492,8 @@
                             .eq('id', attendance.seat_id);
                     }
 
-                    const now = new Date();
-                    const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+                    const checkOutTime = new Date();
+                    const timeStr = checkOutTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
                     showAlert('success', '하원 완료',
                         `${selectedStudent.name}님, 하원 완료되었습니다!\n안녕히 가세요!\n\n하원시간: ${timeStr}`);
