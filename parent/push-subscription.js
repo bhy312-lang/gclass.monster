@@ -38,6 +38,11 @@ async function subscribeToPushNotifications() {
     const registration = await navigator.serviceWorker.register('/parent/sw.js');
     console.log('[Push] Service Worker 등록 완료:', registration);
 
+    // Service Worker가 활성화될 때까지 기다림
+    console.log('[Push] Service Worker 활성화 대기...');
+    await registration.ready;
+    console.log('[Push] Service Worker 활성화 완료');
+
     // 기존 구독 확인
     let subscription = await registration.pushManager.getSubscription();
 
