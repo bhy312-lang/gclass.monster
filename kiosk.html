@@ -115,6 +115,13 @@
     <script src="supabase-config.js"></script>
 
     <script>
+        // Supabase 클라이언트 전역 변수 할당
+        const supabase = window.supabase || window.supabaseClient;
+
+        // 디버깅용 로그
+        console.log('[Kiosk] Supabase 클라이언트:', supabase ? '로드됨' : '로드 실패');
+        console.log('[Kiosk] isSupabaseConfigured:', typeof window.isSupabaseConfigured === 'function' ? window.isSupabaseConfigured() : '함수 없음');
+
         let kioskInput = '';
         let foundStudents = [];
         let selectedStudent = null;
