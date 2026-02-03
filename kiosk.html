@@ -111,15 +111,15 @@
     </div>
 
     <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@sb/sb-js@2"></script>
+    <script src="sb-config.js"></script>
 
     <script>
         // Supabase 클라이언트 전역 변수 할당
-        const supabase = window.supabase || window.supabaseClient;
+        const sb = window.sb || window.sbClient;
 
         // 디버깅용 로그
-        console.log('[Kiosk] Supabase 클라이언트:', supabase ? '로드됨' : '로드 실패');
+        console.log('[Kiosk] Supabase 클라이언트:', sb ? '로드됨' : '로드 실패');
         console.log('[Kiosk] isSupabaseConfigured:', typeof window.isSupabaseConfigured === 'function' ? window.isSupabaseConfigured() : '함수 없음');
 
         let kioskInput = '';
@@ -186,13 +186,13 @@
 
             // isSupabaseConfigured 함수가 없으면 항상 false 처리 (데모 모드)
             const hasConfigFunction = typeof window.isSupabaseConfigured === 'function';
-            const supabaseOk = hasConfigFunction && window.isSupabaseConfigured();
-            console.log('[searchStudents] 데모 모드:', !supabaseOk);
+            const sbOk = hasConfigFunction && window.isSupabaseConfigured();
+            console.log('[searchStudents] 데모 모드:', !sbOk);
 
-            if (supabaseOk) {
+            if (sbOk) {
                 // Supabase 모드
                 try {
-                    const { data, error } = await supabase
+                    const { data, error } = await sb
                         .from('students')
                         .select('id, name, parent_id, parent_phone_last4')
                         .eq('parent_phone_last4', kioskInput);
@@ -311,13 +311,13 @@
                 selectedStudent = foundStudents[0];
             }
 
-            const supabaseOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
+            const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
 
-            if (supabaseOk) {
+            if (sbOk) {
                 // Supabase 모드
                 try {
                     // 이미 등원했는지 확인 (waiting 또는 seated 상태)
-                    const { data: existing } = await supabase
+                    const { data: existing } = await sb
                         .from('attendance')
                         .select('*')
                         .eq('student_id', selectedStudent.id)
@@ -335,7 +335,7 @@
                     const now = new Date();
                     const alarmTime = new Date(now.getTime() + 60 * 60 * 1000); // +60분
 
-                    const { error } = await supabase
+                    const { error } = await sb
                         .from('attendance')
                         .insert({
                             student_id: selectedStudent.id,
@@ -432,13 +432,13 @@
                 selectedStudent = foundStudents[0];
             }
 
-            const supabaseOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
+            const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
 
-            if (supabaseOk) {
+            if (sbOk) {
                 // Supabase 모드
                 try {
                     // 이미 하원했는지 확인 (completed 상태)
-                    const { data: completedRecord } = await supabase
+                    const { data: completedRecord } = await sb
                         .from('attendance')
                         .select('*')
                         .eq('student_id', selectedStudent.id)
@@ -454,7 +454,7 @@
                     }
 
                     // 등원 기록 찾기
-                    const { data: attendance, error: findError } = await supabase
+                    const { data: attendance, error: findError } = await sb
                         .from('attendance')
                         .select('*')
                         .eq('student_id', selectedStudent.id)
@@ -470,7 +470,7 @@
                     }
 
                     // 하원 처리 (상태 업데이트)
-                    const { error } = await supabase
+                    const { error } = await sb
                         .from('attendance')
                         .update({
                             type: 'check_out',
@@ -486,7 +486,7 @@
 
                     // 좌석에 배정되어 있었다면 좌석도 비우기
                     if (attendance.seat_id) {
-                        await supabase
+                        await sb
                             .from('seats')
                             .update({
                                 occupied: false,
@@ -577,9 +577,9 @@
         async function sendWebPushNotification(studentId, type) {
             try {
                 // Supabase가 구성되어 있는지 확인
-                const supabaseOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
+                const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
 
-                if (!supabaseOk) {
+                if (!sbOk) {
                     console.log('[Kiosk] 데모 모드 - Push 알림 스킵');
                     return;
                 }
@@ -587,7 +587,7 @@
                 console.log(`[Kiosk] Web Push 알림 전송 시도: student_id=${studentId}, type=${type}`);
 
                 // 학생 정보와 부모 조회
-                const { data: student, error: studentError } = await supabase
+                const { data: student, error: studentError } = await sb
                     .from('students')
                     .select('id, name, parent_id')
                     .eq('id', studentId)
@@ -604,7 +604,7 @@
                 }
 
                 // Supabase Edge Function 호출
-                const { data, error } = await supabase.functions.invoke('send-web-push-notification', {
+                const { data, error } = await sb.functions.invoke('send-web-push-notification', {
                     body: {
                         student_id: student.id,
                         parent_id: student.parent_id,
