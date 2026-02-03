@@ -9,7 +9,8 @@
       "Bash(start:*)",
       "Bash(git pull:*)",
       "Skill(glm-plan-usage:usage-query-skill)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npm install:*)"
     ]
   }
 }

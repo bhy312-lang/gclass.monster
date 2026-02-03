@@ -105,7 +105,7 @@ DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 CREATE POLICY "Users can update own profile" ON profiles
   FOR UPDATE
   USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id AND (old.role IS NOT DISTINCT FROM new.role OR new.role IS NULL));
+  WITH CHECK (auth.uid() = id);
 
 -- students 테이블 RLS
 ALTER TABLE students ENABLE ROW LEVEL SECURITY;
@@ -195,8 +195,8 @@ CREATE TRIGGER on_auth_user_created
 -- ================================================
 
 -- attendance 테이블 실시간 변경 감지
-ALTER PUBLICATION supabase_realtime ADD TABLE attendance;
-ALTER PUBLICATION supabase_realtime ADD TABLE seats;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE attendance;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE seats;
 
 -- ================================================
 -- 6. 편의 함수: 사용자 role 확인

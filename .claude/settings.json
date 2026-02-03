@@ -2,9 +2,7 @@
   "env": {
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-4.5-air",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-4.7",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-4.7",
-    "ANTHROPIC_AUTH_TOKEN": "50476bb6af6641c780efffd178c1ef4f.aYH1Qtelp56Nz8z1",
-    "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic"
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-4.7"
   },
   "permissions": {
     "allow": [
@@ -22,7 +20,8 @@
       "Bash(env:*)",
       "Bash(code:*)",
       "Bash(claude auth:*)",
-      "Bash(where:*)"
+      "Bash(where:*)",
+      "Bash(cp:*)"
     ]
   }
 }
