@@ -2505,44 +2505,61 @@
                 </div>
             </div>
 
-            <!-- 좌석 설정 모달 -->
+            <!-- 좌석 설정 모달 (입체적 디자인) -->
             <div id="edit-seat-modal"
-                class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center"
+                class="fixed inset-0 bg-black/50 backdrop-blur-md z-50 hidden flex items-center justify-center"
                 style="display: none;">
-                <div class="bg-white rounded-3xl p-10 max-w-sm w-full mx-4 shadow-2xl" style="display: none;">
-                    <h3 class="text-3xl font-bold text-center mb-8 text-gray-800">좌석 설정</h3>
+                <div class="relative">
+                    <!-- 배경 광택 효과 -->
+                    <div class="absolute -inset-1 bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 rounded-3xl blur-lg opacity-40 animate-pulse"></div>
 
-                    <div class="space-y-6">
-                        <div>
-                            <label for="edit-seat-name"
-                                class="block text-base font-semibold text-gray-700 mb-3">이름:</label>
-                            <input type="text" id="edit-seat-name" placeholder="이름을 입력하세요"
-                                class="w-full px-5 py-4 border-2 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none transition text-base">
+                    <div class="relative bg-gradient-to-br from-white via-purple-50 to-pink-50 rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl border border-white/50">
+                        <!-- 헤더 -->
+                        <div class="text-center mb-6">
+                            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg mb-4">
+                                <span class="material-symbols-outlined text-white text-3xl">settings</span>
+                            </div>
+                            <h3 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">좌석 설정</h3>
                         </div>
 
-                        <div>
-                            <label class="block text-base font-semibold text-gray-700 mb-3">알람 시간:</label>
-                            <div class="flex gap-3 items-center justify-center">
-                                <div class="flex-1">
-                                    <input type="number" id="edit-seat-alarm-hour" min="0" max="23" maxlength="2"
-                                        placeholder="시"
-                                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none transition text-center text-lg font-semibold">
+                        <div class="space-y-5">
+                            <!-- 이름 입력 -->
+                            <div>
+                                <label for="edit-seat-name" class="block text-sm font-semibold text-gray-700 mb-3">👤 이름</label>
+                                <div class="relative">
+                                    <input type="text" id="edit-seat-name" placeholder="이름을 입력하세요"
+                                        class="w-full px-5 py-4 border-2 border-purple-200 rounded-2xl focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-100 transition-all text-base bg-white/80 backdrop-blur">
+                                    <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+                                        <span class="material-symbols-outlined text-2xl">person</span>
+                                    </div>
                                 </div>
-                                <span class="text-2xl font-bold text-gray-400">:</span>
-                                <div class="flex-1">
-                                    <input type="number" id="edit-seat-alarm-minute" min="0" max="59" maxlength="2"
-                                        placeholder="분"
-                                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-2xl focus:border-blue-500 focus:outline-none transition text-center text-lg font-semibold">
+                            </div>
+
+                            <!-- 알람 시간 입력 -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">⏰ 알람 시간</label>
+                                <div class="flex gap-3 items-center justify-center">
+                                    <div class="flex-1 relative">
+                                        <input type="number" id="edit-seat-alarm-hour" min="0" max="23" maxlength="2"
+                                            placeholder="시"
+                                            class="w-full px-4 py-3 border-2 border-purple-200 rounded-2xl focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-100 transition-all text-center text-lg font-semibold bg-white/80 backdrop-blur">
+                                    </div>
+                                    <span class="text-2xl font-bold text-purple-400">:</span>
+                                    <div class="flex-1 relative">
+                                        <input type="number" id="edit-seat-alarm-minute" min="0" max="59" maxlength="2"
+                                            placeholder="분"
+                                            class="w-full px-4 py-3 border-2 border-purple-200 rounded-2xl focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-100 transition-all text-center text-lg font-semibold bg-white/80 backdrop-blur">
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="flex gap-3 mt-10">
-                        <button id="edit-seat-save" onclick="saveSeatSettings()"
-                            class="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg transition text-base">저장</button>
-                        <button id="edit-seat-cancel" onclick="cancelSeatSettings()"
-                            class="flex-1 px-4 py-3 bg-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-400 transition text-base">취소</button>
+                        <div class="flex gap-3 mt-8">
+                            <button id="edit-seat-save" onclick="saveSeatSettings()"
+                                class="flex-1 px-4 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all hover:scale-105 hover:shadow-xl text-base shadow-lg">저장</button>
+                            <button id="edit-seat-cancel" onclick="cancelSeatSettings()"
+                                class="flex-1 px-4 py-4 bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 font-bold rounded-xl hover:from-gray-300 hover:to-gray-400 transition-all text-base shadow-md">취소</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2565,6 +2582,145 @@
                             class="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold rounded-xl hover:shadow-lg transition text-base">확인</button>
                         <button id="confirm-no"
                             class="flex-1 px-4 py-3 bg-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-400 transition text-base">취소</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 시험 알람 설정 모달 (입체적 디자인) -->
+            <div id="exam-alarm-modal"
+                class="fixed inset-0 bg-black/50 backdrop-blur-md z-50 hidden flex items-center justify-center"
+                style="display: none;">
+                <div class="relative">
+                    <!-- 배경 광택 효과 -->
+                    <div class="absolute -inset-1 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 rounded-3xl blur-lg opacity-40 animate-pulse"></div>
+
+                    <div class="relative bg-gradient-to-br from-white via-blue-50 to-indigo-50 rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl border border-white/50">
+                        <!-- 헤더 -->
+                        <div class="text-center mb-6">
+                            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg mb-4">
+                                <!-- 책 펼친 모양 아이콘 -->
+                                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- 책 왼쪽 페이지 -->
+                                    <path d="M20 8L5 12V32L20 28V8Z" fill="white" fill-opacity="0.9"/>
+                                    <!-- 책 오른쪽 페이지 -->
+                                    <path d="M20 8L35 12V32L20 28V8Z" fill="white" fill-opacity="0.7"/>
+                                    <!-- 책 spine -->
+                                    <rect x="19" y="8" width="2" height="20" fill="white" fill-opacity="0.5"/>
+                                    <!-- TEST 글자 -->
+                                    <text x="20" y="22" font-size="8" font-weight="bold" fill="#1e40af" text-anchor="middle">TEST</text>
+                                </svg>
+                            </div>
+                            <h3 class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">시험 알람</h3>
+                            <p id="exam-alarm-seat-name" class="text-gray-500 mt-2"></p>
+                        </div>
+
+                        <div class="space-y-5">
+                            <!-- 빠른 시간 선택 버튼 -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">⚡ 빠른 설정</label>
+                                <div class="grid grid-cols-4 gap-2">
+                                    <button onclick="setExamAlarmMinutes(10)" class="px-3 py-3 bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 font-bold rounded-xl hover:from-blue-200 hover:to-blue-300 transition-all hover:scale-105 hover:shadow-lg text-sm">10분</button>
+                                    <button onclick="setExamAlarmMinutes(20)" class="px-3 py-3 bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 font-bold rounded-xl hover:from-blue-200 hover:to-blue-300 transition-all hover:scale-105 hover:shadow-lg text-sm">20분</button>
+                                    <button onclick="setExamAlarmMinutes(30)" class="px-3 py-3 bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 font-bold rounded-xl hover:from-blue-200 hover:to-blue-300 transition-all hover:scale-105 hover:shadow-lg text-sm">30분</button>
+                                    <button onclick="setExamAlarmMinutes(60)" class="px-3 py-3 bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 font-bold rounded-xl hover:from-blue-200 hover:to-blue-300 transition-all hover:scale-105 hover:shadow-lg text-sm">60분</button>
+                                </div>
+                            </div>
+
+                            <!-- 수동 입력 -->
+                            <div>
+                                <label for="exam-alarm-minutes" class="block text-sm font-semibold text-gray-700 mb-3">✏️ 직접 입력 (분)</label>
+                                <div class="relative">
+                                    <input type="number" id="exam-alarm-minutes" min="1" max="999" placeholder="분"
+                                        onkeydown="if(event.key === 'Enter') { event.preventDefault(); saveExamAlarm(); }"
+                                        class="w-full px-5 py-4 border-2 border-blue-200 rounded-2xl focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all text-base text-center bg-white/80 backdrop-blur">
+                                    <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+                                        <span class="material-symbols-outlined text-2xl">schedule</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 현재 설정된 시험 알람 표시 -->
+                            <div id="current-exam-alarm" class="hidden bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl p-4 text-center shadow-lg">
+                                <span class="text-white/90 font-semibold">현재 설정: </span>
+                                <span id="current-exam-alarm-time" class="text-white font-bold text-lg"></span>
+                                <button onclick="cancelExamAlarm()" class="ml-2 px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-sm rounded-lg transition backdrop-blur">취소</button>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 mt-8">
+                            <button onclick="saveExamAlarm()"
+                                class="flex-1 px-4 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all hover:scale-105 hover:shadow-xl text-base shadow-lg">설정</button>
+                            <button onclick="cancelExamAlarmModal()"
+                                class="flex-1 px-4 py-4 bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 font-bold rounded-xl hover:from-gray-300 hover:to-gray-400 transition-all text-base shadow-md">취소</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 좌석 컨텍스트 메뉴 -->
+            <div id="seat-context-menu"
+                class="fixed hidden bg-white rounded-xl shadow-2xl py-2 z-50 min-w-40 border border-gray-200"
+                style="display: none;"
+                onmouseenter="keepContextMenuVisible()"
+                onmouseleave="hideSeatContextMenu()">
+                <button onclick="contextMenuAction('settings')" class="w-full px-4 py-3 text-left hover:bg-gray-100 transition flex items-center gap-3">
+                    <span class="material-symbols-outlined text-gray-600">settings</span>
+                    <span class="text-gray-700 font-medium">설정</span>
+                </button>
+                <button onclick="contextMenuAction('exam')" class="w-full px-4 py-3 text-left hover:bg-blue-50 transition flex items-center gap-3">
+                    <span class="material-symbols-outlined text-blue-600">quiz</span>
+                    <span class="text-blue-700 font-medium">시험알람</span>
+                </button>
+                <button onclick="contextMenuAction('reset')" class="w-full px-4 py-3 text-left hover:bg-yellow-50 transition flex items-center gap-3">
+                    <span class="material-symbols-outlined text-yellow-600">refresh</span>
+                    <span class="text-yellow-700 font-medium">초기화</span>
+                </button>
+                <div class="border-t border-gray-200 my-1"></div>
+                <button onclick="contextMenuAction('delete')" class="w-full px-4 py-3 text-left hover:bg-red-50 transition flex items-center gap-3">
+                    <span class="material-symbols-outlined text-red-600">delete</span>
+                    <span class="text-red-700 font-medium">삭제</span>
+                </button>
+            </div>
+
+            <!-- 시험 알람 알림 모달 (입체적 디자인) -->
+            <div id="exam-alarm-alert"
+                class="fixed inset-0 bg-black/60 backdrop-blur-lg z-50 hidden flex items-center justify-center"
+                style="display: none;">
+                <div class="relative">
+                    <!-- 배경 광택 효과 -->
+                    <div class="absolute -inset-2 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 rounded-3xl blur-xl opacity-60 animate-pulse-fast"></div>
+
+                    <div class="relative bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 rounded-3xl p-10 max-w-sm w-full mx-4 shadow-2xl text-white border border-white/20">
+                        <!-- 아이콘 컨테이너 -->
+                        <div class="text-center">
+                            <!-- 시험 종료 아이콘 -->
+                            <div class="relative inline-block mb-6">
+                                <div class="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto animate-bounce shadow-lg">
+                                    <!-- 책 펼친 모양 + 완료 아이콘 -->
+                                    <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <!-- 책 왼쪽 페이지 -->
+                                        <path d="M30 15L15 20V45L30 40V15Z" fill="white" fill-opacity="0.9"/>
+                                        <!-- 책 오른쪽 페이지 -->
+                                        <path d="M30 15L45 20V45L30 40V15Z" fill="white" fill-opacity="0.7"/>
+                                        <!-- 체크마크 -->
+                                        <path d="M22 30L27 35L38 24" stroke="#10b981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <!-- 텍스트 -->
+                            <h3 class="text-4xl font-bold mb-3 drop-shadow-lg">🎉 시험 종료!</h3>
+                            <p id="exam-alarm-seat-name-alert" class="text-2xl font-semibold mb-3 text-blue-100"></p>
+                            <p class="text-blue-100 mb-8 text-lg">시험 종료 알림이 울리고 있습니다</p>
+
+                            <!-- 중지 버튼 -->
+                            <button onclick="stopExamAlarm()" class="px-10 py-4 bg-white text-blue-600 font-bold rounded-2xl hover:bg-blue-50 transition-all hover:scale-105 text-lg shadow-xl hover:shadow-2xl">
+                                <span class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined">alarm_off</span>
+                                    알람 끄기
+                                </span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2699,15 +2855,6 @@
         </section>
 
     </main>
-
-    <!-- ZIP Download Floating Button -->
-    <div class="fixed bottom-8 right-8 z-[100]">
-        <button onclick="downloadCodeZip()"
-            class="flex items-center gap-2 bg-gray-900 text-white px-6 py-4 rounded-full font-bold shadow-2xl hover:bg-black transition-transform hover:scale-110">
-            <span class="material-symbols-outlined">download_for_offline</span>
-            소스코드 다운로드 (.zip)
-        </button>
-    </div>
 
     <!-- Footer -->
     <footer class="bg-white border-t border-gray-100 py-16 mt-20">
@@ -3230,11 +3377,27 @@
                 seatDiv.className = `absolute w-32 h-36 rounded-3xl flex flex-col items-center justify-center font-bold text-sm cursor-move overflow-hidden group transition-all duration-300`;
                 seatDiv.dataset.seatId = seat.id;
 
-                // 좌석이 설정되었는지 확인 (이름 또는 알람 시간이 있는 경우)
-                const isConfigured = seat.name || seat.alarmTime;
+                // 좌석이 설정되었는지 확인 (이름, 알람 시간, 또는 시험 알람이 있는 경우)
+                const isConfigured = seat.name || seat.alarmTime || seat.examAlarmMinutes;
 
+                // 시험 알람 중인지 체크 - 녹색 발광
+                if (seat.examAlarming === true) {
+                    seatDiv.classList.add('seat-exam-alarming');
+                    seatDiv.style.background = 'linear-gradient(145deg, #4ade80, #22c55e)';
+                    seatDiv.style.boxShadow = '0 0 30px rgba(34, 197, 94, 0.8), 0 0 60px rgba(34, 197, 94, 0.5)';
+                    seatDiv.style.animation = 'examAlarmPulse 1s ease-in-out infinite';
+                    seatDiv.style.animationDelay = `${index * 0.05}s`;
+                }
+                // 시험 알람이 설정된 좌석 - 연한 하늘색 그라데이션 + 무지개색 회전 테두리
+                else if (seat.examAlarmMinutes && !seat.examAlarming) {
+                    seatDiv.classList.remove('overflow-hidden'); // overflow-hidden 제거 (테두리 효과를 위해)
+                    seatDiv.classList.add('seat-exam-mode');
+                    seatDiv.style.background = 'linear-gradient(145deg, #bae6fd, #7dd3fc)';
+                    seatDiv.style.boxShadow = '0 10px 30px -10px rgba(236, 72, 153, 0.3), inset 0 1px 0 rgba(255,255,255,0.8)';
+                    seatDiv.style.border = 'none';
+                }
                 // 알람 중인지 체크 - 빨간색 깜빡임
-                if (seat.alarming === true) {
+                else if (seat.alarming === true) {
                     seatDiv.classList.add('seat-alarming');
                     seatDiv.style.animationDelay = `${index * 0.05}s`;
                 } else if (seat.alarmStopped === true) {
@@ -3258,7 +3421,10 @@
                 seatDiv.style.left = x + 'px';
                 seatDiv.style.top = y + 'px';
                 seatDiv.style.userSelect = 'none';
-                seatDiv.style.border = '1px solid rgba(255,255,255,0.6)';
+                // 시험 알람 중인 좌석은 테두리를 적용하지 않음 (애니메이션 효과를 위해)
+                if (!(seat.examAlarmMinutes && !seat.examAlarming)) {
+                    seatDiv.style.border = '1px solid rgba(255,255,255,0.6)';
+                }
 
                 // 좌석 콘텐츠 - 프리미엄 디자인
                 const contentDiv = document.createElement('div');
@@ -3289,28 +3455,40 @@
                     nameDiv.style.textShadow = '0 1px 2px rgba(255,255,255,0.5)';
                     nameDiv.textContent = seat.name || '이름 없음';
 
-                    // 알람 시간 표시 (중단 아래)
-                    const timeDiv = document.createElement('div');
-                    timeDiv.className = 'text-xs mb-1 font-semibold';
-                    timeDiv.style.color = '#059669'; // 일관된 청록색
+                    contentDiv.appendChild(nameDiv);
+
+                    // 일반 알람 시간이 있는 경우
                     if (seat.alarmTime) {
+                        const timeDiv = document.createElement('div');
+                        timeDiv.className = 'text-xs mb-1 font-semibold';
+                        timeDiv.style.color = '#059669'; // 일관된 청록색
                         timeDiv.textContent = '⏰ ' + seat.alarmTime;
-                    } else {
-                        timeDiv.textContent = '⏰ --:--';
+                        contentDiv.appendChild(timeDiv);
+
+                        // 남은 시간 카운트다운 (하단)
+                        const remainingDiv = document.createElement('div');
+                        remainingDiv.className = 'text-xs font-bold px-2 py-0.5 rounded-full';
+                        remainingDiv.id = 'remaining-' + seat.id;
+                        remainingDiv.style.background = 'rgba(255,255,255,0.7)';
+                        remainingDiv.style.color = '#047857'; // 일관된 진한 청록색
+                        const timeRemaining = calculateTimeRemaining(seat.alarmTime);
+                        remainingDiv.textContent = formatTimeRemaining(timeRemaining);
+                        contentDiv.appendChild(remainingDiv);
                     }
 
-                    // 남은 시간 카운트다운 (하단)
-                    const remainingDiv = document.createElement('div');
-                    remainingDiv.className = 'text-xs font-bold px-2 py-0.5 rounded-full';
-                    remainingDiv.id = 'remaining-' + seat.id;
-                    remainingDiv.style.background = 'rgba(255,255,255,0.7)';
-                    remainingDiv.style.color = '#047857'; // 일관된 진한 청록색
-                    const timeRemaining = calculateTimeRemaining(seat.alarmTime);
-                    remainingDiv.textContent = formatTimeRemaining(timeRemaining);
+                    // 시험 알람 시간이 있는 경우 (좌석 내부에 표시)
+                    if (seat.examAlarmMinutes && !seat.examAlarming) {
+                        const examTimeDiv = document.createElement('div');
+                        examTimeDiv.className = 'text-xs font-bold px-2 py-0.5 rounded-full mt-1';
+                        examTimeDiv.id = 'exam-remaining-inner-' + seat.id;
+                        examTimeDiv.style.background = 'rgba(59, 130, 246, 0.9)';
+                        examTimeDiv.style.color = 'white';
+                        examTimeDiv.style.boxShadow = '0 2px 6px rgba(59, 130, 246, 0.4)';
 
-                    contentDiv.appendChild(nameDiv);
-                    contentDiv.appendChild(timeDiv);
-                    contentDiv.appendChild(remainingDiv);
+                        const examTimeRemaining = calculateExamTimeRemaining(seat.examAlarmEndTime);
+                        examTimeDiv.textContent = 'T ' + formatExamTimeRemaining(examTimeRemaining);
+                        contentDiv.appendChild(examTimeDiv);
+                    }
                 }
 
                 seatDiv.appendChild(contentDiv);
@@ -3352,6 +3530,18 @@
                 buttonsDiv.appendChild(editBtn);
                 buttonsDiv.appendChild(resetBtn);
 
+                // 시험알람 버튼
+                const examAlarmBtn = document.createElement('button');
+                examAlarmBtn.className = 'text-white px-4 py-1.5 rounded-full text-xs font-bold w-20 transition-all hover:scale-105';
+                examAlarmBtn.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+                examAlarmBtn.style.boxShadow = '0 2px 8px rgba(59, 130, 246, 0.4)';
+                examAlarmBtn.textContent = '시험알람';
+                examAlarmBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openExamAlarmModal(seat.id);
+                });
+                buttonsDiv.appendChild(examAlarmBtn);
+
                 if (seat.alarming) {
                     const stopBtn = document.createElement('button');
                     stopBtn.className = 'text-white px-4 py-1.5 rounded-full text-xs font-bold w-20 transition-all hover:scale-105';
@@ -3389,10 +3579,27 @@
                     }
                 });
 
-                // 드래그 기능 초기화 (한 번만 호출)
-                makeSeatDraggable(seatDiv, seat.id);
-
-                container.appendChild(seatDiv);
+                // 시험 알람이 설정된 좌석은 래퍼로 감싸서 무지개색 테두리 효과 적용
+                if (seat.examAlarmMinutes && !seat.examAlarming) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'seat-exam-wrapper';
+                    wrapper.style.position = 'absolute';
+                    wrapper.style.left = seatDiv.style.left;
+                    wrapper.style.top = seatDiv.style.top;
+                    wrapper.id = 'seat-wrapper-' + seat.id;
+                    // 좌석의 position을 relative로 변경하여 래퍼 내부에서 배치되도록
+                    seatDiv.style.position = 'relative';
+                    seatDiv.style.left = '0';
+                    seatDiv.style.top = '0';
+                    wrapper.appendChild(seatDiv);
+                    // 드래그 기능은 래퍼에 적용
+                    makeSeatDraggable(wrapper, seat.id);
+                    container.appendChild(wrapper);
+                } else {
+                    // 드래그 기능 초기화 (한 번만 호출)
+                    makeSeatDraggable(seatDiv, seat.id);
+                    container.appendChild(seatDiv);
+                }
             });
 
             // 카운트다운 업데이트 시작 (1초마다)
@@ -3835,6 +4042,12 @@
             // stopBeep로 모든 타입의 인터벌 정리
             stopBeep(seatId);
 
+            // 시험 알람 인터벌 제거
+            if (examAlarmIntervals[seatId]) {
+                clearInterval(examAlarmIntervals[seatId]);
+                delete examAlarmIntervals[seatId];
+            }
+
             const alarmModal = document.getElementById('alarm-popup-modal');
             if (alarmModal && alarmModal.dataset.seatId == seatId) {
                 alarmModal.style.display = 'none';
@@ -3861,6 +4074,12 @@
             // stopBeep로 모든 타입의 인터벌 정리
             stopBeep(seatId);
 
+            // 시험 알람 인터벌 제거
+            if (examAlarmIntervals[seatId]) {
+                clearInterval(examAlarmIntervals[seatId]);
+                delete examAlarmIntervals[seatId];
+            }
+
             const alarmModal = document.getElementById('alarm-popup-modal');
             if (alarmModal && alarmModal.dataset.seatId == seatId) {
                 alarmModal.style.display = 'none';
@@ -3871,34 +4090,330 @@
             seat.alarming = false;
             seat.alarmStopped = false;
             seat.occupied = false;
+            seat.examAlarmMinutes = null;
+            seat.examAlarmEndTime = null;
+            seat.examAlarming = false;
             saveSeats();
             renderSeats();
         }
 
-        // 모든 좌석 초기화
-        // 파스텔톤 확인 모달
+        // ========== 시험 알람 관련 변수 및 함수 ==========
+        let currentExamAlarmSeatId = null;
+        let examAlarmIntervals = {};
+        let examAlarmAudio = null;
+
+        // 시험 알람 소리 생성 (종소리 효과)
+        function createExamAlarmSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                // 종소리 효과 - 여러 주파수 합성
+                function playBellSound() {
+                    const now = audioContext.currentTime;
+
+                    // 기본 종소리 주파수 (C5: 523Hz, E5: 659Hz, G5: 784Hz)
+                    const frequencies = [523, 659, 784, 1047]; // 화음
+
+                    frequencies.forEach((freq, index) => {
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+
+                        oscillator.frequency.value = freq;
+                        oscillator.type = 'sine';
+
+                        // 종소리 효과 - 빠른 어택과 긴 여음
+                        const volume = 0.15 / (index + 1); // 기본음이 가장 크게
+                        gainNode.gain.setValueAtTime(0, now);
+                        gainNode.gain.linearRampToValueAtTime(volume, now + 0.01);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+
+                        oscillator.start(now);
+                        oscillator.stop(now + 1.5);
+                    });
+                }
+
+                // 딩동딩동 효과
+                playBellSound();
+                setTimeout(playBellSound, 400);
+                setTimeout(playBellSound, 800);
+                setTimeout(playBellSound, 1200);
+            } catch (e) {
+                console.error('알람 소리 재생 오류:', e);
+            }
+        }
+
+        // 시험 알람 모달 열기
+        function openExamAlarmModal(seatId) {
+            const modal = document.getElementById('exam-alarm-modal');
+            const seat = seats.find(s => s.id === seatId || s.id == seatId);
+            if (!seat) return;
+
+            currentExamAlarmSeatId = seatId;
+
+            const seatNameEl = document.getElementById('exam-alarm-seat-name');
+            seatNameEl.textContent = `좌석 ${seat.number}번${seat.name ? ` (${seat.name})` : ''}`;
+
+            const currentExamAlarmDiv = document.getElementById('current-exam-alarm');
+            const currentExamAlarmTime = document.getElementById('current-exam-alarm-time');
+
+            if (seat.examAlarmMinutes) {
+                currentExamAlarmDiv.classList.remove('hidden');
+                currentExamAlarmTime.textContent = `${seat.examAlarmMinutes}분`;
+            } else {
+                currentExamAlarmDiv.classList.add('hidden');
+            }
+
+            document.getElementById('exam-alarm-minutes').value = '';
+
+            modal.style.display = 'flex';
+        }
+
+        // 시험 알람 분 단위 설정
+        function setExamAlarmMinutes(minutes) {
+            document.getElementById('exam-alarm-minutes').value = minutes;
+        }
+
+        // 시험 알람 저장
+        function saveExamAlarm() {
+            const seat = seats.find(s => s.id === currentExamAlarmSeatId || s.id == currentExamAlarmSeatId);
+            if (!seat) return;
+
+            const minutesInput = document.getElementById('exam-alarm-minutes');
+            const minutes = parseInt(minutesInput.value);
+
+            if (!isNaN(minutes) && minutes > 0) {
+                // 기존 인터벌 제거
+                if (examAlarmIntervals[seat.id]) {
+                    clearInterval(examAlarmIntervals[seat.id]);
+                    delete examAlarmIntervals[seat.id];
+                }
+
+                seat.examAlarmMinutes = minutes;
+                const endTime = new Date();
+                endTime.setMinutes(endTime.getMinutes() + minutes);
+                seat.examAlarmEndTime = endTime.toISOString();
+
+                saveSeats();
+                renderSeats(); // 좌석 다시 렌더링하여 시간 표시
+
+                // 시험 알람 시작
+                startExamAlarmTimer(seat);
+
+                const modal = document.getElementById('exam-alarm-modal');
+                modal.style.display = 'none';
+                currentExamAlarmSeatId = null;
+
+                // alert 제거
+            } else {
+                alert('유효한 분을 입력해주세요.');
+            }
+        }
+
+        // 시험 알람 취소
+        function cancelExamAlarm() {
+            const seat = seats.find(s => s.id === currentExamAlarmSeatId || s.id == currentExamAlarmSeatId);
+            if (!seat) return;
+
+            seat.examAlarmMinutes = null;
+            seat.examAlarmEndTime = null;
+
+            // 인터벌 제거
+            if (examAlarmIntervals[seat.id]) {
+                clearInterval(examAlarmIntervals[seat.id]);
+                delete examAlarmIntervals[seat.id];
+            }
+
+            saveSeats();
+            renderSeats(); // 좌석 다시 렌더링
+
+            // 모달을 닫지 않고 유지
+            // 현재 설정된 시험 알람 표시 숨김
+            const currentExamAlarmDiv = document.getElementById('current-exam-alarm');
+            if (currentExamAlarmDiv) {
+                currentExamAlarmDiv.classList.add('hidden');
+            }
+
+            // 입력 필드 초기화
+            document.getElementById('exam-alarm-minutes').value = '';
+        }
+
+        // 시험 알람 모달 닫기
+        function cancelExamAlarmModal() {
+            const modal = document.getElementById('exam-alarm-modal');
+            modal.style.display = 'none';
+            currentExamAlarmSeatId = null;
+        }
+
+        // 시험 알람 타이머 시작
+        function startExamAlarmTimer(seat) {
+            if (examAlarmIntervals[seat.id]) {
+                clearInterval(examAlarmIntervals[seat.id]);
+            }
+
+            examAlarmIntervals[seat.id] = setInterval(() => {
+                const now = new Date();
+                const endTime = new Date(seat.examAlarmEndTime);
+
+                if (now >= endTime) {
+                    // 시험 알람 울리기
+                    clearInterval(examAlarmIntervals[seat.id]);
+                    delete examAlarmIntervals[seat.id];
+
+                    triggerExamAlarm(seat);
+                }
+            }, 1000);
+        }
+
+        // 시험 알람 트리거
+        function triggerExamAlarm(seat) {
+            seat.examAlarming = true;
+            currentExamAlarmSeatId = seat.id;
+            saveSeats();
+            renderSeats();
+
+            // 알람 소리 재생
+            createExamAlarmSound();
+
+            // 알림 모달 표시
+            const alertModal = document.getElementById('exam-alarm-alert');
+            const seatNameEl = document.getElementById('exam-alarm-seat-name-alert');
+            seatNameEl.textContent = `좌석 ${seat.number}번${seat.name ? ` (${seat.name})` : ''}`;
+            alertModal.style.display = 'flex';
+
+            // 1.5초마다 알람 소리 반복 (종소리가 계속 울림)
+            examAlarmAudio = setInterval(() => {
+                const seat = seats.find(s => s.id === currentExamAlarmSeatId || s.id == currentExamAlarmSeatId);
+                if (seat && seat.examAlarming) {
+                    createExamAlarmSound();
+                } else {
+                    clearInterval(examAlarmAudio);
+                    examAlarmAudio = null;
+                }
+            }, 1500);
+        }
+
+        // 시험 알람 중지
+        function stopExamAlarm() {
+            // 먼저 알람 소리 인터벌 즉시 정지
+            if (examAlarmAudio) {
+                clearInterval(examAlarmAudio);
+                examAlarmAudio = null;
+            }
+
+            const seat = seats.find(s => s.id === currentExamAlarmSeatId || s.id == currentExamAlarmSeatId);
+
+            if (seat) {
+                seat.examAlarming = false;
+                seat.examAlarmMinutes = null;
+                seat.examAlarmEndTime = null;
+                saveSeats();
+                renderSeats();
+            }
+
+            const alertModal = document.getElementById('exam-alarm-alert');
+            alertModal.style.display = 'none';
+            currentExamAlarmSeatId = null;
+        }
+
+        // 페이지 로드 시 기존 시험 알람 복구
+        function restoreExamAlarms() {
+            const now = new Date();
+
+            seats.forEach(seat => {
+                if (seat.examAlarmEndTime) {
+                    const endTime = new Date(seat.examAlarmEndTime);
+
+                    if (endTime > now) {
+                        // 아직 시간이 남았으면 타이머 시작
+                        startExamAlarmTimer(seat);
+                    } else {
+                        // 시간이 지났으면 데이터 정리
+                        seat.examAlarmMinutes = null;
+                        seat.examAlarmEndTime = null;
+                    }
+                }
+            });
+
+            saveSeats();
+        }
+
+        // 시험 알람 남은 시간 계산
+        function calculateExamTimeRemaining(endTimeStr) {
+            if (!endTimeStr) return null;
+            const endTime = new Date(endTimeStr);
+            const now = new Date();
+            const diff = endTime - now;
+            return diff > 0 ? diff : 0;
+        }
+
+        // 시험 알람 남은 시간 포맷팅
+        function formatExamTimeRemaining(ms) {
+            if (!ms || ms <= 0) return '0분';
+            const minutes = Math.floor(ms / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            if (minutes > 0) {
+                return `${minutes}분${seconds > 0 ? ' ' + seconds + '초' : ''}`;
+            }
+            return `${seconds}초`;
+        }
+
+        // 시험 알람 카운트다운 업데이트
+        function updateExamCountdowns() {
+            seats.forEach(seat => {
+                if (seat.examAlarmMinutes && !seat.examAlarming) {
+                    const timeRemaining = calculateExamTimeRemaining(seat.examAlarmEndTime);
+
+                    // 좌석 내부 시간 업데이트
+                    const examTimeInnerDiv = document.getElementById('exam-remaining-inner-' + seat.id);
+                    if (examTimeInnerDiv) {
+                        if (timeRemaining > 0) {
+                            examTimeInnerDiv.textContent = 'T ' + formatExamTimeRemaining(timeRemaining);
+                        } else {
+                            examTimeInnerDiv.textContent = 'T 0분';
+                        }
+                    }
+                }
+            });
+        }
+
+        // 입체적 확인 모달
         function showConfirmModal(title, message, icon, confirmText, cancelText) {
             return new Promise((resolve) => {
                 let modal = document.getElementById('confirm-modal');
                 if (!modal) {
                     modal = document.createElement('div');
                     modal.id = 'confirm-modal';
-                    modal.className = 'fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center';
+                    modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-md z-[9999] flex items-center justify-center';
                     document.body.appendChild(modal);
                 }
 
                 modal.innerHTML = `
-                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 text-center animate-bounce-in border border-purple-200">
-                        <div class="text-5xl mb-4">${icon || '❓'}</div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-3">${title}</h3>
-                        <p class="text-gray-600 mb-6">${message}</p>
-                        <div class="flex gap-3 justify-center">
-                            <button id="confirm-ok-btn" class="px-6 py-2.5 bg-gradient-to-r from-purple-400 to-pink-400 text-white font-semibold rounded-full hover:shadow-lg transition">
-                                ${confirmText || '확인'}
-                            </button>
-                            <button id="confirm-cancel-btn" class="px-6 py-2.5 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition">
-                                ${cancelText || '취소'}
-                            </button>
+                    <div class="relative">
+                        <!-- 배경 광택 효과 -->
+                        <div class="absolute -inset-1 bg-gradient-to-r from-purple-400 via-pink-400 to-rose-400 rounded-3xl blur-lg opacity-50 animate-pulse"></div>
+
+                        <div class="relative bg-gradient-to-br from-white via-purple-50 to-pink-50 rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl border border-white/50">
+                            <!-- 헤더 -->
+                            <div class="text-center mb-6">
+                                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg mb-4">
+                                    <span class="text-4xl">${icon || '❓'}</span>
+                                </div>
+                                <h3 class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">${title}</h3>
+                                <p class="text-gray-600 mt-3 text-base">${message}</p>
+                            </div>
+
+                            <!-- 버튼 -->
+                            <div class="flex gap-3 justify-center">
+                                <button id="confirm-ok-btn" class="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:shadow-lg hover:scale-105 transition-all">
+                                    ${confirmText || '확인'}
+                                </button>
+                                <button id="confirm-cancel-btn" class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-all">
+                                    ${cancelText || '취소'}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -3917,25 +4432,37 @@
             });
         }
 
-        // 알림 모달
+        // 입체적 알림 모달
         function showAlertModal(title, message, icon) {
             return new Promise((resolve) => {
                 let modal = document.getElementById('alert-modal');
                 if (!modal) {
                     modal = document.createElement('div');
                     modal.id = 'alert-modal';
-                    modal.className = 'fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center';
+                    modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-md z-[9999] flex items-center justify-center';
                     document.body.appendChild(modal);
                 }
 
                 modal.innerHTML = `
-                    <div class="bg-gradient-to-br from-green-50 to-teal-50 rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 text-center animate-bounce-in border border-green-200">
-                        <div class="text-5xl mb-4">${icon || '✅'}</div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-3">${title}</h3>
-                        <p class="text-gray-600 mb-6">${message}</p>
-                        <button id="alert-ok-btn" class="px-8 py-2.5 bg-gradient-to-r from-green-400 to-teal-400 text-white font-semibold rounded-full hover:shadow-lg transition">
-                            확인
-                        </button>
+                    <div class="relative">
+                        <!-- 배경 광택 효과 -->
+                        <div class="absolute -inset-1 bg-gradient-to-r from-green-400 via-teal-400 to-emerald-400 rounded-3xl blur-lg opacity-50 animate-pulse"></div>
+
+                        <div class="relative bg-gradient-to-br from-white via-green-50 to-teal-50 rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl border border-white/50">
+                            <!-- 헤더 -->
+                            <div class="text-center mb-6">
+                                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-teal-500 rounded-2xl shadow-lg mb-4">
+                                    <span class="text-4xl">${icon || '✅'}</span>
+                                </div>
+                                <h3 class="text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">${title}</h3>
+                                <p class="text-gray-600 mt-3 text-base">${message}</p>
+                            </div>
+
+                            <!-- 버튼 -->
+                            <button id="alert-ok-btn" class="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-teal-500 text-white font-bold rounded-xl hover:shadow-lg hover:scale-105 transition-all">
+                                확인
+                            </button>
+                        </div>
                     </div>
                 `;
 
@@ -4206,6 +4733,9 @@
             loadSeats();
             renderSeats();
 
+            // 시험 알람 복구
+            restoreExamAlarms();
+
             // To-Do List 초기화
             loadTodos();
             const todoDateInput = document.getElementById('todo-date');
@@ -4219,6 +4749,9 @@
 
             // 1초마다 카운트다운 업데이트
             setInterval(updateCountdowns, 1000);
+
+            // 1초마다 시험 알람 카운트다운 업데이트
+            setInterval(updateExamCountdowns, 1000);
 
             // ========== 등원 목록 실시간 업데이트 ==========
             // 등원 목록 로드 함수

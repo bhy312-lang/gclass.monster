@@ -496,9 +496,40 @@ function renderAttendance() {
 let seats = [];
 let seatCounter = 1;
 let currentSeatId = null;
+let currentExamAlarmSeatId = null;
 let draggedSeat = null;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
+let examAlarmAudio = null;
+let examAlarmIntervals = {}; // 좌석별 시험 알람 인터벌 저장
+
+// 시험 알람 소리 생성 (Web Audio API)
+function createExamAlarmSound() {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playBeep() {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        // 시험 알람: 높고 명확한 소리 (일반 알람과 다름)
+        oscillator.frequency.value = 880; // A5 음
+        oscillator.type = 'sine';
+
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+    }
+
+    // 3회 반복
+    playBeep();
+    setTimeout(playBeep, 300);
+    setTimeout(playBeep, 600);
+}
 
 // 로컬 스토리지에서 좌석 목록 불러오기
 function loadSeats() {
@@ -545,22 +576,39 @@ function renderSeats() {
         seatDiv.id = 'seat-' + seat.id;
 
         // 좌석이 설정되었는지 확인 (이름 또는 알람 시간이 있는 경우)
-        const isConfigured = seat.name || seat.alarmTime;
+        const isConfigured = seat.name || seat.alarmTime || seat.examAlarmMinutes;
+
+        // 시험 알람이 울리고 있는지 확인
+        const isExamAlarming = seat.examAlarming;
 
         let seatColorClass;
         let textColorClass;
-        if (!isConfigured) {
+        let boxShadow = '';
+
+        if (isExamAlarming) {
+            // 시험 알람이 울리는 중: 녹색 발광 효과
+            seatColorClass = 'bg-gradient-to-br from-green-400 to-green-500';
+            textColorClass = 'text-white';
+            boxShadow = '0 0 30px rgba(34, 197, 94, 0.8), 0 0 60px rgba(34, 197, 94, 0.5)';
+            seatDiv.style.animation = 'examAlarmPulse 1s ease-in-out infinite';
+        } else if (!isConfigured) {
             // 설정되지 않은 좌석: 파스텔 회색 (비활성화 스타일)
             seatColorClass = 'bg-gradient-to-br from-gray-200 to-gray-300';
             textColorClass = 'text-gray-400';
+            boxShadow = '';
+            seatDiv.style.animation = '';
         } else if (seat.occupied) {
             // 사용 중인 좌석: 빨간색
             seatColorClass = 'bg-gradient-to-br from-red-400 to-red-500';
             textColorClass = 'text-white';
+            boxShadow = '';
+            seatDiv.style.animation = '';
         } else {
             // 설정된 비어있는 좌석: 초록색
             seatColorClass = 'bg-gradient-to-br from-emerald-400 to-emerald-500';
             textColorClass = 'text-white';
+            boxShadow = '';
+            seatDiv.style.animation = '';
         }
 
         seatDiv.className = `absolute w-24 h-28 rounded-2xl flex flex-col items-center justify-center font-bold text-sm shadow-lg cursor-move ${seatColorClass} ${textColorClass}`;
@@ -570,9 +618,18 @@ function renderSeats() {
         seatDiv.style.userSelect = 'none';
         seatDiv.style.willChange = 'transform';
         seatDiv.style.transition = 'none';
+        if (boxShadow) {
+            seatDiv.style.boxShadow = boxShadow;
+        }
+
+        // 시험 알람 표시 아이콘
+        const examAlarmIcon = seat.examAlarmMinutes ? `<div class="absolute top-1 right-1 text-blue-600">
+            <span class="material-symbols-outlined text-sm">quiz</span>
+        </div>` : '';
 
         // 설정되지 않은 좌석은 좌석 번호만 표시
         seatDiv.innerHTML = isConfigured ? `
+                    ${examAlarmIcon}
                     <div class="text-lg">좌석 ${seat.number}</div>
                     ${seat.name ? `<div class="text-xs mt-1">${seat.name}</div>` : ''}
                 ` : `
@@ -583,6 +640,21 @@ function renderSeats() {
         seatDiv.addEventListener('dblclick', (e) => {
             e.stopPropagation();
             openEditSeatModal(seat.id);
+        });
+
+        // 마우스 오버: 컨텍스트 메뉴 표시
+        seatDiv.addEventListener('mouseenter', (e) => {
+            e.stopPropagation();
+            // 드래그 중이 아니면 메뉴 표시
+            if (!draggedSeat) {
+                showSeatContextMenu(e, seat.id, seatDiv);
+            }
+        });
+
+        // 마우스 아웃: 컨텍스트 메뉴 숨김
+        seatDiv.addEventListener('mouseleave', (e) => {
+            e.stopPropagation();
+            hideSeatContextMenu();
         });
 
         // 마우스 다운: 드래그 시작
@@ -834,6 +906,280 @@ function clearAllSeats() {
     });
 }
 
+// ========== 좌석 컨텍스트 메뉴 ==========
+let contextMenuSeatId = null;
+
+function showSeatContextMenu(event, seatId, seatElement) {
+    const menu = document.getElementById('seat-context-menu');
+    contextMenuSeatId = seatId;
+
+    menu.style.display = 'block';
+
+    // 좌석 근처에 메뉴 배치
+    const seatRect = seatElement.getBoundingClientRect();
+    const menuWidth = 160; // 메뉴 예상 너비
+
+    // 좌석 오른쪽에 메뉴 표시, 공간이 부족하면 왼쪽
+    let leftPos = seatRect.right + 10;
+    if (leftPos + menuWidth > window.innerWidth) {
+        leftPos = seatRect.left - menuWidth - 10;
+    }
+
+    // 좌석 상단에 맞춤
+    let topPos = seatRect.top;
+    if (topPos + menu.getBoundingClientRect().height > window.innerHeight) {
+        topPos = window.innerHeight - menu.getBoundingClientRect().height - 10;
+    }
+
+    menu.style.left = leftPos + 'px';
+    menu.style.top = topPos + 'px';
+}
+
+function hideSeatContextMenu() {
+    const menu = document.getElementById('seat-context-menu');
+    menu.style.display = 'none';
+    contextMenuSeatId = null;
+}
+
+function keepContextMenuVisible() {
+    // 메뉴 위에 마우스가 있을 때는 메뉴를 유지
+    // 아무것도 하지 않음
+}
+
+function contextMenuAction(action) {
+    const seat = seats.find(s => s.id === contextMenuSeatId);
+    if (!seat) {
+        hideSeatContextMenu();
+        return;
+    }
+
+    switch (action) {
+        case 'settings':
+            openEditSeatModal(seat.id);
+            break;
+        case 'exam':
+            openExamAlarmModal(seat.id);
+            break;
+        case 'reset':
+            showConfirmModal(`좌석 ${seat.number}을(를) 초기화하시겠습니까?`, () => {
+                seat.occupied = false;
+                seat.name = '';
+                seat.alarmTime = null;
+                seat.examAlarmMinutes = null;
+                seat.examAlarmEndTime = null;
+                seat.alarming = false;
+                seat.examAlarming = false;
+                seat.alarmStopped = false;
+
+                // 시험 알람 인터벌 제거
+                if (examAlarmIntervals[seat.id]) {
+                    clearInterval(examAlarmIntervals[seat.id]);
+                    delete examAlarmIntervals[seat.id];
+                }
+
+                saveSeats();
+                renderSeats();
+            });
+            break;
+        case 'delete':
+            showConfirmModal(`좌석 ${seat.number}을(를) 삭제하시겠습니까?`, () => {
+                seats = seats.filter(s => s.id !== seat.id);
+
+                // 시험 알람 인터벌 제거
+                if (examAlarmIntervals[seat.id]) {
+                    clearInterval(examAlarmIntervals[seat.id]);
+                    delete examAlarmIntervals[seat.id];
+                }
+
+                saveSeats();
+                renderSeats();
+            });
+            break;
+    }
+
+    hideSeatContextMenu();
+}
+
+// ========== 시험 알람 설정 ==========
+function openExamAlarmModal(seatId) {
+    const modal = document.getElementById('exam-alarm-modal');
+    const seat = seats.find(s => s.id === seatId);
+    if (!seat) return;
+
+    currentExamAlarmSeatId = seatId;
+
+    const seatNameEl = document.getElementById('exam-alarm-seat-name');
+    seatNameEl.textContent = `좌석 ${seat.number}${seat.name ? ` (${seat.name})` : ''}`;
+
+    const currentExamAlarmDiv = document.getElementById('current-exam-alarm');
+    const currentExamAlarmTime = document.getElementById('current-exam-alarm-time');
+
+    if (seat.examAlarmMinutes) {
+        currentExamAlarmDiv.classList.remove('hidden');
+        currentExamAlarmTime.textContent = `${seat.examAlarmMinutes}분`;
+    } else {
+        currentExamAlarmDiv.classList.add('hidden');
+    }
+
+    document.getElementById('exam-alarm-minutes').value = '';
+
+    modal.style.display = 'flex';
+    hideSeatContextMenu();
+}
+
+function setExamAlarmMinutes(minutes) {
+    document.getElementById('exam-alarm-minutes').value = minutes;
+}
+
+function saveExamAlarm() {
+    const seat = seats.find(s => s.id === currentExamAlarmSeatId);
+    if (!seat) return;
+
+    const minutesInput = document.getElementById('exam-alarm-minutes');
+    const minutes = parseInt(minutesInput.value);
+
+    if (!isNaN(minutes) && minutes > 0) {
+        // 기존 인터벌 제거
+        if (examAlarmIntervals[seat.id]) {
+            clearInterval(examAlarmIntervals[seat.id]);
+            delete examAlarmIntervals[seat.id];
+        }
+
+        seat.examAlarmMinutes = minutes;
+        const endTime = new Date();
+        endTime.setMinutes(endTime.getMinutes() + minutes);
+        seat.examAlarmEndTime = endTime.toISOString();
+
+        saveSeats();
+        renderSeats();
+
+        // 시험 알람 시작
+        startExamAlarmTimer(seat);
+
+        const modal = document.getElementById('exam-alarm-modal');
+        modal.style.display = 'none';
+        currentExamAlarmSeatId = null;
+
+        alert(`시험 알람이 ${minutes}분 후로 설정되었습니다.`);
+    } else {
+        alert('유효한 분을 입력해주세요.');
+    }
+}
+
+function cancelExamAlarm() {
+    const seat = seats.find(s => s.id === currentExamAlarmSeatId);
+    if (!seat) return;
+
+    seat.examAlarmMinutes = null;
+    seat.examAlarmEndTime = null;
+
+    // 인터벌 제거
+    if (examAlarmIntervals[seat.id]) {
+        clearInterval(examAlarmIntervals[seat.id]);
+        delete examAlarmIntervals[seat.id];
+    }
+
+    saveSeats();
+    renderSeats();
+
+    const modal = document.getElementById('exam-alarm-modal');
+    modal.style.display = 'none';
+    currentExamAlarmSeatId = null;
+}
+
+function cancelExamAlarmModal() {
+    const modal = document.getElementById('exam-alarm-modal');
+    modal.style.display = 'none';
+    currentExamAlarmSeatId = null;
+}
+
+function startExamAlarmTimer(seat) {
+    if (examAlarmIntervals[seat.id]) {
+        clearInterval(examAlarmIntervals[seat.id]);
+    }
+
+    examAlarmIntervals[seat.id] = setInterval(() => {
+        const now = new Date();
+        const endTime = new Date(seat.examAlarmEndTime);
+
+        if (now >= endTime) {
+            // 시험 알람 울리기
+            clearInterval(examAlarmIntervals[seat.id]);
+            delete examAlarmIntervals[seat.id];
+
+            triggerExamAlarm(seat);
+        }
+    }, 1000);
+}
+
+function triggerExamAlarm(seat) {
+    seat.examAlarming = true;
+    saveSeats();
+    renderSeats();
+
+    // 알람 소리 재생
+    createExamAlarmSound();
+
+    // 알럼 모달 표시
+    const alertModal = document.getElementById('exam-alarm-alert');
+    const seatNameEl = document.getElementById('exam-alarm-seat-name-alert');
+    seatNameEl.textContent = `좌석 ${seat.number}${seat.name ? ` (${seat.name})` : ''}`;
+    alertModal.style.display = 'flex';
+
+    // 5초마다 알람 소리 반복
+    examAlarmAudio = setInterval(() => {
+        if (seat.examAlarming) {
+            createExamAlarmSound();
+        } else {
+            clearInterval(examAlarmAudio);
+            examAlarmAudio = null;
+        }
+    }, 5000);
+}
+
+function stopExamAlarm() {
+    const seat = seats.find(s => s.id === currentExamAlarmSeatId);
+
+    if (seat) {
+        seat.examAlarming = false;
+        seat.examAlarmMinutes = null;
+        seat.examAlarmEndTime = null;
+        saveSeats();
+        renderSeats();
+    }
+
+    if (examAlarmAudio) {
+        clearInterval(examAlarmAudio);
+        examAlarmAudio = null;
+    }
+
+    const alertModal = document.getElementById('exam-alarm-alert');
+    alertModal.style.display = 'none';
+    currentExamAlarmSeatId = null;
+}
+
+// 페이지 로드 시 기존 시험 알람 복구
+function restoreExamAlarms() {
+    const now = new Date();
+
+    seats.forEach(seat => {
+        if (seat.examAlarmEndTime) {
+            const endTime = new Date(seat.examAlarmEndTime);
+
+            if (endTime > now) {
+                // 아직 시간이 남았으면 타이머 시작
+                startExamAlarmTimer(seat);
+            } else {
+                // 시간이 지났으면 데이터 정리
+                seat.examAlarmMinutes = null;
+                seat.examAlarmEndTime = null;
+            }
+        }
+    });
+
+    saveSeats();
+}
+
 // Map Implementation
 async function initMap() {
     try {
@@ -916,6 +1262,33 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAttendance();
     loadSeats();
     console.log('로드된 좌석:', seats);
+
+    // 시험 알람 복구
+    restoreExamAlarms();
+
     renderSeats();
     console.log('초기화 완료');
+
+    // 전역 클릭 시 컨텍스트 메뉴 닫기 (메뉴 외부 클릭 시에만)
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('seat-context-menu');
+        if (menu && menu.style.display === 'block' && !menu.contains(e.target)) {
+            hideSeatContextMenu();
+        }
+    });
+
+    // ESC 키로 모달 닫기
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            hideSeatContextMenu();
+            const editModal = document.getElementById('edit-seat-modal');
+            if (editModal && editModal.style.display === 'flex') {
+                cancelSeatSettings();
+            }
+            const examAlarmModal = document.getElementById('exam-alarm-modal');
+            if (examAlarmModal && examAlarmModal.style.display === 'flex') {
+                cancelExamAlarmModal();
+            }
+        }
+    });
 });
