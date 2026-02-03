@@ -115,12 +115,8 @@
     <script src="supabase-config.js"></script>
 
     <script>
-        // Supabase 클라이언트 전역 변수 할당
-        const sb = window.supabase || window.supabaseClient;
-
-        // 디버깅용 로그
-        console.log('[Kiosk] Supabase 클라이언트:', sb ? '로드됨' : '로드 실패');
-        console.log('[Kiosk] isSupabaseConfigured:', typeof window.isSupabaseConfigured === 'function' ? window.isSupabaseConfigured() : '함수 없음');
+        // Supabase 클라이언트 (DOMContentLoaded 후 할당)
+        let sb = null;
 
         let kioskInput = '';
         let foundStudents = [];
@@ -679,7 +675,23 @@
         }
 
         // 초기화
-        updateKioskDisplay();
+        function initKiosk() {
+            // Supabase 클라이언트 할당
+            sb = window.supabase || window.supabaseClient;
+
+            // 디버깅용 로그
+            console.log('[Kiosk] Supabase 클라이언트:', sb ? '로드됨' : '로드 실패');
+            console.log('[Kiosk] isSupabaseConfigured:', typeof window.isSupabaseConfigured === 'function' ? window.isSupabaseConfigured() : '함수 없음');
+
+            updateKioskDisplay();
+        }
+
+        // DOMContentLoaded 후 초기화
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initKiosk);
+        } else {
+            initKiosk();
+        }
 
         // ESC 키로 모달 닫기
         document.addEventListener('keydown', (e) => {
