@@ -180,18 +180,43 @@
         async function searchStudents() {
             console.log('[searchStudents] 시작, 입력값:', kioskInput);
 
+            // Supabase 클라이언트가 없으면 초기화 시도
+            if (!sb) {
+                sb = window.supabase || window.supabaseClient;
+                console.log('[searchStudents] sb 재초기화:', sb ? '성공' : '실패');
+            }
+
             // isSupabaseConfigured 함수가 없으면 항상 false 처리 (데모 모드)
             const hasConfigFunction = typeof window.isSupabaseConfigured === 'function';
-            const sbOk = hasConfigFunction && window.isSupabaseConfigured();
-            console.log('[searchStudents] 데모 모드:', !sbOk);
+            const sbOk = hasConfigFunction && window.isSupabaseConfigured() && sb;
+            console.log('[searchStudents] 데모 모드:', !sbOk, 'sb:', !!sb);
 
             if (sbOk) {
                 // Supabase 모드
                 try {
-                    const { data, error } = await sb
+                    console.log('[searchStudents] Supabase 쿼리 시작...');
+                    console.log('[searchStudents] sb.auth.session():', sb.auth.session());
+
+                    // 먼저 간단한 테스트 쿼리로 연결 확인
+                    console.log('[searchStudents] 연결 테스트 쿼리 시작...');
+                    const testResult = await sb.from('students').select('count', { count: 'exact', head: true });
+                    console.log('[searchStudents] 연결 테스트 결과:', testResult);
+
+                    // 타임아웃 추가 (10초)
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('Query timeout')), 10000)
+                    );
+
+                    // Supabase 쿼리
+                    const queryPromise = sb
                         .from('students')
                         .select('id, name, parent_id, parent_phone_last4')
                         .eq('parent_phone_last4', kioskInput);
+
+                    // 둘 중 먼저 완료되는 것 사용
+                    const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+
+                    console.log('[searchStudents] 쿼리 결과:', { data, error });
 
                     if (error) throw error;
 
@@ -214,8 +239,47 @@
                         kioskClearInput();
                     }
                 } catch (error) {
-                    console.error('학생 검색 오류:', error);
-                    showAlert('error', '오류', '검색 중 오류가 발생했습니다.');
+                    console.error('학생 검색 오류 (Supabase 클라이언트):', error);
+                    console.error('에러 타입:', error.constructor.name);
+                    console.error('에러 메시지:', error.message);
+
+                    // AbortError인 경우 직접 fetch로 재시도
+                    const isAbortError = error.name === 'AbortError' ||
+                                        error.constructor?.name === 'AbortError' ||
+                                        (error.message && error.message.includes('AbortError'));
+
+                    if (isAbortError) {
+                        console.log('[searchStudents] AbortError 감지, 직접 fetch로 재시도...');
+                        const { data: fetchData, error: fetchError } = await searchStudentsDirectFetch(kioskInput);
+
+                        if (fetchError) {
+                            console.error('학생 검색 오류 (직접 fetch):', fetchError);
+                            showAlert('error', '오류', `검색 중 오류가 발생했습니다.\n${fetchError.message || 'Unknown error'}`);
+                        } else if (fetchData && fetchData.length > 0) {
+                            foundStudents = fetchData;
+                            if (fetchData.length === 1) {
+                                selectedStudent = fetchData[0];
+                                showStudentInfo(selectedStudent, '학생을 찾았습니다');
+                            } else {
+                                selectedStudent = null;
+                                showStudentInfo({ name: `${fetchData.length}명의 학생` }, '등원/하원 버튼을 눌러주세요');
+                            }
+                        } else {
+                            foundStudents = [];
+                            selectedStudent = null;
+                            showAlert('error', '검색 결과 없음', '등록되지 않은 번호입니다.\n회원가입 후 이용해주세요.');
+                            kioskClearInput();
+                        }
+                    } else {
+                        console.error('에러 상세:', {
+                            message: error.message,
+                            code: error.code,
+                            hint: error.hint,
+                            details: error.details,
+                            stack: error.stack
+                        });
+                        showAlert('error', '오류', `검색 중 오류가 발생했습니다.\n${error.message || 'Unknown error'}`);
+                    }
                 }
             } else {
                 // 데모 모드 - 로컬 학생 데이터 검색
@@ -312,11 +376,13 @@
             if (sbOk) {
                 // Supabase 모드
                 try {
-                    // 이미 등원했는지 확인 (waiting 또는 seated 상태)
+                    // 이미 등원했는지 확인 (waiting 또는 seated 상태) - 오늘 날짜만
+                    const today = new Date().toISOString().split('T')[0];
                     const { data: existing } = await sb
                         .from('attendance')
                         .select('*')
                         .eq('student_id', selectedStudent.id)
+                        .eq('date', today)
                         .in('status', ['waiting', 'seated'])
                         .maybeSingle();
 
@@ -386,11 +452,14 @@
                 // 데모 모드 - localStorage에 저장
                 const now = new Date();
                 const alarmTime = new Date(now.getTime() + 60 * 60 * 1000); // +60분
+                const today = now.toISOString().split('T')[0];
 
-                // 이미 등원했는지 확인 (waiting 또는 seated 상태)
+                // 이미 등원했는지 확인 (waiting 또는 seated 상태) - 오늘 날짜만
                 const existingAttendance = getLocalAttendance();
                 const existingRecord = existingAttendance.find(
-                    a => a.student_id === selectedStudent.id && (a.status === 'waiting' || a.status === 'seated')
+                    a => a.student_id === selectedStudent.id &&
+                         (a.status === 'waiting' || a.status === 'seated') &&
+                         a.check_in_time && a.check_in_time.startsWith(today)
                 );
 
                 if (existingRecord) {
@@ -409,6 +478,7 @@
                     type: 'check_in',
                     check_in_time: now.toISOString(),
                     alarm_time: alarmTime.toISOString(),
+                    date: today,
                     status: 'waiting'
                 };
 
@@ -455,14 +525,14 @@
             if (sbOk) {
                 // Supabase 모드
                 try {
-                    // 이미 하원했는지 확인 (completed 상태)
+                    // 이미 하원했는지 확인 (completed 상태) - 오늘 날짜만
+                    const today = new Date().toISOString().split('T')[0];
                     const { data: completedRecord } = await sb
                         .from('attendance')
                         .select('*')
                         .eq('student_id', selectedStudent.id)
+                        .eq('date', today)
                         .eq('status', 'completed')
-                        .order('check_in_time', { ascending: false })
-                        .limit(1)
                         .maybeSingle();
 
                     if (completedRecord) {
@@ -471,15 +541,16 @@
                         return;
                     }
 
-                    // 등원 기록 찾기
+                    // 등원 기록 찾기 - 오늘 날짜만
                     const { data: attendance, error: findError } = await sb
                         .from('attendance')
                         .select('*')
                         .eq('student_id', selectedStudent.id)
+                        .eq('date', today)
                         .in('status', ['waiting', 'seated'])
                         .order('check_in_time', { ascending: false })
                         .limit(1)
-                        .single();
+                        .maybeSingle();
 
                     if (findError || !attendance) {
                         showAlert('info', '알림', `${selectedStudent.name}님은 등원 기록이 없습니다.`);
@@ -531,10 +602,13 @@
             } else {
                 // 데모 모드 - localStorage 업데이트
                 const existingAttendance = getLocalAttendance();
+                const today = new Date().toISOString().split('T')[0];
 
-                // 이미 하원했는지 확인 (completed 상태)
+                // 이미 하원했는지 확인 (completed 상태) - 오늘 날짜만
                 const completedIndex = existingAttendance.findIndex(
-                    a => a.student_id === selectedStudent.id && a.status === 'completed'
+                    a => a.student_id === selectedStudent.id &&
+                         a.status === 'completed' &&
+                         a.check_in_time && a.check_in_time.startsWith(today)
                 );
                 if (completedIndex !== -1) {
                     showAlert('info', '알림', `${selectedStudent.name}님은 이미 하원 처리되었습니다.`);
@@ -544,7 +618,8 @@
 
                 const attendanceIndex = existingAttendance.findIndex(
                     a => a.student_id === selectedStudent.id &&
-                         (a.status === 'waiting' || a.status === 'seated')
+                         (a.status === 'waiting' || a.status === 'seated') &&
+                         a.check_in_time && a.check_in_time.startsWith(today)
                 );
 
                 if (attendanceIndex === -1) {
@@ -705,8 +780,135 @@
             console.log('[Kiosk] Supabase 클라이언트:', sb ? '로드됨' : '로드 실패');
             console.log('[Kiosk] sb.from 함수:', typeof sb?.from);
             console.log('[Kiosk] isSupabaseConfigured:', typeof window.isSupabaseConfigured === 'function' ? window.isSupabaseConfigured() : '함수 없음');
+            console.log('[Kiosk] SUPABASE_URL:', typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '정의되지 않음');
+
+            // Supabase 클라이언트 내부 확인
+            if (sb) {
+                console.log('[Kiosk] sb.auth:', typeof sb.auth);
+                console.log('[Kiosk] sb.storage:', typeof sb.storage);
+                console.log('[Kiosk] sb.functions:', typeof sb.functions);
+                console.log('[Kiosk] sb.rest:', typeof sb.rest);
+                if (sb.rest) {
+                    console.log('[Kiosk] sb.rest.url:', sb.rest?.url);
+                }
+            }
 
             updateKioskDisplay();
+
+            // 옛날 출결 기록 정리 (비동기 실행)
+            cleanupOldAttendance();
+        }
+
+        // 옛날 미완료 출결 기록 정리
+        async function cleanupOldAttendance() {
+            const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured() && sb;
+
+            if (sbOk) {
+                // Supabase 모드 - 어제 및 그 이전 미완료 기록을 completed로 변경
+                try {
+                    const today = new Date().toISOString().split('T')[0];
+
+                    // 어제 및 그 이전의 waiting/seated 상태 기록 찾기
+                    const { data: oldRecords, error } = await sb
+                        .from('attendance')
+                        .select('id, student_id, student_name, check_in_time, date')
+                        .in('status', ['waiting', 'seated'])
+                        .lt('date', today);
+
+                    if (error) {
+                        console.error('[정리] 옛날 기록 조회 실패:', error);
+                        return;
+                    }
+
+                    if (oldRecords && oldRecords.length > 0) {
+                        console.log('[정리] 미완료 기록', oldRecords.length, '개 발견, 정리 시작...');
+
+                        // 모두 completed 상태로 변경
+                        const { error: updateError } = await sb
+                            .from('attendance')
+                            .update({
+                                status: 'completed',
+                                type: 'check_out',
+                                check_out: new Date().toISOString()
+                            })
+                            .in('id', oldRecords.map(r => r.id));
+
+                        if (updateError) {
+                            console.error('[정리] 기록 업데이트 실패:', updateError);
+                        } else {
+                            console.log('[정리] 미완료 기록', oldRecords.length, '개를 완료 처리했습니다.');
+                        }
+                    } else {
+                        console.log('[정리] 정리할 미완료 기록이 없습니다.');
+                    }
+
+                } catch (e) {
+                    console.error('[정리] 오류:', e);
+                }
+            } else {
+                // 데모 모드 - localStorage 정리
+                try {
+                    const today = new Date().toISOString().split('T')[0];
+                    const existingAttendance = getLocalAttendance();
+
+                    const needsUpdate = existingAttendance.some(a =>
+                        (a.status === 'waiting' || a.status === 'seated') &&
+                        a.check_in_time && !a.check_in_time.startsWith(today)
+                    );
+
+                    if (needsUpdate) {
+                        console.log('[정리] 데모 모드: 미완료 기록 정리...');
+
+                        existingAttendance.forEach(a => {
+                            if ((a.status === 'waiting' || a.status === 'seated') &&
+                                a.check_in_time && !a.check_in_time.startsWith(today)) {
+                                a.status = 'completed';
+                                a.type = 'check_out';
+                            }
+                        });
+
+                        localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
+                        console.log('[정리] 데모 모드: 정리 완료');
+                    }
+
+                } catch (e) {
+                    console.error('[정리] 데모 모드 오류:', e);
+                }
+            }
+        }
+
+        // 직접 fetch로 학생 검색 (Supabase 클라이언트 오류 시 폴백)
+        async function searchStudentsDirectFetch(phoneLast4) {
+            console.log('[searchStudentsDirectFetch] 직접 fetch 시도...');
+            try {
+                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/students?parent_phone_last4=eq.${phoneLast4}&select=id,name,parent_id,parent_phone_last4`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('[searchStudentsDirectFetch] 응답 상태:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('[searchStudentsDirectFetch] 에러 응답:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('[searchStudentsDirectFetch] 성공, 데이터:', data);
+                return { data, error: null };
+
+            } catch (error) {
+                console.error('[searchStudentsDirectFetch] 오류:', error);
+                return { data: null, error };
+            }
         }
 
         // 스크립트 로드 후 즉시 초기화 시도
