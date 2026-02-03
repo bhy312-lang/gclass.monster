@@ -111,12 +111,12 @@
     </div>
 
     <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@sb/sb-js@2"></script>
-    <script src="sb-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
 
     <script>
         // Supabase 클라이언트 전역 변수 할당
-        const sb = window.sb || window.sbClient;
+        const sb = window.supabase || window.supabaseClient;
 
         // 디버깅용 로그
         console.log('[Kiosk] Supabase 클라이언트:', sb ? '로드됨' : '로드 실패');
