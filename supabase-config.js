@@ -6,11 +6,24 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // Supabase 클라이언트 생성 및 전역 노출 (즉시 실행)
 (function() {
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: {
+            fetch: (url, options = {}) => {
+                // 타임아웃 30초로 설정
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+                return fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                }).finally(() => clearTimeout(timeoutId));
+            }
+        }
+    });
     window.supabaseClient = supabaseClient;
     window.supabase = supabaseClient;
 
-    console.log('[Supabase Config] 클라이언트 초기화 완료');
+    console.log('[Supabase Config] 클라이언트 초기화 완료 (타임아웃: 30초)');
 })();
 
 // 설정이 완료되었는지 확인
