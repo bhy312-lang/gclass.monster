@@ -6,18 +6,39 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // Supabase 클라이언트 생성 및 전역 노출 (즉시 실행)
 (function() {
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        global: {
-            fetch: (url, options = {}) => {
-                // 타임아웃 30초로 설정
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000);
+    // 타임아웃이 있는 fetch 래퍼 함수
+    function createFetchWithTimeout(timeoutMs) {
+        return async (url, options = {}) => {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-                return fetch(url, {
+            try {
+                const response = await fetch(url, {
                     ...options,
                     signal: controller.signal
-                }).finally(() => clearTimeout(timeoutId));
+                });
+                clearTimeout(timeoutId);
+                return response;
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new Error(`Request timeout after ${timeoutMs}ms`);
+                }
+                throw error;
             }
+        };
+    }
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        db: {
+            schema: 'public'
+        },
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true
+        },
+        global: {
+            fetch: createFetchWithTimeout(30000) // 30초 타임아웃
         }
     });
     window.supabaseClient = supabaseClient;
