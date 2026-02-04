@@ -435,7 +435,36 @@
 
                 } catch (error) {
                     console.error('등원 처리 오류:', error);
-                    showAlert('error', '오류', '등원 처리 중 오류가 발생했습니다.');
+
+                    // AbortError인 경우 직접 fetch로 재시도
+                    const isAbortError =
+                        error.message?.includes('AbortError') ||
+                        error.message?.includes('aborted') ||
+                        error.hint?.includes('aborted') ||
+                        error.details?.includes('AbortError');
+
+                    if (isAbortError) {
+                        console.log('[performCheckIn] AbortError 감지, 직접 fetch로 재시도...');
+                        const fetchResult = await performCheckInDirectFetch();
+
+                        if (fetchResult.success) {
+                            const { now, alarmTime } = fetchResult;
+                            const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+                            const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+                            showAlert('success', '등원 완료',
+                                `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}`);
+                            kioskClearInput();
+                        } else {
+                            showAlert('error', '오류', `등원 처리 중 오류가 발생했습니다.\n${fetchResult.error || 'Unknown error'}`);
+                        }
+                    } else {
+                        let errorMessage = error.message || 'Unknown error';
+                        if (errorMessage.includes('timeout') || errorMessage.includes('AbortError')) {
+                            errorMessage = '요청 시간이 초과되었습니다. 다시 시도해주세요.';
+                        }
+                        showAlert('error', '오류', `등원 처리 중 오류가 발생했습니다.\n${errorMessage}`);
+                    }
                 }
             } else {
                 // 데모 모드 - localStorage에 저장
@@ -981,6 +1010,111 @@
             } catch (error) {
                 console.error('[searchStudentsDirectFetch] 오류:', error);
                 return { data: null, error };
+            }
+        }
+
+        // 직접 fetch로 등원 처리 (Supabase 클라이언트 오류 시 폴백)
+        async function performCheckInDirectFetch() {
+            console.log('[performCheckInDirectFetch] 직접 fetch로 등원 처리 시도...');
+            try {
+                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+
+                const today = new Date().toISOString().split('T')[0];
+
+                // 타임아웃 컨트롤러 (30초)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+                // 1. 기존 등원 확인
+                const checkResponse = await fetch(
+                    `${SUPABASE_URL}/rest/v1/attendance?student_id=eq.${selectedStudent.id}&date=eq.${today}&status=in.(waiting,seated)&select=*`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        signal: controller.signal
+                    }
+                );
+
+                if (!checkResponse.ok) {
+                    const errorText = await checkResponse.text();
+                    console.error('[performCheckInDirectFetch] 기존 등원 확인 실패:', errorText);
+                    return { success: false, error: `기존 등원 확인 실패: ${errorText}` };
+                }
+
+                const existingData = await checkResponse.json();
+                if (existingData && existingData.length > 0) {
+                    const statusText = existingData[0].status === 'seated' ? '이미 좌석에 배정되었습니다' : '이미 등원 처리되었습니다';
+                    return { success: false, error: statusText, alreadyCheckedIn: true };
+                }
+
+                // 2. 등원 기록 추가
+                const now = new Date();
+                const alarmTime = new Date(now.getTime() + 60 * 60 * 1000);
+
+                const insertResponse = await fetch(`${SUPABASE_URL}/rest/v1/attendance`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    signal: controller.signal,
+                    body: JSON.stringify({
+                        student_id: selectedStudent.id,
+                        student_name: selectedStudent.name,
+                        type: 'check_in',
+                        check_in_time: now.toISOString(),
+                        check_in: now.toISOString(),
+                        date: today,
+                        alarm_time: alarmTime.toISOString(),
+                        status: 'waiting'
+                    })
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!insertResponse.ok) {
+                    const errorText = await insertResponse.text();
+                    console.error('[performCheckInDirectFetch] 등원 기록 추가 실패:', errorText);
+                    return { success: false, error: `등원 기록 추가 실패: ${errorText}` };
+                }
+
+                // 3. localStorage에도 저장 (좌석 모니터링 호환)
+                const attendanceId = `attendance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                const newAttendance = {
+                    id: attendanceId,
+                    student_id: selectedStudent.id,
+                    student_name: selectedStudent.name,
+                    type: 'check_in',
+                    check_in_time: now.toISOString(),
+                    alarm_time: alarmTime.toISOString(),
+                    status: 'waiting'
+                };
+
+                const existingAttendance = getLocalAttendance();
+                existingAttendance.push(newAttendance);
+                localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
+
+                // storage 이벤트 발생
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'demo_attendance',
+                    newValue: JSON.stringify(existingAttendance)
+                }));
+
+                // 4. Web Push 알림 전송
+                await sendWebPushNotification(selectedStudent, 'check_in');
+
+                return { success: true, now, alarmTime };
+
+            } catch (error) {
+                console.error('[performCheckInDirectFetch] 오류:', error);
+                return { success: false, error: error.message };
             }
         }
 
