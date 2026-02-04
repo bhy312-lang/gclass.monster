@@ -6,6 +6,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // Supabase 클라이언트 생성 및 전역 노출 (즉시 실행)
 (function() {
+    // 완전히 기본 설정으로 복원 - 커스텀 fetch 제거
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         db: {
             schema: 'public'
@@ -13,26 +14,12 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
         auth: {
             persistSession: true,
             autoRefreshToken: true
-        },
-        global: {
-            fetch: (url, options = {}) => {
-                // AbortSignal.any()를 사용하여 원본 signal과 타임아웃 signal 병합
-                const timeoutSignal = AbortSignal.timeout(120000); // 120초 타임아웃
-                const signal = options.signal
-                    ? AbortSignal.any([options.signal, timeoutSignal])
-                    : timeoutSignal;
-
-                return fetch(url, {
-                    ...options,
-                    signal
-                });
-            }
         }
     });
     window.supabaseClient = supabaseClient;
     window.supabase = supabaseClient;
 
-    console.log('[Supabase Config] 클라이언트 초기화 완료 (타임아웃: 120초, AbortSignal.any 사용)');
+    console.log('[Supabase Config] 클라이언트 초기화 완료 (기본 설정)');
 })();
 
 // 설정이 완료되었는지 확인
