@@ -15,27 +15,16 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
             autoRefreshToken: true
         },
         global: {
-            // Supabase SDK v2 내장 타임아웃 설정 (밀리초)
-            headers: {},
             fetch: (url, options = {}) => {
-                // AbortController를 사용하여 타임아웃 구현
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 120000); // 120초
-
-                // 기존 signal이 있으면 병합
-                const originalSignal = options.signal;
-                if (originalSignal) {
-                    originalSignal.addEventListener('abort', () => {
-                        clearTimeout(timeoutId);
-                        controller.abort();
-                    });
-                }
+                // AbortSignal.any()를 사용하여 원본 signal과 타임아웃 signal 병합
+                const timeoutSignal = AbortSignal.timeout(120000); // 120초 타임아웃
+                const signal = options.signal
+                    ? AbortSignal.any([options.signal, timeoutSignal])
+                    : timeoutSignal;
 
                 return fetch(url, {
                     ...options,
-                    signal: controller.signal
-                }).finally(() => {
-                    clearTimeout(timeoutId);
+                    signal
                 });
             }
         }
@@ -43,7 +32,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     window.supabaseClient = supabaseClient;
     window.supabase = supabaseClient;
 
-    console.log('[Supabase Config] 클라이언트 초기화 완료 (타임아웃: 120초)');
+    console.log('[Supabase Config] 클라이언트 초기화 완료 (타임아웃: 120초, AbortSignal.any 사용)');
 })();
 
 // 설정이 완료되었는지 확인
