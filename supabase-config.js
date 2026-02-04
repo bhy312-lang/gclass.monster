@@ -13,13 +13,37 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
         auth: {
             persistSession: true,
             autoRefreshToken: true
+        },
+        global: {
+            // Supabase SDK v2 내장 타임아웃 설정 (밀리초)
+            headers: {},
+            fetch: (url, options = {}) => {
+                // AbortController를 사용하여 타임아웃 구현
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 120000); // 120초
+
+                // 기존 signal이 있으면 병합
+                const originalSignal = options.signal;
+                if (originalSignal) {
+                    originalSignal.addEventListener('abort', () => {
+                        clearTimeout(timeoutId);
+                        controller.abort();
+                    });
+                }
+
+                return fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                }).finally(() => {
+                    clearTimeout(timeoutId);
+                });
+            }
         }
-        // 커스텀 fetch 제거 - Supabase SDK v2 내부 타임아웃 사용
     });
     window.supabaseClient = supabaseClient;
     window.supabase = supabaseClient;
 
-    console.log('[Supabase Config] 클라이언트 초기화 완료');
+    console.log('[Supabase Config] 클라이언트 초기화 완료 (타임아웃: 120초)');
 })();
 
 // 설정이 완료되었는지 확인
