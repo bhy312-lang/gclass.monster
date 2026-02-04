@@ -235,21 +235,40 @@
                         code: error.code
                     });
 
-                    // 타임아웃 오류 메시지를 사용자 친화적으로 변경
-                    let errorMessage = error.message || 'Unknown error';
-                    const isTimeoutError =
-                        errorMessage.includes('timeout') ||
-                        errorMessage.includes('AbortError') ||
-                        errorMessage.includes('aborted') ||
-                        error.hint?.includes('timeout') ||
+                    // AbortError인 경우 직접 fetch로 재시도
+                    const isAbortError =
+                        error.message?.includes('AbortError') ||
+                        error.message?.includes('aborted') ||
                         error.hint?.includes('aborted') ||
                         error.details?.includes('AbortError');
 
-                    if (isTimeoutError) {
-                        errorMessage = '요청 시간이 초과되었습니다. 다시 시도해주세요.';
-                    }
+                    if (isAbortError) {
+                        console.log('[searchStudents] AbortError 감지, 직접 fetch로 재시도...');
+                        const { data: fetchData, error: fetchError } = await searchStudentsDirectFetch(kioskInput);
 
-                    showAlert('error', '오류', `검색 중 오류가 발생했습니다.\n${errorMessage}`);
+                        if (fetchError) {
+                            console.error('학생 검색 오류 (직접 fetch):', fetchError);
+                            showAlert('error', '오류', `검색 중 오류가 발생했습니다.\n${fetchError.message || 'Unknown error'}`);
+                        } else if (fetchData && fetchData.length > 0) {
+                            foundStudents = fetchData;
+                            if (fetchData.length === 1) {
+                                selectedStudent = fetchData[0];
+                                showStudentInfo(selectedStudent, '학생을 찾았습니다');
+                            } else {
+                                selectedStudent = null;
+                                showStudentInfo({ name: `${fetchData.length}명의 학생` }, '등원/하원 버튼을 눌러주세요');
+                            }
+                        } else {
+                            foundStudents = [];
+                            selectedStudent = null;
+                            showAlert('error', '검색 결과 없음', '등록되지 않은 번호입니다.\n회원가입 후 이용해주세요.');
+                            kioskClearInput();
+                        }
+                    } else {
+                        // 다른 오류는 그대로 표시
+                        let errorMessage = error.message || 'Unknown error';
+                        showAlert('error', '오류', `검색 중 오류가 발생했습니다.\n${errorMessage}`);
+                    }
                 }
             } else {
                 // 데모 모드 - 로컬 학생 데이터 검색
