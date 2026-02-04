@@ -80,9 +80,16 @@ async function displayUserInfo() {
 
     const userName = profile?.full_name || profile?.email?.split('@')[0] || '학부모';
 
+    // Google 프로필 이미지 또는 기본 이미지
+    const avatarUrl = currentUser?.user_metadata?.avatar_url ||
+                      currentUser?.user_metadata?.picture ||
+                      profile?.avatar_url ||
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=ec4899&color=fff`;
+
     document.getElementById('user-info').innerHTML = `
-      <span class="text-sm font-medium">${userName}</span>
-      <button onclick="logout()" class="text-xs bg-white text-pink-600 px-3 py-1 rounded-full font-medium shadow-sm hover:shadow transition-shadow">
+      <img src="${avatarUrl}" alt="${userName}" class="w-10 h-10 rounded-full border-2 border-white shadow-md object-cover flex-shrink-0">
+      <span class="text-sm font-medium hidden sm:inline">${userName}</span>
+      <button onclick="logout()" class="text-xs bg-white text-pink-600 px-3 py-1 rounded-full font-medium shadow-sm hover:shadow transition-shadow flex-shrink-0">
         로그아웃
       </button>
     `;
@@ -311,16 +318,22 @@ async function initializeFirebase() {
 // FCM 토큰 요청 및 저장
 async function requestFCMToken() {
   try {
+    console.log('[FCM] 토큰 요청 시작...');
+
     if (!messaging) {
-      console.error('[FCM] Messaging이 초기화되지 않음');
+      const error = 'Messaging이 초기화되지 않음';
+      console.error('[FCM]', error);
+      alert('FCM 오류: ' + error);
       return null;
     }
 
     // VAPID 키 (Firebase 콘솔 > 프로젝트 설정 > 클라우드 메시징 > 웹 푸시 인증서)
     const vapidKey = 'BG9QNW0L5qLDNPizKL2cGoM9azrRCqzqmBAlyNkboHM6__XdBLtzge3dqkzp2VbZxORbMulRDGyCooCAPKTAhUE';
 
+    console.log('[FCM] getToken() 호출 중...');
+
     const token = await messaging.getToken({ vapidKey });
-    console.log('[FCM] 토큰 획득:', token);
+    console.log('[FCM] 토큰 획득 성공:', token ? token.substring(0, 20) + '...' : 'null');
 
     // Supabase에 토큰 저장
     const { error } = await supabase
@@ -333,6 +346,7 @@ async function requestFCMToken() {
 
     if (error) {
       console.error('[FCM] 토큰 저장 실패:', error);
+      alert('토큰 저장 실패: ' + error.message);
       return null;
     }
 
@@ -340,6 +354,14 @@ async function requestFCMToken() {
     return token;
   } catch (error) {
     console.error('[FCM] 토큰 요청 실패:', error);
+    console.error('[FCM] 에러 이름:', error.name);
+    console.error('[FCM] 에러 메시지:', error.message);
+    console.error('[FCM] 에러 스택:', error.stack);
+
+    // 화면에 에러 표시
+    const errorMsg = `FCM 토큰 획득 실패\n\n${error.name}: ${error.message}`;
+    alert(errorMsg);
+
     return null;
   }
 }

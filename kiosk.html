@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>키오스크 - 꿈터공부방</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -519,33 +522,9 @@
 
                 console.log('[Kiosk] Edge Function 요청 body:', JSON.stringify(requestBody));
 
-                // sb.functions 상태 디버그
-                console.log('[Kiosk] sb 객체:', sb);
-                console.log('[Kiosk] sb.functions:', sb?.functions);
-                console.log('[Kiosk] sb.functions.invoke:', typeof sb?.functions?.invoke);
-
-                // sb.functions가 있는지 확인
-                if (sb && sb.functions && typeof sb.functions.invoke === 'function') {
-                    console.log('[Kiosk] sb.functions.invoke 사용');
-                    try {
-                        const { data, error } = await sb.functions.invoke('send-web-push-notification', {
-                            body: requestBody
-                        });
-
-                        if (error) {
-                            console.error('[Kiosk] Web Push 전송 실패 (sb.functions):', error);
-                            console.error('[Kiosk] Edge Function 에러 상세:', JSON.stringify(error, null, 2));
-                        } else {
-                            console.log('[Kiosk] Web Push 알림 전송 성공:', data);
-                        }
-                    } catch (invokeError) {
-                        console.error('[Kiosk] sb.functions.invoke 예외:', invokeError);
-                    }
-                } else {
-                    // sb.functions가 없으면 로그만 남기고 스킵 (CORS 문제로 직접 fetch 불가)
-                    console.warn('[Kiosk] sb.functions 없음 - Push 알림 스킵');
-                    console.warn('[Kiosk] Supabase SDK가 제대로 로드되었는지 확인하세요');
-                }
+                // SDK 대신 직접 fetch만 사용 (FunctionsFetchError 방지)
+                console.log('[Kiosk] 직접 fetch로 Web Push 전송 시도...');
+                await sendWebPushDirectFetch(requestBody);
 
             } catch (error) {
                 console.error('[Kiosk] Push 알림 전송 중 오류:', error);
@@ -916,8 +895,10 @@
                     newValue: JSON.stringify(existingAttendance)
                 }));
 
-                // 4. Web Push 알림 전송
-                await sendWebPushNotification(selectedStudent, 'check_in');
+                // 4. Web Push 알림 전송 (비동기 - 팝업 지연 방지)
+                sendWebPushNotification(selectedStudent, 'check_in').catch(err => {
+                    console.error('[Kiosk] Push 알림 백그라운드 에러:', err);
+                });
 
                 return { success: true, now, alarmTime };
 
@@ -1058,8 +1039,10 @@
                     }
                 }
 
-                // 5. Web Push 알림 전송
-                await sendWebPushNotification(selectedStudent, 'check_out');
+                // 5. Web Push 알림 전송 (비동기 - 팝업 지연 방지)
+                sendWebPushNotification(selectedStudent, 'check_out').catch(err => {
+                    console.error('[Kiosk] Push 알림 백그라운드 에러:', err);
+                });
 
                 return { success: true, attendance };
 
