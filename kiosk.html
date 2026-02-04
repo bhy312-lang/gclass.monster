@@ -195,12 +195,6 @@
                 // Supabase 모드
                 try {
                     console.log('[searchStudents] Supabase 쿼리 시작...');
-                    console.log('[searchStudents] sb.auth.session():', sb.auth.session());
-
-                    // 먼저 간단한 테스트 쿼리로 연결 확인
-                    console.log('[searchStudents] 연결 테스트 쿼리 시작...');
-                    const testResult = await sb.from('students').select('count', { count: 'exact', head: true });
-                    console.log('[searchStudents] 연결 테스트 결과:', testResult);
 
                     // 타임아웃 추가 (10초)
                     const timeoutPromise = new Promise((_, reject) =>
@@ -434,8 +428,8 @@
                         newValue: JSON.stringify(existingAttendance)
                     }));
 
-                    // Web Push 알림 전송
-                    await sendWebPushNotification(selectedStudent.id, 'check_in');
+                    // Web Push 알림 전송 (selectedStudent 객체 직접 전달)
+                    await sendWebPushNotification(selectedStudent, 'check_in');
 
                     const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
                     const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
@@ -570,8 +564,8 @@
 
                     if (error) throw error;
 
-                    // Web Push 알림 전송
-                    await sendWebPushNotification(selectedStudent.id, 'check_out');
+                    // Web Push 알림 전송 (selectedStudent 객체 직접 전달)
+                    await sendWebPushNotification(selectedStudent, 'check_out');
 
                     // 좌석에 배정되어 있었다면 좌석도 비우기
                     if (attendance.seat_id) {
@@ -667,7 +661,8 @@
         }
 
         // Web Push 알림 전송 함수
-        async function sendWebPushNotification(studentId, type) {
+        // student 객체를 직접 받아서 불필요한 DB 조회 제거
+        async function sendWebPushNotification(student, type) {
             try {
                 // Supabase가 구성되어 있는지 확인
                 const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
@@ -677,45 +672,99 @@
                     return;
                 }
 
-                console.log(`[Kiosk] Web Push 알림 전송 시도: student_id=${studentId}, type=${type}`);
-
-                // 학생 정보와 부모 조회
-                const { data: student, error: studentError } = await sb
-                    .from('students')
-                    .select('id, name, parent_id')
-                    .eq('id', studentId)
-                    .single();
-
-                if (studentError || !student) {
-                    console.error('[Kiosk] 학생 조회 실패:', studentError);
+                if (!student) {
+                    console.error('[Kiosk] 학생 정보가 없음');
                     return;
                 }
+
+                console.log(`[Kiosk] Web Push 알림 전송 시도: student_id=${student.id}, name=${student.name}, parent_id=${student.parent_id}, type=${type}`);
 
                 if (!student.parent_id) {
                     console.log('[Kiosk] 부모 ID가 없음 - 알림 스킵');
                     return;
                 }
 
-                // Supabase Edge Function 호출
-                const { data, error } = await sb.functions.invoke('send-web-push-notification', {
-                    body: {
-                        student_id: student.id,
-                        parent_id: student.parent_id,
-                        type: type,
-                        student_name: student.name
-                    }
-                });
+                const requestBody = {
+                    student_id: student.id,
+                    parent_id: student.parent_id,
+                    type: type,
+                    student_name: student.name
+                };
 
-                if (error) {
-                    console.error('[Kiosk] Web Push 전송 실패:', error);
-                    // 알림 실패해도 키오스크 동작에는 영향 없음
+                console.log('[Kiosk] Edge Function 요청 body:', JSON.stringify(requestBody));
+
+                // sb.functions 상태 디버그
+                console.log('[Kiosk] sb 객체:', sb);
+                console.log('[Kiosk] sb.functions:', sb?.functions);
+                console.log('[Kiosk] sb.functions.invoke:', typeof sb?.functions?.invoke);
+
+                // sb.functions가 있는지 확인
+                if (sb && sb.functions && typeof sb.functions.invoke === 'function') {
+                    console.log('[Kiosk] sb.functions.invoke 사용');
+                    try {
+                        const { data, error } = await sb.functions.invoke('send-web-push-notification', {
+                            body: requestBody
+                        });
+
+                        if (error) {
+                            console.error('[Kiosk] Web Push 전송 실패 (sb.functions):', error);
+                            console.error('[Kiosk] Edge Function 에러 상세:', JSON.stringify(error, null, 2));
+                        } else {
+                            console.log('[Kiosk] Web Push 알림 전송 성공:', data);
+                        }
+                    } catch (invokeError) {
+                        console.error('[Kiosk] sb.functions.invoke 예외:', invokeError);
+                    }
                 } else {
-                    console.log('[Kiosk] Web Push 알림 전송 성공:', data);
+                    // sb.functions가 없으면 로그만 남기고 스킵 (CORS 문제로 직접 fetch 불가)
+                    console.warn('[Kiosk] sb.functions 없음 - Push 알림 스킵');
+                    console.warn('[Kiosk] Supabase SDK가 제대로 로드되었는지 확인하세요');
                 }
 
             } catch (error) {
                 console.error('[Kiosk] Push 알림 전송 중 오류:', error);
+                console.error('[Kiosk] 오류 상세:', error.message, error.stack);
                 // 키오스크 동작에는 영향 없음
+            }
+        }
+
+        // 직접 fetch로 Edge Function 호출 (폴백용)
+        async function sendWebPushDirectFetch(requestBody) {
+            try {
+                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+
+                const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/send-web-push-notification`;
+                console.log('[Kiosk] Edge Function URL:', edgeFunctionUrl);
+
+                const response = await fetch(edgeFunctionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                console.log('[Kiosk] Edge Function 응답 상태:', response.status);
+
+                const responseText = await response.text();
+                console.log('[Kiosk] Edge Function 응답:', responseText);
+
+                if (!response.ok) {
+                    console.error('[Kiosk] Edge Function 호출 실패:', response.status, responseText);
+                } else {
+                    try {
+                        const data = JSON.parse(responseText);
+                        console.log('[Kiosk] Web Push 알림 전송 성공 (직접 fetch):', data);
+                    } catch (e) {
+                        console.log('[Kiosk] 응답 파싱 실패, 원본:', responseText);
+                    }
+                }
+
+            } catch (error) {
+                console.error('[Kiosk] 직접 fetch 오류:', error);
             }
         }
 
