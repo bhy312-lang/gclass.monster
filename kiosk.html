@@ -306,107 +306,23 @@
             const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
 
             if (sbOk) {
-                // Supabase 모드
-                try {
-                    // 이미 등원했는지 확인 (waiting 또는 seated 상태) - 오늘 날짜만
-                    const today = new Date().toISOString().split('T')[0];
-                    const { data: existing } = await sb
-                        .from('attendance')
-                        .select('*')
-                        .eq('student_id', selectedStudent.id)
-                        .eq('date', today)
-                        .in('status', ['waiting', 'seated'])
-                        .maybeSingle();
+                // 직접 fetch로 바로 등원 처리 (SDK 거치지 않음 - 더 빠름)
+                console.log('[performCheckIn] 직접 fetch로 등원 처리 시작...');
+                const fetchResult = await performCheckInDirectFetch();
 
-                    if (existing) {
-                        const statusText = existing.status === 'seated' ? '이미 좌석에 배정되었습니다' : '이미 등원 처리되었습니다';
-                        showAlert('info', '알림', `${selectedStudent.name}님은 ${statusText}.`);
-                        kioskClearInput();
-                        return;
-                    }
-
-                    // 등원 기록 추가
-                    const now = new Date();
-                    const alarmTime = new Date(now.getTime() + 60 * 60 * 1000); // +60분
-
-                    const { error } = await sb
-                        .from('attendance')
-                        .insert({
-                            student_id: selectedStudent.id,
-                            student_name: selectedStudent.name,
-                            type: 'check_in',
-                            check_in_time: now.toISOString(),
-                            check_in: now.toISOString(),
-                            date: now.toISOString().split('T')[0],
-                            alarm_time: alarmTime.toISOString(),
-                            status: 'waiting'
-                        });
-
-                    if (error) throw error;
-
-                    // localStorage에도 저장 (좌석 모니터링 호환)
-                    const attendanceId = `attendance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                    const newAttendance = {
-                        id: attendanceId,
-                        student_id: selectedStudent.id,
-                        student_name: selectedStudent.name,
-                        type: 'check_in',
-                        check_in_time: now.toISOString(),
-                        alarm_time: alarmTime.toISOString(),
-                        status: 'waiting'
-                    };
-
-                    const existingAttendance = getLocalAttendance();
-                    existingAttendance.push(newAttendance);
-                    localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
-
-                    // storage 이벤트 발생 (좌석 모니터링 갱신 트리거)
-                    window.dispatchEvent(new StorageEvent('storage', {
-                        key: 'demo_attendance',
-                        newValue: JSON.stringify(existingAttendance)
-                    }));
-
-                    // Web Push 알림 전송 (selectedStudent 객체 직접 전달)
-                    await sendWebPushNotification(selectedStudent, 'check_in');
-
+                if (fetchResult.success) {
+                    const { now, alarmTime } = fetchResult;
                     const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
                     const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
                     showAlert('success', '등원 완료',
                         `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}`);
                     kioskClearInput();
-
-                } catch (error) {
-                    console.error('등원 처리 오류:', error);
-
-                    // AbortError인 경우 직접 fetch로 재시도
-                    const isAbortError =
-                        error.message?.includes('AbortError') ||
-                        error.message?.includes('aborted') ||
-                        error.hint?.includes('aborted') ||
-                        error.details?.includes('AbortError');
-
-                    if (isAbortError) {
-                        console.log('[performCheckIn] AbortError 감지, 직접 fetch로 재시도...');
-                        const fetchResult = await performCheckInDirectFetch();
-
-                        if (fetchResult.success) {
-                            const { now, alarmTime } = fetchResult;
-                            const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-                            const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-
-                            showAlert('success', '등원 완료',
-                                `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}`);
-                            kioskClearInput();
-                        } else {
-                            showAlert('error', '오류', `등원 처리 중 오류가 발생했습니다.\n${fetchResult.error || 'Unknown error'}`);
-                        }
+                } else {
+                    if (fetchResult.alreadyCheckedIn) {
+                        showAlert('info', '알림', fetchResult.error);
                     } else {
-                        let errorMessage = error.message || 'Unknown error';
-                        if (errorMessage.includes('timeout') || errorMessage.includes('AbortError')) {
-                            errorMessage = '요청 시간이 초과되었습니다. 다시 시도해주세요.';
-                        }
-                        showAlert('error', '오류', `등원 처리 중 오류가 발생했습니다.\n${errorMessage}`);
+                        showAlert('error', '오류', `등원 처리 중 오류가 발생했습니다.\n${fetchResult.error || 'Unknown error'}`);
                     }
                 }
             } else {
