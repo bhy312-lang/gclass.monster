@@ -114,6 +114,12 @@ input[type="checkbox"]:checked + div {
   }
 }
 
+/* 알림 팝업 애니메이션 */
+.animate-slide-in {
+  animation: slideIn 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
 /* 다크 모드 지원 (나중에 추가) */
 @media (prefers-color-scheme: dark) {
   /* 다크 모드 스타일 */

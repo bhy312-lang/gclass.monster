@@ -10,7 +10,9 @@ import webpush from 'https://esm.sh/web-push@3.6.3';
 // CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, Accept',
+  'Access-Control-Max-Age': '86400',
 };
 
 // VAPID 설정 (환경 변수에서 로드)

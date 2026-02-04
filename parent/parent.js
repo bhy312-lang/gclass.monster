@@ -4,6 +4,20 @@ let currentUser = null;
 let childrenData = [];
 let realtimeChannel = null;
 
+// Firebase 설정
+const firebaseConfig = {
+  apiKey: "AIzaSyAEmXw8PFP1hPVRJE-0tLbGfpFOrIHs7uc",
+  authDomain: "study-room-push.firebaseapp.com",
+  projectId: "study-room-push",
+  storageBucket: "study-room-push.firebasestorage.app",
+  messagingSenderId: "198231754611",
+  appId: "1:198231754611:web:675a173730ee251439a706"
+};
+
+// Firebase 인스턴스
+let firebaseApp = null;
+let messaging = null;
+
 // 페이지 로드 시 실행
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('[Parent Portal] 초기화 시작...');
@@ -249,6 +263,111 @@ async function loadAttendanceHistory() {
   }
 }
 
+// Firebase 초기화
+async function initializeFirebase() {
+  try {
+    if (typeof firebase === 'undefined') {
+      console.error('[FCM] Firebase SDK가 로드되지 않음');
+      return false;
+    }
+
+    // Firebase 앱 초기화
+    if (!firebaseApp) {
+      firebaseApp = firebase.initializeApp(firebaseConfig);
+      console.log('[FCM] Firebase 앱 초기화 완료');
+    }
+
+    // Messaging 초기화
+    if (!messaging) {
+      messaging = firebase.messaging();
+      console.log('[FCM] Firebase Messaging 초기화 완료');
+    }
+
+    // Service Worker 등록
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.register('/parent/firebase-messaging-sw.js');
+      console.log('[FCM] Service Worker 등록 완료:', registration.scope);
+    }
+
+    // 포그라운드 메시지 수신 핸들러
+    messaging.onMessage((payload) => {
+      console.log('[FCM] 포그라운드 메시지 수신:', payload);
+
+      // 인앱 알림 표시
+      showNotificationPopup({
+        title: payload.notification?.title || payload.data?.title,
+        body: payload.notification?.body || payload.data?.body,
+        type: payload.data?.type || 'check_in'
+      });
+    });
+
+    return true;
+  } catch (error) {
+    console.error('[FCM] Firebase 초기화 실패:', error);
+    return false;
+  }
+}
+
+// FCM 토큰 요청 및 저장
+async function requestFCMToken() {
+  try {
+    if (!messaging) {
+      console.error('[FCM] Messaging이 초기화되지 않음');
+      return null;
+    }
+
+    // VAPID 키 (Firebase 콘솔 > 프로젝트 설정 > 클라우드 메시징 > 웹 푸시 인증서)
+    const vapidKey = 'BG9QNW0L5qLDNPizKL2cGoM9azrRCqzqmBAlyNkboHM6__XdBLtzge3dqkzp2VbZxORbMulRDGyCooCAPKTAhUE';
+
+    const token = await messaging.getToken({ vapidKey });
+    console.log('[FCM] 토큰 획득:', token);
+
+    // Supabase에 토큰 저장
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        fcm_token: token,
+        push_notification_enabled: true
+      })
+      .eq('id', currentUser.id);
+
+    if (error) {
+      console.error('[FCM] 토큰 저장 실패:', error);
+      return null;
+    }
+
+    console.log('[FCM] 토큰이 DB에 저장됨');
+    return token;
+  } catch (error) {
+    console.error('[FCM] 토큰 요청 실패:', error);
+    return null;
+  }
+}
+
+// FCM 토큰 삭제
+async function deleteFCMToken() {
+  try {
+    if (messaging) {
+      await messaging.deleteToken();
+      console.log('[FCM] 토큰 삭제됨');
+    }
+
+    // DB에서 토큰 제거
+    await supabase
+      .from('profiles')
+      .update({
+        fcm_token: null,
+        push_notification_enabled: false
+      })
+      .eq('id', currentUser.id);
+
+    return true;
+  } catch (error) {
+    console.error('[FCM] 토큰 삭제 실패:', error);
+    return false;
+  }
+}
+
 // Push 알림 설정
 async function setupPushNotifications() {
   const permissionStatus = document.getElementById('permission-status');
@@ -259,7 +378,17 @@ async function setupPushNotifications() {
     return;
   }
 
-  const permission = await window.PushNotification.getPermission();
+  // Firebase 초기화
+  const firebaseReady = await initializeFirebase();
+  if (!firebaseReady) {
+    permissionStatus.textContent = 'Firebase 초기화 실패';
+    permissionStatus.className = 'text-sm text-red-500';
+    pushToggle.disabled = true;
+    return;
+  }
+
+  // 알림 권한 상태 확인
+  const permission = Notification.permission;
   console.log('[Parent Portal] 알림 권한 상태:', permission);
 
   switch (permission) {
@@ -269,11 +398,16 @@ async function setupPushNotifications() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('push_notification_enabled')
+        .select('push_notification_enabled, fcm_token')
         .eq('id', currentUser.id)
         .single();
 
       pushToggle.checked = profile?.push_notification_enabled || false;
+
+      // 토큰이 없으면 자동으로 요청
+      if (profile?.push_notification_enabled && !profile?.fcm_token) {
+        await requestFCMToken();
+      }
       break;
 
     case 'denied':
@@ -288,33 +422,30 @@ async function setupPushNotifications() {
       permissionStatus.className = 'text-sm text-gray-500';
       pushToggle.checked = false;
       break;
-
-    default:
-      permissionStatus.textContent = '알림 미지원 브라우저';
-      permissionStatus.className = 'text-sm text-gray-500';
-      pushToggle.disabled = true;
-      pushToggle.checked = false;
   }
 
   // 토글 이벤트 리스너
   pushToggle.addEventListener('change', async (e) => {
     if (e.target.checked) {
-      const granted = await window.PushNotification.requestPermission();
-      if (granted) {
-        const success = await window.PushNotification.subscribe();
-        if (success) {
+      // 알림 권한 요청
+      const permission = await Notification.requestPermission();
+
+      if (permission === 'granted') {
+        const token = await requestFCMToken();
+        if (token) {
           permissionStatus.textContent = '알림 허용됨 ✓';
           permissionStatus.className = 'text-sm text-green-600 font-medium';
           showSuccess('알림이 활성화되었습니다!');
         } else {
           e.target.checked = false;
+          showError('FCM 토큰 획득에 실패했습니다.');
         }
       } else {
         e.target.checked = false;
         showError('알림 권한이 거부되었습니다.');
       }
     } else {
-      const success = await window.PushNotification.unsubscribe();
+      const success = await deleteFCMToken();
       if (success) {
         permissionStatus.textContent = '알림 미설정';
         permissionStatus.className = 'text-sm text-gray-500';
@@ -339,7 +470,7 @@ function subscribeToRealtimeUpdates() {
   }
 
   realtimeChannel = supabase
-    .channel('attendance-changes')
+    .channel('parent-updates')
     .on(
       'postgres_changes',
       {
@@ -359,9 +490,85 @@ function subscribeToRealtimeUpdates() {
         }
       }
     )
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `parent_id=eq.${currentUser.id}`
+      },
+      (payload) => {
+        console.log('[Parent Portal] 새 알림 수신:', payload);
+        showNotificationPopup(payload.new);
+      }
+    )
     .subscribe((status) => {
       console.log('[Parent Portal] 실시간 구독 상태:', status);
     });
+}
+
+// 알림 팝업 표시
+function showNotificationPopup(notification) {
+  // 알림 사운드 재생 (선택적)
+  try {
+    const audio = new Audio('/sounds/notification.mp3');
+    audio.volume = 0.5;
+    audio.play().catch(() => {});
+  } catch (e) {}
+
+  // 팝업 생성
+  const popup = document.createElement('div');
+  popup.className = 'fixed top-4 right-4 left-4 md:left-auto md:w-96 bg-white rounded-2xl shadow-2xl border border-pink-200 p-4 z-50 animate-slide-in';
+  popup.innerHTML = `
+    <div class="flex items-start gap-3">
+      <div class="w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
+        notification.type === 'check_in'
+          ? 'bg-green-100'
+          : 'bg-orange-100'
+      }">
+        ${notification.type === 'check_in' ? '📚' : '🏠'}
+      </div>
+      <div class="flex-1">
+        <h4 class="font-bold text-gray-800">${notification.title}</h4>
+        <p class="text-gray-600 text-sm">${notification.body}</p>
+        <p class="text-gray-400 text-xs mt-1">${new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</p>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  // 알림 읽음 처리
+  markNotificationAsRead(notification.id);
+
+  // 5초 후 자동 제거
+  setTimeout(() => {
+    popup.style.opacity = '0';
+    popup.style.transform = 'translateX(100%)';
+    setTimeout(() => popup.remove(), 300);
+  }, 5000);
+
+  // 자녀 상태 새로고침
+  renderChildrenStatus();
+  loadAttendanceHistory();
+}
+
+// 알림 읽음 처리
+async function markNotificationAsRead(notificationId) {
+  try {
+    await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('id', notificationId);
+  } catch (error) {
+    console.error('[Parent Portal] 알림 읽음 처리 실패:', error);
+  }
 }
 
 // 로그아웃
