@@ -176,99 +176,42 @@
             document.getElementById('student-info').classList.add('hidden');
         }
 
-        // Supabase에서 학생 검색
+        // Supabase에서 학생 검색 (직접 fetch만 사용 - 빠른 응답)
         async function searchStudents() {
             console.log('[searchStudents] 시작, 입력값:', kioskInput);
 
-            // Supabase 클라이언트가 없으면 초기화 시도
-            if (!sb) {
-                sb = window.supabase || window.supabaseClient;
-                console.log('[searchStudents] sb 재초기화:', sb ? '성공' : '실패');
-            }
-
             // isSupabaseConfigured 함수가 없으면 항상 false 처리 (데모 모드)
             const hasConfigFunction = typeof window.isSupabaseConfigured === 'function';
-            const sbOk = hasConfigFunction && window.isSupabaseConfigured() && sb;
-            console.log('[searchStudents] 데모 모드:', !sbOk, 'sb:', !!sb);
+            const sbOk = hasConfigFunction && window.isSupabaseConfigured();
+            console.log('[searchStudents] 데모 모드:', !sbOk);
 
             if (sbOk) {
-                // Supabase 모드 (전역 타임아웃 30초는 supabase-config.js에서 설정)
-                try {
-                    console.log('[searchStudents] Supabase 쿼리 시작...');
+                // 직접 fetch로 바로 검색 (SDK 거치지 않음 - 더 빠름)
+                console.log('[searchStudents] 직접 fetch로 검색 시작...');
+                const { data: fetchData, error: fetchError } = await searchStudentsDirectFetch(kioskInput);
 
-                    // Supabase 쿼리 (타임아웃은 supabase-config.js의 전역 설정 사용)
-                    const { data, error } = await sb
-                        .from('students')
-                        .select('id, name, parent_id, parent_phone_last4')
-                        .eq('parent_phone_last4', kioskInput);
+                if (fetchError) {
+                    console.error('학생 검색 오류 (직접 fetch):', fetchError);
+                    showAlert('error', '오류', `검색 중 오류가 발생했습니다.\n${fetchError.message || 'Unknown error'}`);
+                    return;
+                }
 
-                    console.log('[searchStudents] 쿼리 결과:', { data, error });
-
-                    if (error) throw error;
-
-                    if (data && data.length > 0) {
-                        foundStudents = data;
-
-                        if (data.length === 1) {
-                            // 학생이 1명이면 바로 선택
-                            selectedStudent = data[0];
-                            showStudentInfo(selectedStudent, '학생을 찾았습니다');
-                        } else {
-                            // 여러 명이면 선택 모달 표시 (등원/하원 버튼 클릭 시)
-                            selectedStudent = null;
-                            showStudentInfo({ name: `${data.length}명의 학생` }, '등원/하원 버튼을 눌러주세요');
-                        }
+                if (fetchData && fetchData.length > 0) {
+                    foundStudents = fetchData;
+                    if (fetchData.length === 1) {
+                        // 학생이 1명이면 바로 선택
+                        selectedStudent = fetchData[0];
+                        showStudentInfo(selectedStudent, '학생을 찾았습니다');
                     } else {
-                        foundStudents = [];
+                        // 여러 명이면 선택 모달 표시 (등원/하원 버튼 클릭 시)
                         selectedStudent = null;
-                        showAlert('error', '검색 결과 없음', '등록되지 않은 번호입니다.\n회원가입 후 이용해주세요.');
-                        kioskClearInput();
+                        showStudentInfo({ name: `${fetchData.length}명의 학생` }, '등원/하원 버튼을 눌러주세요');
                     }
-                } catch (error) {
-                    console.error('학생 검색 오류 (Supabase 클라이언트):', error);
-                    console.error('에러 타입:', error.constructor?.name);
-                    console.error('에러 메시지:', error.message);
-                    console.error('에러 상세:', {
-                        message: error.message,
-                        hint: error.hint,
-                        details: error.details,
-                        code: error.code
-                    });
-
-                    // AbortError인 경우 직접 fetch로 재시도
-                    const isAbortError =
-                        error.message?.includes('AbortError') ||
-                        error.message?.includes('aborted') ||
-                        error.hint?.includes('aborted') ||
-                        error.details?.includes('AbortError');
-
-                    if (isAbortError) {
-                        console.log('[searchStudents] AbortError 감지, 직접 fetch로 재시도...');
-                        const { data: fetchData, error: fetchError } = await searchStudentsDirectFetch(kioskInput);
-
-                        if (fetchError) {
-                            console.error('학생 검색 오류 (직접 fetch):', fetchError);
-                            showAlert('error', '오류', `검색 중 오류가 발생했습니다.\n${fetchError.message || 'Unknown error'}`);
-                        } else if (fetchData && fetchData.length > 0) {
-                            foundStudents = fetchData;
-                            if (fetchData.length === 1) {
-                                selectedStudent = fetchData[0];
-                                showStudentInfo(selectedStudent, '학생을 찾았습니다');
-                            } else {
-                                selectedStudent = null;
-                                showStudentInfo({ name: `${fetchData.length}명의 학생` }, '등원/하원 버튼을 눌러주세요');
-                            }
-                        } else {
-                            foundStudents = [];
-                            selectedStudent = null;
-                            showAlert('error', '검색 결과 없음', '등록되지 않은 번호입니다.\n회원가입 후 이용해주세요.');
-                            kioskClearInput();
-                        }
-                    } else {
-                        // 다른 오류는 그대로 표시
-                        let errorMessage = error.message || 'Unknown error';
-                        showAlert('error', '오류', `검색 중 오류가 발생했습니다.\n${errorMessage}`);
-                    }
+                } else {
+                    foundStudents = [];
+                    selectedStudent = null;
+                    showAlert('error', '검색 결과 없음', '등록되지 않은 번호입니다.\n회원가입 후 이용해주세요.');
+                    kioskClearInput();
                 }
             } else {
                 // 데모 모드 - 로컬 학생 데이터 검색
@@ -972,16 +915,16 @@
             }
         }
 
-        // 직접 fetch로 학생 검색 (Supabase 클라이언트 오류 시 폴백)
+        // 직접 fetch로 학생 검색 (빠른 응답을 위한 타임아웃 5초)
         async function searchStudentsDirectFetch(phoneLast4) {
             console.log('[searchStudentsDirectFetch] 직접 fetch 시도...');
             try {
                 const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
                 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
 
-                // 타임아웃 컨트롤러 (30초)
+                // 타임아웃 컨트롤러 (5초 - 빠른 응답)
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
 
                 const response = await fetch(`${SUPABASE_URL}/rest/v1/students?parent_phone_last4=eq.${phoneLast4}&select=id,name,parent_id,parent_phone_last4`, {
                     method: 'GET',
@@ -1022,9 +965,9 @@
 
                 const today = new Date().toISOString().split('T')[0];
 
-                // 타임아웃 컨트롤러 (30초)
+                // 타임아웃 컨트롤러 (5초 - 빠른 응답)
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
 
                 // 1. 기존 등원 확인
                 const checkResponse = await fetch(
