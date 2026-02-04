@@ -400,81 +400,24 @@
             const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
 
             if (sbOk) {
-                // Supabase 모드
-                try {
-                    // 이미 하원했는지 확인 (completed 상태) - 오늘 날짜만
-                    const today = new Date().toISOString().split('T')[0];
-                    const { data: completedRecord } = await sb
-                        .from('attendance')
-                        .select('*')
-                        .eq('student_id', selectedStudent.id)
-                        .eq('date', today)
-                        .eq('status', 'completed')
-                        .maybeSingle();
+                console.log('[performCheckOut] 직접 fetch로 하원 처리 시작...');
+                const fetchResult = await performCheckOutDirectFetch();
 
-                    if (completedRecord) {
-                        showAlert('info', '알림', `${selectedStudent.name}님은 이미 하원 처리되었습니다.`);
-                        kioskClearInput();
-                        return;
-                    }
-
-                    // 등원 기록 찾기 - 오늘 날짜만
-                    const { data: attendance, error: findError } = await sb
-                        .from('attendance')
-                        .select('*')
-                        .eq('student_id', selectedStudent.id)
-                        .eq('date', today)
-                        .in('status', ['waiting', 'seated'])
-                        .order('check_in_time', { ascending: false })
-                        .limit(1)
-                        .maybeSingle();
-
-                    if (findError || !attendance) {
-                        showAlert('info', '알림', `${selectedStudent.name}님은 등원 기록이 없습니다.`);
-                        kioskClearInput();
-                        return;
-                    }
-
-                    // 하원 처리 (상태 업데이트)
-                    const { error } = await sb
-                        .from('attendance')
-                        .update({
-                            type: 'check_out',
-                            status: 'completed',
-                            check_out: new Date().toISOString()
-                        })
-                        .eq('id', attendance.id);
-
-                    if (error) throw error;
-
-                    // Web Push 알림 전송 (selectedStudent 객체 직접 전달)
-                    await sendWebPushNotification(selectedStudent, 'check_out');
-
-                    // 좌석에 배정되어 있었다면 좌석도 비우기
-                    if (attendance.seat_id) {
-                        await sb
-                            .from('seats')
-                            .update({
-                                occupied: false,
-                                student_id: null,
-                                student_name: null,
-                                alarm_time: null,
-                                alarming: false,
-                                alarm_stopped: false
-                            })
-                            .eq('id', attendance.seat_id);
-                    }
-
+                if (fetchResult.success) {
                     const checkOutTime = new Date();
                     const timeStr = checkOutTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
                     showAlert('success', '하원 완료',
                         `${selectedStudent.name}님, 하원 완료되었습니다!\n안녕히 가세요!\n\n하원시간: ${timeStr}`);
                     kioskClearInput();
-
-                } catch (error) {
-                    console.error('하원 처리 오류:', error);
-                    showAlert('error', '오류', '하원 처리 중 오류가 발생했습니다.');
+                } else if (fetchResult.alreadyCheckedOut) {
+                    showAlert('info', '알림', fetchResult.error);
+                    kioskClearInput();
+                } else if (fetchResult.noCheckIn) {
+                    showAlert('info', '알림', fetchResult.error);
+                    kioskClearInput();
+                } else {
+                    showAlert('error', '오류', `하원 처리 중 오류가 발생했습니다.\n${fetchResult.error}`);
                 }
             } else {
                 // 데모 모드 - localStorage 업데이트
@@ -886,6 +829,11 @@
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
 
                 // 1. 기존 등원 확인
+                console.log('[performCheckInDirectFetch] 기존 등원 확인 요청:', {
+                    student_id: selectedStudent.id,
+                    date: today,
+                    url: `${SUPABASE_URL}/rest/v1/attendance?student_id=eq.${selectedStudent.id}&date=eq.${today}&status=in.(waiting,seated)&select=*`
+                });
                 const checkResponse = await fetch(
                     `${SUPABASE_URL}/rest/v1/attendance?student_id=eq.${selectedStudent.id}&date=eq.${today}&status=in.(waiting,seated)&select=*`,
                     {
@@ -906,8 +854,10 @@
                 }
 
                 const existingData = await checkResponse.json();
+                console.log('[performCheckInDirectFetch] 기존 등원 확인 응답:', existingData);
                 if (existingData && existingData.length > 0) {
                     const statusText = existingData[0].status === 'seated' ? '이미 좌석에 배정되었습니다' : '이미 등원 처리되었습니다';
+                    console.log('[performCheckInDirectFetch] 기존 기록 발견:', existingData[0]);
                     return { success: false, error: statusText, alreadyCheckedIn: true };
                 }
 
@@ -973,6 +923,148 @@
 
             } catch (error) {
                 console.error('[performCheckInDirectFetch] 오류:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // 직접 fetch로 하원 처리 (Supabase SDK 오류 시 폴백)
+        async function performCheckOutDirectFetch() {
+            console.log('[performCheckOutDirectFetch] 직접 fetch로 하원 처리 시도...');
+            try {
+                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+
+                const today = new Date().toISOString().split('T')[0];
+
+                // 타임아웃 컨트롤러 (5초 - 빠른 응답)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+                // 1. 이미 하원했는지 확인 (completed 상태)
+                console.log('[performCheckOutDirectFetch] 하원 확인 요청:', {
+                    student_id: selectedStudent.id,
+                    date: today
+                });
+                const completedResponse = await fetch(
+                    `${SUPABASE_URL}/rest/v1/attendance?student_id=eq.${selectedStudent.id}&date=eq.${today}&status=eq.completed&select=*`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        signal: controller.signal
+                    }
+                );
+
+                if (!completedResponse.ok) {
+                    const errorText = await completedResponse.text();
+                    console.error('[performCheckOutDirectFetch] 하원 확인 실패:', errorText);
+                    return { success: false, error: `하원 확인 실패: ${errorText}` };
+                }
+
+                const completedData = await completedResponse.json();
+                console.log('[performCheckOutDirectFetch] 하원 확인 응답:', completedData);
+                if (completedData && completedData.length > 0) {
+                    return { success: false, error: `${selectedStudent.name}님은 이미 하원 처리되었습니다.`, alreadyCheckedOut: true };
+                }
+
+                // 2. 등원 기록 찾기 (waiting, seated 상태)
+                console.log('[performCheckOutDirectFetch] 등원 기록 찾기 요청:', {
+                    student_id: selectedStudent.id,
+                    date: today
+                });
+                const attendanceResponse = await fetch(
+                    `${SUPABASE_URL}/rest/v1/attendance?student_id=eq.${selectedStudent.id}&date=eq.${today}&status=in.(waiting,seated)&select=*&order=check_in_time.desc&limit=1`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        signal: controller.signal
+                    }
+                );
+
+                if (!attendanceResponse.ok) {
+                    const errorText = await attendanceResponse.text();
+                    console.error('[performCheckOutDirectFetch] 등원 기록 찾기 실패:', errorText);
+                    return { success: false, error: `등원 기록 찾기 실패: ${errorText}` };
+                }
+
+                const attendanceData = await attendanceResponse.json();
+                console.log('[performCheckOutDirectFetch] 등원 기록 응답:', attendanceData);
+                if (!attendanceData || attendanceData.length === 0) {
+                    return { success: false, error: `${selectedStudent.name}님은 등원 기록이 없습니다.`, noCheckIn: true };
+                }
+
+                const attendance = attendanceData[0];
+                console.log('[performCheckOutDirectFetch] 찾은 등원 기록:', attendance);
+
+                // 3. 하원 처리 (상태 업데이트)
+                const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/attendance?id=eq.${attendance.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    signal: controller.signal,
+                    body: JSON.stringify({
+                        type: 'check_out',
+                        status: 'completed',
+                        check_out: new Date().toISOString()
+                    })
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!updateResponse.ok) {
+                    const errorText = await updateResponse.text();
+                    console.error('[performCheckOutDirectFetch] 하원 처리 실패:', errorText);
+                    return { success: false, error: `하원 처리 실패: ${errorText}` };
+                }
+
+                const updateResult = await updateResponse.json();
+                console.log('[performCheckOutDirectFetch] 하원 처리 성공:', updateResult);
+
+                // 4. 좌석이 있었다면 좌석 비우기
+                if (attendance.seat_id) {
+                    console.log('[performCheckOutDirectFetch] 좌석 비우기:', attendance.seat_id);
+                    const seatResponse = await fetch(`${SUPABASE_URL}/rest/v1/seats?id=eq.${attendance.seat_id}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            occupied: false,
+                            student_id: null,
+                            student_name: null,
+                            alarm_time: null,
+                            alarming: false,
+                            alarm_stopped: false
+                        })
+                    });
+
+                    if (seatResponse.ok) {
+                        console.log('[performCheckOutDirectFetch] 좌석 비우기 성공');
+                    } else {
+                        console.error('[performCheckOutDirectFetch] 좌석 비우기 실패:', await seatResponse.text());
+                    }
+                }
+
+                // 5. Web Push 알림 전송
+                await sendWebPushNotification(selectedStudent, 'check_out');
+
+                return { success: true, attendance };
+
+            } catch (error) {
+                console.error('[performCheckOutDirectFetch] 오류:', error);
                 return { success: false, error: error.message };
             }
         }
