@@ -226,12 +226,26 @@
                     }
                 } catch (error) {
                     console.error('학생 검색 오류 (Supabase 클라이언트):', error);
-                    console.error('에러 타입:', error.constructor.name);
+                    console.error('에러 타입:', error.constructor?.name);
                     console.error('에러 메시지:', error.message);
+                    console.error('에러 상세:', {
+                        message: error.message,
+                        hint: error.hint,
+                        details: error.details,
+                        code: error.code
+                    });
 
                     // 타임아웃 오류 메시지를 사용자 친화적으로 변경
                     let errorMessage = error.message || 'Unknown error';
-                    if (errorMessage.includes('timeout') || errorMessage.includes('AbortError')) {
+                    const isTimeoutError =
+                        errorMessage.includes('timeout') ||
+                        errorMessage.includes('AbortError') ||
+                        errorMessage.includes('aborted') ||
+                        error.hint?.includes('timeout') ||
+                        error.hint?.includes('aborted') ||
+                        error.details?.includes('AbortError');
+
+                    if (isTimeoutError) {
                         errorMessage = '요청 시간이 초과되었습니다. 다시 시도해주세요.';
                     }
 
@@ -827,7 +841,19 @@
                         .lt('date', today);
 
                     if (error) {
-                        console.error('[정리] 옛날 기록 조회 실패:', error);
+                        // 타임아웃/AbortError는 치명적이지 않으므로 조용히 처리
+                        const isTimeoutError =
+                            error.message?.includes('timeout') ||
+                            error.message?.includes('AbortError') ||
+                            error.message?.includes('aborted') ||
+                            error.hint?.includes('timeout') ||
+                            error.hint?.includes('aborted');
+
+                        if (isTimeoutError) {
+                            console.warn('[정리] 옛날 기록 조회 타임아웃 (무시)');
+                        } else {
+                            console.error('[정리] 옛날 기록 조회 실패:', error);
+                        }
                         return;
                     }
 
@@ -854,7 +880,17 @@
                     }
 
                 } catch (e) {
-                    console.error('[정리] 오류:', e);
+                    // 타임아웃/AbortError는 치명적이지 않으므로 조용히 처리
+                    const isTimeoutError =
+                        e.message?.includes('timeout') ||
+                        e.message?.includes('AbortError') ||
+                        e.message?.includes('aborted');
+
+                    if (isTimeoutError) {
+                        console.warn('[정리] 타임아웃 오류 (무시)');
+                    } else {
+                        console.error('[정리] 오류:', e);
+                    }
                 }
             } else {
                 // 데모 모드 - localStorage 정리
