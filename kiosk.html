@@ -132,6 +132,68 @@
             { id: 'demo-2', name: '강서준', parent_phone_last4: '4397' }
         ];
 
+        // ===== 학생별 보강시간/메모 조회 함수 =====
+        // 해당 날짜의 보강시간(분) 조회
+        function getMakeupMinutesForStudent(studentId, dateStr = null) {
+            const students = JSON.parse(localStorage.getItem('students') || '[]');
+            const student = students.find(s => s.id === studentId);
+            if (!student || !student.makeupTimes) return 0;
+
+            const today = dateStr || new Date().toISOString().split('T')[0];
+            const activeMakeup = student.makeupTimes.find(m => m.startDate <= today && m.endDate >= today);
+            return activeMakeup ? activeMakeup.additionalMinutes : 0;
+        }
+
+        // 해당 날짜의 활성 메모 목록 조회
+        function getMemosForStudent(studentId, dateStr = null) {
+            const students = JSON.parse(localStorage.getItem('students') || '[]');
+            const student = students.find(s => s.id === studentId);
+            if (!student || !student.memos) return [];
+
+            const today = dateStr || new Date().toISOString().split('T')[0];
+            return student.memos.filter(m => m.startDate <= today && m.endDate >= today);
+        }
+
+        // 학생 메모를 To-do 리스트에 추가
+        function addStudentMemosToTodo(studentId, studentName, dateStr = null) {
+            const memos = getMemosForStudent(studentId, dateStr);
+            if (!memos.length) return;
+
+            const todos = JSON.parse(localStorage.getItem('todos') || '[]');
+            const today = dateStr || new Date().toISOString().split('T')[0];
+
+            memos.forEach(memo => {
+                // 이미 추가된 메모인지 확인 (같은 날짜, 같은 학생, 같은 내용)
+                const alreadyExists = todos.some(t =>
+                    t.studentId === studentId &&
+                    t.memoId === memo.id &&
+                    t.date === today
+                );
+
+                if (!alreadyExists) {
+                    todos.push({
+                        id: 'todo-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+                        studentId: studentId,
+                        memoId: memo.id,
+                        text: `[${studentName}] ${memo.content}`,
+                        completed: false,
+                        date: today,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+            });
+
+            localStorage.setItem('todos', JSON.stringify(todos));
+
+            // storage 이벤트 발생하여 다른 탭에 알림
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: 'todos',
+                newValue: JSON.stringify(todos)
+            }));
+
+            console.log(`[Kiosk] ${studentName}의 메모 ${memos.length}개가 To-do에 추가됨`);
+        }
+
         function kioskPressKey(key) {
             if (kioskInput.length < 4) {
                 kioskInput += key;
@@ -314,12 +376,14 @@
                 const fetchResult = await performCheckInDirectFetch();
 
                 if (fetchResult.success) {
-                    const { now, alarmTime } = fetchResult;
+                    const { now, alarmTime, makeupMinutes } = fetchResult;
                     const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
                     const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
+                    // 보강시간이 있으면 메시지에 표시
+                    const makeupMsg = makeupMinutes > 0 ? `\n(보강 +${makeupMinutes}분 적용)` : '';
                     showAlert('success', '등원 완료',
-                        `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}`);
+                        `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}${makeupMsg}`);
                     kioskClearInput();
                 } else {
                     if (fetchResult.alreadyCheckedIn) {
@@ -331,8 +395,13 @@
             } else {
                 // 데모 모드 - localStorage에 저장
                 const now = new Date();
-                const alarmTime = new Date(now.getTime() + 60 * 60 * 1000); // +60분
                 const today = now.toISOString().split('T')[0];
+
+                // 보강시간 조회 (기본 60분 + 보강시간)
+                const makeupMinutes = getMakeupMinutesForStudent(selectedStudent.id, today);
+                const totalMinutes = 60 + makeupMinutes;
+                const alarmTime = new Date(now.getTime() + totalMinutes * 60 * 1000);
+                console.log(`[Kiosk] 알람시간 계산: 60분 + 보강${makeupMinutes}분 = ${totalMinutes}분`);
 
                 // 이미 등원했는지 확인 (waiting 또는 seated 상태) - 오늘 날짜만
                 const existingAttendance = getLocalAttendance();
@@ -366,11 +435,16 @@
                 existingAttendance.push(newAttendance);
                 localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
 
+                // 학생 메모를 To-do 리스트에 추가
+                addStudentMemosToTodo(selectedStudent.id, selectedStudent.name, today);
+
                 const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
                 const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
+                // 보강시간이 있으면 메시지에 표시
+                const makeupMsg = makeupMinutes > 0 ? `\n(보강 +${makeupMinutes}분 적용)` : '';
                 showAlert('success', '등원 완료 (데모 모드)',
-                    `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}`);
+                    `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}${makeupMsg}`);
                 kioskClearInput();
             }
         }
@@ -842,7 +916,12 @@
 
                 // 2. 등원 기록 추가
                 const now = new Date();
-                const alarmTime = new Date(now.getTime() + 60 * 60 * 1000);
+
+                // 보강시간 조회 (기본 60분 + 보강시간)
+                const makeupMinutes = getMakeupMinutesForStudent(selectedStudent.id, today);
+                const totalMinutes = 60 + makeupMinutes;
+                const alarmTime = new Date(now.getTime() + totalMinutes * 60 * 1000);
+                console.log(`[performCheckInDirectFetch] 알람시간 계산: 60분 + 보강${makeupMinutes}분 = ${totalMinutes}분`);
 
                 const insertResponse = await fetch(`${SUPABASE_URL}/rest/v1/attendance`, {
                     method: 'POST',
@@ -900,7 +979,10 @@
                     console.error('[Kiosk] Push 알림 백그라운드 에러:', err);
                 });
 
-                return { success: true, now, alarmTime };
+                // 5. 학생 메모를 To-do 리스트에 추가
+                addStudentMemosToTodo(selectedStudent.id, selectedStudent.name, today);
+
+                return { success: true, now, alarmTime, makeupMinutes };
 
             } catch (error) {
                 console.error('[performCheckInDirectFetch] 오류:', error);
