@@ -50,10 +50,29 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         currentUser = session.user;
         await loadUserProfile();
         updateAuthUI();
+
+        // DataService 초기화 (가맹점 데이터 로드)
+        if (typeof DataService !== 'undefined') {
+            try {
+                await DataService.initializeData();
+                console.log('[Auth] DataService 초기화 완료');
+                // 페이지별 데이터 새로고침 함수가 있으면 호출
+                if (typeof refreshPageData === 'function') {
+                    refreshPageData();
+                }
+            } catch (e) {
+                console.error('[Auth] DataService 초기화 실패:', e);
+            }
+        }
     } else {
         currentUser = null;
         currentProfile = null;
         updateAuthUI();
+
+        // DataService 캐시 클리어
+        if (typeof DataService !== 'undefined') {
+            DataService.clearCache();
+        }
     }
 });
 
