@@ -1983,6 +1983,24 @@
                 grid-template-columns: repeat(3, minmax(0, 1fr))
             }
         }
+
+        /* 모바일 최적화 */
+        @media (max-width: 639px) {
+            .seat-map-container {
+                min-width: 800px;
+            }
+
+            #check-in-list .check-in-card {
+                padding: 0.75rem;
+            }
+        }
+
+        @media (max-width: 1023px) {
+            .seat-map-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
     </style>
     <link type="text/css"
         href="https://fonts.googleapis.com/css2?family=Google+Symbols:opsz,wght,FILL,GRAD,ROND@24,400,0,0,50&amp;icon_names=link"
@@ -2428,9 +2446,9 @@
         </section>
 
         <!-- 5. 좌석모니터링 TAB -->
-        <section id="seats" class="tab-content max-w-6xl mx-auto px-6 py-12">
+        <section id="seats" class="tab-content max-w-6xl mx-auto px-3 lg:px-6 py-6 lg:py-12">
             <!-- To-Do List (가로형, 상단) -->
-            <div class="bg-white rounded-3xl p-6 shadow-lg border border-purple-50 mb-8">
+            <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-lg border border-purple-50 mb-4 lg:mb-8">
                 <div class="flex flex-col gap-4">
                     <!-- 상단: 제목 (중앙 정렬) -->
                     <div class="text-center py-2">
@@ -2471,30 +2489,30 @@
                         </button>
                     </div>
 
-                    <!-- 할 일 목록 (3열 배치) -->
-                    <div id="todo-list" class="grid grid-cols-3 gap-3 pt-2">
+                    <!-- 할 일 목록 (반응형 그리드) -->
+                    <div id="todo-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3 pt-2">
                         <!-- 할 일들이 동적으로 추가됨 -->
                     </div>
                 </div>
             </div>
 
             <!-- 좌석 영역 -->
-            <div class="flex gap-6">
+            <div class="flex flex-col lg:flex-row gap-4 lg:gap-6">
                 <!-- 왼쪽: 등원 목록 패널 -->
-                <div id="check-in-panel" class="w-72 shrink-0">
-                    <div class="bg-white rounded-3xl p-6 shadow-lg border border-pink-100 sticky top-4">
-                        <div class="flex items-center gap-2 mb-4">
-                            <div class="w-10 h-10 bg-gradient-to-br from-pink-400 to-purple-400 rounded-xl flex items-center justify-center">
-                                <span class="material-symbols-outlined text-white">school</span>
+                <div id="check-in-panel" class="w-full lg:w-72 lg:shrink-0 order-2 lg:order-1">
+                    <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-lg border border-pink-100 lg:sticky lg:top-4">
+                        <div class="flex items-center gap-2 mb-3 lg:mb-4">
+                            <div class="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-pink-400 to-purple-400 rounded-lg lg:rounded-xl flex items-center justify-center">
+                                <span class="material-symbols-outlined text-white text-lg lg:text-2xl">school</span>
                             </div>
                             <div class="flex-1">
-                                <h3 class="text-lg font-bold text-gray-800">등원 목록</h3>
+                                <h3 class="text-base lg:text-lg font-bold text-gray-800">등원 목록</h3>
                             </div>
                             <div class="w-8 h-8 flex items-center justify-center">
-                                <span id="refresh-icon" class="material-symbols-outlined text-pink-400 text-xl" style="animation: spin-slow 3s linear infinite;">refresh</span>
+                                <span id="refresh-icon" class="material-symbols-outlined text-pink-400 text-lg lg:text-xl" style="animation: spin-slow 3s linear infinite;">refresh</span>
                             </div>
                         </div>
-                        <div id="check-in-list" class="space-y-3 max-h-[900px] overflow-y-auto pr-1">
+                        <div id="check-in-list" class="space-y-2 lg:space-y-3 max-h-[300px] lg:max-h-[900px] overflow-y-auto pr-1">
                             <!-- 등원 학생 카드들이 동적으로 추가됨 -->
                             <div class="text-center text-gray-400 text-sm py-8">
                                 <span class="material-symbols-outlined text-4xl mb-2 block">hourglass_empty</span>
@@ -2505,32 +2523,32 @@
                 </div>
 
                 <!-- 오른쪽: 좌석 영역 -->
-                <div class="flex-1">
-                    <div class="bg-white rounded-3xl p-8 shadow-lg border border-teal-50 mb-8">
-                        <div class="mb-6 flex flex-wrap gap-3">
+                <div class="flex-1 order-1 lg:order-2">
+                    <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-8 shadow-lg border border-teal-50 mb-4 lg:mb-8">
+                        <div class="mb-4 lg:mb-6 flex flex-wrap gap-2 lg:gap-3">
                             <button onclick="addSeat();"
-                                class="px-6 py-2.5 bg-gradient-to-r from-teal-400 to-teal-500 text-white font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
-                                <span class="material-symbols-outlined inline mr-1 text-sm">add</span>좌석 추가
+                                class="px-3 py-1.5 lg:px-6 lg:py-2.5 bg-gradient-to-r from-teal-400 to-teal-500 text-white text-xs lg:text-base font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
+                                <span class="material-symbols-outlined inline mr-1 text-xs lg:text-sm">add</span>좌석 추가
                             </button>
                             <button onclick="resetAllSeats()"
-                                class="px-6 py-2.5 bg-gradient-to-r from-purple-400 to-purple-500 text-white font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
-                                <span class="material-symbols-outlined inline mr-1 text-sm">restart_alt</span>모든 좌석 초기화
+                                class="px-3 py-1.5 lg:px-6 lg:py-2.5 bg-gradient-to-r from-purple-400 to-purple-500 text-white text-xs lg:text-base font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
+                                <span class="material-symbols-outlined inline mr-1 text-xs lg:text-sm">restart_alt</span><span class="hidden sm:inline">모든 좌석 </span>초기화
                             </button>
                             <button onclick="stopAllAlarms()"
-                                class="px-6 py-2.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
-                                <span class="material-symbols-outlined inline mr-1 text-sm">alarm_off</span>모든 알람중지
+                                class="px-3 py-1.5 lg:px-6 lg:py-2.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs lg:text-base font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
+                                <span class="material-symbols-outlined inline mr-1 text-xs lg:text-sm">alarm_off</span><span class="hidden sm:inline">모든 </span>알람중지
                             </button>
                             <button onclick="clearAllSeats()"
-                                class="px-6 py-2.5 bg-gradient-to-r from-red-400 to-red-500 text-white font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
-                                <span class="material-symbols-outlined inline mr-1 text-sm">delete_sweep</span>전부 삭제
+                                class="px-3 py-1.5 lg:px-6 lg:py-2.5 bg-gradient-to-r from-red-400 to-red-500 text-white text-xs lg:text-base font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105">
+                                <span class="material-symbols-outlined inline mr-1 text-xs lg:text-sm">delete_sweep</span>전부 삭제
                             </button>
                             <a href="kiosk.html" target="_blank"
-                                class="px-6 py-2.5 bg-gradient-to-r from-indigo-400 to-indigo-500 text-white font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105 inline-flex items-center">
-                                <span class="material-symbols-outlined inline mr-1 text-sm">touch_app</span>키오스크
+                                class="px-3 py-1.5 lg:px-6 lg:py-2.5 bg-gradient-to-r from-indigo-400 to-indigo-500 text-white text-xs lg:text-base font-semibold rounded-full hover:shadow-lg transition transform hover:scale-105 inline-flex items-center">
+                                <span class="material-symbols-outlined inline mr-1 text-xs lg:text-sm">touch_app</span>키오스크
                             </a>
                         </div>
 
-                        <div class="bg-gradient-to-br from-teal-50 to-blue-50 rounded-2xl p-8 border-2 border-dashed border-teal-300 min-h-[1050px] relative seat-map-container"
+                        <div class="bg-gradient-to-br from-teal-50 to-blue-50 rounded-xl lg:rounded-2xl p-4 lg:p-8 border-2 border-dashed border-teal-300 min-h-[400px] lg:min-h-[1050px] relative seat-map-container overflow-x-auto"
                             id="seat-container"
                             ondragover="handleDragOver(event)"
                             ondrop="handleDropOnContainer(event)">
