@@ -172,7 +172,8 @@
             return activeMemos;
         }
 
-        // 학생 메모를 To-do 리스트에 추가
+        // 학생 메모를 To-do 리스트에 추가 (franchise.html과 동일한 구조 사용)
+        // franchise.html todos 구조: { "2026-02-05": [{ text, completed, color, studentId, memoId }], ... }
         function addStudentMemosToTodo(studentId, studentName, dateStr = null) {
             console.log(`[To-do 추가] 호출됨: studentId=${studentId}, studentName=${studentName}`);
             const memos = getMemosForStudent(studentId, dateStr, studentName);
@@ -182,36 +183,39 @@
                 return;
             }
 
-            // todos가 배열인지 확인하고, 아니면 빈 배열로 초기화
-            let todos = [];
+            // todos는 날짜별 객체 구조 (franchise.html과 동일)
+            let todos = {};
             try {
-                const stored = JSON.parse(localStorage.getItem('todos') || '[]');
-                todos = Array.isArray(stored) ? stored : [];
+                const stored = JSON.parse(localStorage.getItem('todos') || '{}');
+                // 객체인지 확인 (배열이면 빈 객체로 초기화)
+                todos = (stored && typeof stored === 'object' && !Array.isArray(stored)) ? stored : {};
             } catch (e) {
-                console.warn('[addStudentMemosToTodo] todos 파싱 실패, 빈 배열로 초기화');
-                todos = [];
+                console.warn('[addStudentMemosToTodo] todos 파싱 실패, 빈 객체로 초기화');
+                todos = {};
             }
 
             const today = dateStr || new Date().toISOString().split('T')[0];
 
+            // 해당 날짜의 할일 배열 초기화
+            if (!todos[today]) {
+                todos[today] = [];
+            }
+
             memos.forEach(memo => {
-                // 이미 추가된 메모인지 확인 (같은 날짜, 같은 학생, 같은 내용)
-                const alreadyExists = todos.some(t =>
-                    t && t.studentId === studentId &&
-                    t.memoId === memo.id &&
-                    t.date === today
+                // 이미 추가된 메모인지 확인 (같은 학생, 같은 메모 ID)
+                const alreadyExists = todos[today].some(t =>
+                    t && t.studentId === studentId && t.memoId === memo.id
                 );
 
                 if (!alreadyExists) {
-                    todos.push({
-                        id: 'todo-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                        studentId: studentId,
-                        memoId: memo.id,
+                    todos[today].push({
                         text: `[${studentName}] ${memo.content}`,
                         completed: false,
-                        date: today,
-                        createdAt: new Date().toISOString()
+                        color: 'hsl(200, 85%, 92%)', // 하늘색 파스텔톤
+                        studentId: studentId,
+                        memoId: memo.id
                     });
+                    console.log(`[To-do 추가] 메모 추가됨: [${studentName}] ${memo.content}`);
                 }
             });
 
