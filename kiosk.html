@@ -170,13 +170,22 @@
             const memos = getMemosForStudent(studentId, dateStr, studentName);
             if (!memos.length) return;
 
-            const todos = JSON.parse(localStorage.getItem('todos') || '[]');
+            // todos가 배열인지 확인하고, 아니면 빈 배열로 초기화
+            let todos = [];
+            try {
+                const stored = JSON.parse(localStorage.getItem('todos') || '[]');
+                todos = Array.isArray(stored) ? stored : [];
+            } catch (e) {
+                console.warn('[addStudentMemosToTodo] todos 파싱 실패, 빈 배열로 초기화');
+                todos = [];
+            }
+
             const today = dateStr || new Date().toISOString().split('T')[0];
 
             memos.forEach(memo => {
                 // 이미 추가된 메모인지 확인 (같은 날짜, 같은 학생, 같은 내용)
                 const alreadyExists = todos.some(t =>
-                    t.studentId === studentId &&
+                    t && t.studentId === studentId &&
                     t.memoId === memo.id &&
                     t.date === today
                 );
