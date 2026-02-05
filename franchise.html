@@ -5626,7 +5626,7 @@
             const student = students.find(s => s.id === studentId);
 
             if (!student) {
-                alert('학생 정보를 찾을 수 없습니다.');
+                showAlertModal('알림', '학생 정보를 찾을 수 없습니다.', '⚠️');
                 return;
             }
 
@@ -5685,7 +5685,7 @@
             localStorage.setItem('students', JSON.stringify(students));
             document.getElementById('studentModalName').textContent = students[idx].name;
             loadStudentManagementList();
-            alert('저장되었습니다.');
+            showAlertModal('저장 완료', '학생 정보가 저장되었습니다.', '✅');
         }
 
         // 성적 목록 렌더링
@@ -5726,7 +5726,7 @@
             const memo = document.getElementById('newGradeMemo').value.trim();
 
             if (!date || !subject || isNaN(score)) {
-                alert('날짜, 과목, 점수를 입력해주세요.');
+                showAlertModal('입력 오류', '날짜, 과목, 점수를 입력해주세요.', '⚠️');
                 return;
             }
 
@@ -5753,8 +5753,15 @@
         }
 
         // 성적 삭제
-        function deleteStudentGrade(gradeId) {
-            if (!confirm('이 성적을 삭제하시겠습니까?')) return;
+        async function deleteStudentGrade(gradeId) {
+            const confirmed = await showConfirmModal(
+                '성적 삭제',
+                '이 성적을 삭제하시겠습니까?',
+                '🗑️',
+                '삭제',
+                '취소'
+            );
+            if (!confirmed) return;
 
             const students = JSON.parse(localStorage.getItem('students') || '[]');
             const idx = students.findIndex(s => s.id === currentStudentId);
@@ -5793,7 +5800,7 @@
             const content = document.getElementById('newFeedbackContent').value.trim();
 
             if (!date || !content) {
-                alert('날짜와 내용을 입력해주세요.');
+                showAlertModal('입력 오류', '날짜와 내용을 입력해주세요.', '⚠️');
                 return;
             }
 
@@ -5816,8 +5823,15 @@
         }
 
         // 피드백 삭제
-        function deleteStudentFeedback(feedbackId) {
-            if (!confirm('이 피드백을 삭제하시겠습니까?')) return;
+        async function deleteStudentFeedback(feedbackId) {
+            const confirmed = await showConfirmModal(
+                '피드백 삭제',
+                '이 피드백을 삭제하시겠습니까?',
+                '🗑️',
+                '삭제',
+                '취소'
+            );
+            if (!confirmed) return;
 
             const students = JSON.parse(localStorage.getItem('students') || '[]');
             const idx = students.findIndex(s => s.id === currentStudentId);
@@ -5868,12 +5882,12 @@
             const content = document.getElementById('newMemoContent').value.trim();
 
             if (!startDate || !endDate || !content) {
-                alert('시작일, 종료일, 내용을 입력해주세요.');
+                showAlertModal('입력 오류', '시작일, 종료일, 내용을 입력해주세요.', '⚠️');
                 return;
             }
 
             if (startDate > endDate) {
-                alert('종료일은 시작일 이후여야 합니다.');
+                showAlertModal('날짜 오류', '종료일은 시작일 이후여야 합니다.', '📅');
                 return;
             }
 
@@ -5898,8 +5912,15 @@
         }
 
         // 메모 삭제
-        function deleteStudentMemo(memoId) {
-            if (!confirm('이 메모를 삭제하시겠습니까?')) return;
+        async function deleteStudentMemo(memoId) {
+            const confirmed = await showConfirmModal(
+                '메모 삭제',
+                '이 메모를 삭제하시겠습니까?',
+                '🗑️',
+                '삭제',
+                '취소'
+            );
+            if (!confirmed) return;
 
             const students = JSON.parse(localStorage.getItem('students') || '[]');
             const idx = students.findIndex(s => s.id === currentStudentId);
@@ -5944,12 +5965,12 @@
             const content = document.getElementById('editMemoContent').value.trim();
 
             if (!startDate || !endDate || !content) {
-                alert('시작일, 종료일, 내용을 입력해주세요.');
+                showAlertModal('입력 오류', '시작일, 종료일, 내용을 입력해주세요.', '⚠️');
                 return;
             }
 
             if (startDate > endDate) {
-                alert('종료일은 시작일 이후여야 합니다.');
+                showAlertModal('날짜 오류', '종료일은 시작일 이후여야 합니다.', '📅');
                 return;
             }
 
@@ -5972,7 +5993,7 @@
             renderMemosList(students[idx]);
             loadStudentManagementList();
             closeEditMemoModal();
-            alert('메모가 수정되었습니다.');
+            showAlertModal('수정 완료', '메모가 수정되었습니다.', '✅');
         }
 
         // 보강시간 목록 렌더링
@@ -6018,12 +6039,12 @@
             const reason = document.getElementById('newMakeupReason').value.trim();
 
             if (!startDate || !endDate || isNaN(additionalMinutes) || additionalMinutes <= 0) {
-                alert('시작일, 종료일, 추가 시간을 입력해주세요.');
+                showAlertModal('입력 오류', '시작일, 종료일, 추가 시간을 입력해주세요.', '⚠️');
                 return;
             }
 
             if (startDate > endDate) {
-                alert('종료일은 시작일 이후여야 합니다.');
+                showAlertModal('날짜 오류', '종료일은 시작일 이후여야 합니다.', '📅');
                 return;
             }
 
@@ -6042,7 +6063,7 @@
             });
 
             if (hasOverlap) {
-                alert('이미 보강 시간이 설정된 날짜와 겹칩니다.\n다른 날짜를 선택해주세요.');
+                showAlertModal('날짜 겹침', '이미 보강 시간이 설정된 날짜와 겹칩니다.<br>다른 날짜를 선택해주세요.', '🚫');
                 return;
             }
 
@@ -6062,8 +6083,15 @@
         }
 
         // 보강시간 삭제
-        function deleteMakeupTime(makeupId) {
-            if (!confirm('이 보강시간을 삭제하시겠습니까?')) return;
+        async function deleteMakeupTime(makeupId) {
+            const confirmed = await showConfirmModal(
+                '보강시간 삭제',
+                '이 보강시간을 삭제하시겠습니까?',
+                '🗑️',
+                '삭제',
+                '취소'
+            );
+            if (!confirmed) return;
 
             const students = JSON.parse(localStorage.getItem('students') || '[]');
             const idx = students.findIndex(s => s.id === currentStudentId);
@@ -6154,12 +6182,12 @@
             const reason = document.getElementById('editMakeupReason').value.trim();
 
             if (!startDate || !endDate || isNaN(additionalMinutes) || additionalMinutes <= 0) {
-                alert('시작일, 종료일, 추가 시간을 입력해주세요.');
+                showAlertModal('입력 오류', '시작일, 종료일, 추가 시간을 입력해주세요.', '⚠️');
                 return;
             }
 
             if (startDate > endDate) {
-                alert('종료일은 시작일 이후여야 합니다.');
+                showAlertModal('날짜 오류', '종료일은 시작일 이후여야 합니다.', '📅');
                 return;
             }
 
@@ -6174,7 +6202,7 @@
             });
 
             if (hasOverlap) {
-                alert('이미 보강 시간이 설정된 날짜와 겹칩니다.\n다른 날짜를 선택해주세요.');
+                showAlertModal('날짜 겹침', '이미 보강 시간이 설정된 날짜와 겹칩니다.<br>다른 날짜를 선택해주세요.', '🚫');
                 return;
             }
 
@@ -6218,7 +6246,7 @@
             const parentPhone = document.getElementById('addStudentPhone').value.trim();
 
             if (!name) {
-                alert('학생 이름을 입력해주세요.');
+                showAlertModal('입력 오류', '학생 이름을 입력해주세요.', '⚠️');
                 return;
             }
 
@@ -6236,12 +6264,19 @@
             localStorage.setItem('students', JSON.stringify(students));
             loadStudentManagementList();
             closeAddStudentModal();
-            alert('학생이 추가되었습니다.');
+            showAlertModal('추가 완료', '학생이 추가되었습니다.', '✅');
         }
 
         // 학생 삭제
-        function deleteStudent() {
-            if (!confirm('정말 이 학생을 삭제하시겠습니까?\n모든 정보가 삭제됩니다.')) return;
+        async function deleteStudent() {
+            const confirmed = await showConfirmModal(
+                '학생 삭제',
+                '정말 이 학생을 삭제하시겠습니까?<br>모든 정보가 삭제됩니다.',
+                '🗑️',
+                '삭제',
+                '취소'
+            );
+            if (!confirmed) return;
 
             const students = JSON.parse(localStorage.getItem('students') || '[]');
             const filtered = students.filter(s => s.id !== currentStudentId);
@@ -6249,7 +6284,7 @@
 
             closeStudentDetailModal();
             loadStudentManagementList();
-            alert('학생이 삭제되었습니다.');
+            showAlertModal('삭제 완료', '학생이 삭제되었습니다.', '✅');
         }
 
         // switchTab 함수 수정 - 학생관리 탭 처리 추가
