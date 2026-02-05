@@ -2461,9 +2461,12 @@
             <!-- To-Do List (가로형, 상단) -->
             <div class="bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-lg border border-purple-50 mb-4 lg:mb-8">
                 <div class="flex flex-col gap-4">
-                    <!-- 상단: 제목 (중앙 정렬) -->
-                    <div class="text-center py-2">
+                    <!-- 상단: 제목 (중앙 정렬 + 새로고침 버튼) -->
+                    <div class="text-center py-2 flex items-center justify-center gap-2">
                         <h3 class="text-lg font-bold text-gray-800">To-Do List</h3>
+                        <button onclick="loadTodos(); loadTodosForDate();" class="w-6 h-6 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-500 flex items-center justify-center transition" title="새로고침">
+                            <span class="material-symbols-outlined text-sm">refresh</span>
+                        </button>
                     </div>
 
                     <!-- 날짜 선택 & 진행률 (같은 행) -->
@@ -5116,8 +5119,20 @@
             }).join('');
         }
 
+        // 로그인이 필요한 탭 목록
+        const authRequiredTabs = ['attendance', 'students', 'monitor'];
+
         // Tab switching logic
         function switchTab(tabId) {
+            // 로그인이 필요한 탭인지 확인
+            if (authRequiredTabs.includes(tabId)) {
+                if (!currentUser) {
+                    alert('이 기능은 로그인이 필요합니다.');
+                    window.location.href = `login.html?redirect=${encodeURIComponent(window.location.pathname)}`;
+                    return;
+                }
+            }
+
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             window.scrollTo(0, 0);
@@ -5459,6 +5474,19 @@
             // 1초마다 카운트다운 업데이트
             setInterval(updateCheckInCountdowns, 1000);
 
+            // 1초마다 To-do 리스트 실시간 업데이트 (키오스크 등원 메모 확인)
+            let lastTodosHash = '';
+            setInterval(() => {
+                const currentTodos = localStorage.getItem('todos');
+                const currentHash = currentTodos || '';
+                if (currentHash !== lastTodosHash) {
+                    console.log('[franchise] To-do 변경 감지, 갱신 중...');
+                    lastTodosHash = currentHash;
+                    loadTodos();
+                    loadTodosForDate();
+                }
+            }, 1000);
+
             // 다른 탭에서 localStorage 변경 시 자동 업데이트
             window.addEventListener('storage', (e) => {
                 if (e.key === 'demo_attendance') {
@@ -5478,6 +5506,11 @@
                             console.error('[storage 이벤트] 좌석 동기화 실패:', e);
                         }
                     }
+                } else if (e.key === 'todos') {
+                    console.log('[storage 이벤트] todos 변경됨 - 키오스크 등원 메모 추가');
+                    // To-do 데이터 다시 로드
+                    loadTodos();
+                    loadTodosForDate();
                 }
             });
         });

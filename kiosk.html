@@ -116,10 +116,24 @@
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="data-service.js"></script>
 
     <script>
         // Supabase 클라이언트 (DOMContentLoaded 후 할당)
         let sb = null;
+
+        // 페이지 로드 시 로그인 체크
+        async function checkKioskAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) {
+                alert('키오스크를 사용하려면 로그인이 필요합니다.');
+                window.location.href = `login.html?redirect=${encodeURIComponent(window.location.pathname)}`;
+                return false;
+            }
+            console.log('[Kiosk] 로그인 확인됨:', session.user.email);
+            return true;
+        }
 
         let kioskInput = '';
         let foundStudents = [];
@@ -221,13 +235,7 @@
 
             localStorage.setItem('todos', JSON.stringify(todos));
 
-            // storage 이벤트 발생하여 다른 탭에 알림
-            window.dispatchEvent(new StorageEvent('storage', {
-                key: 'todos',
-                newValue: JSON.stringify(todos)
-            }));
-
-            console.log(`[Kiosk] ${studentName}의 메모 ${memos.length}개가 To-do에 추가됨`);
+            console.log(`[Kiosk] ${studentName}의 메모 ${memos.length}개가 To-do에 추가됨 (storage 이벤트 자동 발생됨)`);
         }
 
         function kioskPressKey(key) {
