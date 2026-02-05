@@ -547,6 +547,12 @@
             cursor: grabbing !important;
             z-index: 1000 !important;
             user-select: none !important;
+            touch-action: none !important;
+        }
+
+        /* 드래그 가능한 좌석 터치 동작 제어 */
+        [data-draggable="true"] {
+            touch-action: none;
         }
 
         @keyframes bounce-in {
@@ -3856,58 +3862,65 @@
         let dragPendingX = null;
         let dragPendingY = null;
 
-        // 전역 마우스 이벤트 핸들러 (한 번만 등록)
-        document.addEventListener('mousemove', (e) => {
+        // ========== 드래그 헬퍼 함수 (마우스/터치 공통) ==========
+        function startDrag(seatElement, seatId, clientX, clientY) {
+            dragState.isDragging = true;
+            dragState.seatElement = seatElement;
+            dragState.seatId = seatId;
+            dragState.startX = clientX;
+            dragState.startY = clientY;
+            dragState.initialLeft = parseInt(seatElement.style.left) || 0;
+            dragState.initialTop = parseInt(seatElement.style.top) || 0;
+
+            dragPendingX = dragState.initialLeft;
+            dragPendingY = dragState.initialTop;
+
+            seatElement.classList.add('seat-dragging');
+            seatElement.style.willChange = 'transform';
+            seatElement.style.transform = 'translate3d(0, 0, 0) scale(1.02)';
+        }
+
+        function moveDrag(clientX, clientY) {
             if (!dragState.isDragging || !dragState.seatElement) return;
-            e.preventDefault();
 
             const seatElement = dragState.seatElement;
             const container = seatElement.parentElement;
             if (!container) return;
 
-            // 이동 거리 계산
-            const deltaX = e.clientX - dragState.startX;
-            const deltaY = e.clientY - dragState.startY;
+            const deltaX = clientX - dragState.startX;
+            const deltaY = clientY - dragState.startY;
 
-            // 새로운 예상 위치 (경계 검사용)
             let newX = dragState.initialLeft + deltaX;
             let newY = dragState.initialTop + deltaY;
 
-            // 경계 검사
             newX = Math.max(0, Math.min(newX, container.offsetWidth - seatElement.offsetWidth));
             newY = Math.max(0, Math.min(newY, container.offsetHeight - seatElement.offsetHeight));
 
-            // 실제 이동해야 할 거리 (경계 적용됨)
             const moveX = newX - dragState.initialLeft;
             const moveY = newY - dragState.initialTop;
 
-            // 좌표 저장 (최종 반영용)
             dragPendingX = newX;
             dragPendingY = newY;
 
-            // requestAnimationFrame으로 DOM 업데이트 (GPU 가속 활용)
             if (!dragAnimationId) {
                 dragAnimationId = requestAnimationFrame(() => {
                     if (dragState.isDragging && dragState.seatElement) {
-                        // GPU 가속 transform으로 부드러운 이동
                         dragState.seatElement.style.transform = `translate3d(${moveX}px, ${moveY}px, 0) scale(1.02)`;
                     }
                     dragAnimationId = null;
                 });
             }
-        });
+        }
 
-        document.addEventListener('mouseup', () => {
+        function endDrag() {
             if (dragState.isDragging && dragState.seatElement) {
                 const seatElement = dragState.seatElement;
 
-                // 애니메이션 취소
                 if (dragAnimationId) {
                     cancelAnimationFrame(dragAnimationId);
                     dragAnimationId = null;
                 }
 
-                // 최종 위치 적용
                 if (dragPendingX !== null && dragPendingY !== null) {
                     seatElement.style.transform = '';
                     seatElement.style.left = dragPendingX + 'px';
@@ -3916,7 +3929,6 @@
                     seatElement.style.transform = '';
                 }
 
-                // 드래그 종료 후 스타일 복구
                 seatElement.classList.remove('seat-dragging');
                 seatElement.style.willChange = '';
 
@@ -3933,35 +3945,48 @@
             dragState.seatId = null;
             dragPendingX = null;
             dragPendingY = null;
+        }
+
+        // ========== 전역 마우스 이벤트 핸들러 ==========
+        document.addEventListener('mousemove', (e) => {
+            if (!dragState.isDragging) return;
+            e.preventDefault();
+            moveDrag(e.clientX, e.clientY);
         });
 
-        // 좌석 드래그 초기화 (mousedown만 등록)
+        document.addEventListener('mouseup', endDrag);
+
+        // ========== 전역 터치 이벤트 핸들러 (모바일 지원) ==========
+        document.addEventListener('touchmove', (e) => {
+            if (!dragState.isDragging) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            moveDrag(touch.clientX, touch.clientY);
+        }, { passive: false });
+
+        document.addEventListener('touchend', endDrag);
+        document.addEventListener('touchcancel', endDrag);
+
+        // 좌석 드래그 초기화 (마우스 + 터치 지원)
         function makeSeatDraggable(seatElement, seatId) {
+            // 터치 드래그 지원 속성 추가
+            seatElement.setAttribute('data-draggable', 'true');
+
+            // 마우스 드래그
             seatElement.addEventListener('mousedown', (e) => {
                 if (e.target.closest('button')) return;
                 if (e.button !== 0) return;
-
-                dragState.isDragging = true;
-                dragState.seatElement = seatElement;
-                dragState.seatId = seatId;
-
-                // 초기 상태 저장
-                dragState.startX = e.clientX;
-                dragState.startY = e.clientY;
-                dragState.initialLeft = parseInt(seatElement.style.left) || 0;
-                dragState.initialTop = parseInt(seatElement.style.top) || 0;
-
-                // 초기화
-                dragPendingX = dragState.initialLeft;
-                dragPendingY = dragState.initialTop;
-
-                // 드래그 스타일 적용 (CSS 클래스로 트랜지션 비활성화)
-                seatElement.classList.add('seat-dragging');
-                seatElement.style.willChange = 'transform';
-                seatElement.style.transform = 'translate3d(0, 0, 0) scale(1.02)';
-
+                startDrag(seatElement, seatId, e.clientX, e.clientY);
                 e.preventDefault();
             });
+
+            // 터치 드래그 (모바일)
+            seatElement.addEventListener('touchstart', (e) => {
+                if (e.target.closest('button')) return;
+                const touch = e.touches[0];
+                startDrag(seatElement, seatId, touch.clientX, touch.clientY);
+                e.preventDefault();
+            }, { passive: false });
         }
 
         // ========== 등원 학생 드래그 앤 드롭 ==========
