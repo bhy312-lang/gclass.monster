@@ -569,25 +569,41 @@
 
                 localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
 
-                // 좌석에 배정되어 있었다면 좌석 비우기
-                if (attendance.seat_id) {
-                    try {
-                        const seatsData = localStorage.getItem('seats');
-                        if (seatsData) {
-                            const seats = JSON.parse(seatsData);
-                            const seatIndex = seats.findIndex(s => s.id == attendance.seat_id);
-                            if (seatIndex !== -1) {
-                                seats[seatIndex].name = '';
-                                seats[seatIndex].occupied = false;
-                                seats[seatIndex].alarmTime = null;
-                                seats[seatIndex].alarming = false;
-                                seats[seatIndex].alarmStopped = false;
-                                localStorage.setItem('seats', JSON.stringify(seats));
-                            }
+                // 좌석에 배정되어 있었다면 좌석 비우기 (seat_id 또는 학생 이름으로 찾기)
+                try {
+                    const seatsData = localStorage.getItem('seats');
+                    if (seatsData) {
+                        const seats = JSON.parse(seatsData);
+                        let seatIndex = -1;
+
+                        // 1. seat_id로 찾기
+                        if (attendance.seat_id) {
+                            seatIndex = seats.findIndex(s => s.id == attendance.seat_id);
                         }
-                    } catch (e) {
-                        console.error('Error clearing seat:', e);
+
+                        // 2. seat_id가 없거나 못 찾으면 학생 이름으로 찾기
+                        if (seatIndex === -1) {
+                            seatIndex = seats.findIndex(s => s.name === selectedStudent.name);
+                        }
+
+                        if (seatIndex !== -1) {
+                            console.log(`[하원] 좌석 비우기: ${seats[seatIndex].name} -> 빈 좌석`);
+                            seats[seatIndex].name = '';
+                            seats[seatIndex].occupied = false;
+                            seats[seatIndex].alarmTime = null;
+                            seats[seatIndex].alarming = false;
+                            seats[seatIndex].alarmStopped = false;
+                            localStorage.setItem('seats', JSON.stringify(seats));
+
+                            // storage 이벤트 발생하여 다른 탭에 알림
+                            window.dispatchEvent(new StorageEvent('storage', {
+                                key: 'seats',
+                                newValue: JSON.stringify(seats)
+                            }));
+                        }
                     }
+                } catch (e) {
+                    console.error('Error clearing seat:', e);
                 }
 
                 const now = new Date();
@@ -1130,9 +1146,10 @@
                 const updateResult = await updateResponse.json();
                 console.log('[performCheckOutDirectFetch] 하원 처리 성공:', updateResult);
 
-                // 4. 좌석이 있었다면 좌석 비우기
+                // 4. 좌석 비우기 (Supabase + localStorage 둘 다)
+                // Supabase 좌석 비우기
                 if (attendance.seat_id) {
-                    console.log('[performCheckOutDirectFetch] 좌석 비우기:', attendance.seat_id);
+                    console.log('[performCheckOutDirectFetch] Supabase 좌석 비우기:', attendance.seat_id);
                     const seatResponse = await fetch(`${SUPABASE_URL}/rest/v1/seats?id=eq.${attendance.seat_id}`, {
                         method: 'PATCH',
                         headers: {
@@ -1151,10 +1168,47 @@
                     });
 
                     if (seatResponse.ok) {
-                        console.log('[performCheckOutDirectFetch] 좌석 비우기 성공');
+                        console.log('[performCheckOutDirectFetch] Supabase 좌석 비우기 성공');
                     } else {
-                        console.error('[performCheckOutDirectFetch] 좌석 비우기 실패:', await seatResponse.text());
+                        console.error('[performCheckOutDirectFetch] Supabase 좌석 비우기 실패:', await seatResponse.text());
                     }
+                }
+
+                // localStorage 좌석 비우기 (seat_id 또는 학생 이름으로 찾기)
+                try {
+                    const seatsData = localStorage.getItem('seats');
+                    if (seatsData) {
+                        const seats = JSON.parse(seatsData);
+                        let seatIndex = -1;
+
+                        // 1. seat_id로 찾기
+                        if (attendance.seat_id) {
+                            seatIndex = seats.findIndex(s => s.id == attendance.seat_id);
+                        }
+
+                        // 2. seat_id가 없거나 못 찾으면 학생 이름으로 찾기
+                        if (seatIndex === -1) {
+                            seatIndex = seats.findIndex(s => s.name === selectedStudent.name);
+                        }
+
+                        if (seatIndex !== -1) {
+                            console.log(`[performCheckOutDirectFetch] localStorage 좌석 비우기: ${seats[seatIndex].name}`);
+                            seats[seatIndex].name = '';
+                            seats[seatIndex].occupied = false;
+                            seats[seatIndex].alarmTime = null;
+                            seats[seatIndex].alarming = false;
+                            seats[seatIndex].alarmStopped = false;
+                            localStorage.setItem('seats', JSON.stringify(seats));
+
+                            // storage 이벤트 발생
+                            window.dispatchEvent(new StorageEvent('storage', {
+                                key: 'seats',
+                                newValue: JSON.stringify(seats)
+                            }));
+                        }
+                    }
+                } catch (e) {
+                    console.error('[performCheckOutDirectFetch] localStorage 좌석 비우기 실패:', e);
                 }
 
                 // 5. Web Push 알림 전송 (비동기 - 팝업 지연 방지)
