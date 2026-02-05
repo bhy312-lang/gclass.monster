@@ -159,16 +159,28 @@
         // 해당 날짜의 활성 메모 목록 조회
         function getMemosForStudent(studentId, dateStr = null, studentName = null) {
             const student = findStudentInManagement(studentId, studentName || (selectedStudent ? selectedStudent.name : null));
-            if (!student || !student.memos) return [];
+            console.log(`[메모 조회] 학생 검색: id=${studentId}, name=${studentName}, 찾음=${student ? student.name : 'null'}`);
+
+            if (!student || !student.memos) {
+                console.log(`[메모 조회] 학생 없음 또는 메모 없음`);
+                return [];
+            }
 
             const today = dateStr || new Date().toISOString().split('T')[0];
-            return student.memos.filter(m => m.startDate <= today && m.endDate >= today);
+            const activeMemos = student.memos.filter(m => m.startDate <= today && m.endDate >= today);
+            console.log(`[메모 조회] 날짜: ${today}, 전체 메모: ${student.memos.length}개, 활성 메모: ${activeMemos.length}개`);
+            return activeMemos;
         }
 
         // 학생 메모를 To-do 리스트에 추가
         function addStudentMemosToTodo(studentId, studentName, dateStr = null) {
+            console.log(`[To-do 추가] 호출됨: studentId=${studentId}, studentName=${studentName}`);
             const memos = getMemosForStudent(studentId, dateStr, studentName);
-            if (!memos.length) return;
+            console.log(`[To-do 추가] 조회된 메모 수: ${memos.length}`);
+            if (!memos.length) {
+                console.log(`[To-do 추가] 추가할 메모가 없음`);
+                return;
+            }
 
             // todos가 배열인지 확인하고, 아니면 빈 배열로 초기화
             let todos = [];

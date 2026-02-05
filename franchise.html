@@ -3079,6 +3079,51 @@
             </div>
         </div>
 
+        <!-- 메모 수정 모달 -->
+        <div id="editMemoModal" class="fixed inset-0 bg-black/50 z-[60] hidden items-center justify-center p-4">
+            <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                        <span class="material-symbols-outlined">edit</span>
+                        메모 수정
+                    </h3>
+                    <button onclick="closeEditMemoModal()" class="text-white hover:bg-white/20 rounded-full p-1 transition">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <input type="hidden" id="editMemoId">
+                    <div class="grid gap-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">시작일</label>
+                                <input type="date" id="editMemoStartDate"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">종료일</label>
+                                <input type="date" id="editMemoEndDate"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">메모 내용</label>
+                            <textarea id="editMemoContent" rows="3"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="border-t border-gray-200 px-6 py-4 bg-gray-50 flex justify-end gap-3">
+                    <button onclick="closeEditMemoModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition">
+                        취소
+                    </button>
+                    <button onclick="saveEditedMemo()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition">
+                        저장
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- 6. 결제 TAB -->
         <section id="payment" class="tab-content py-20 bg-slate-900 -mx-6 px-6">
             <div class="max-w-6xl mx-auto">
@@ -5770,9 +5815,14 @@
                         </div>
                         <p class="text-gray-800">${m.content}</p>
                     </div>
-                    <button onclick="deleteStudentMemo('${m.id}')" class="text-red-400 hover:text-red-600 p-1 ml-2">
-                        <span class="material-symbols-outlined text-lg">delete</span>
-                    </button>
+                    <div class="flex gap-1 ml-2">
+                        <button onclick="openEditMemoModal('${m.id}')" class="text-blue-400 hover:text-blue-600 p-1" title="수정">
+                            <span class="material-symbols-outlined text-lg">edit</span>
+                        </button>
+                        <button onclick="deleteStudentMemo('${m.id}')" class="text-red-400 hover:text-red-600 p-1" title="삭제">
+                            <span class="material-symbols-outlined text-lg">delete</span>
+                        </button>
+                    </div>
                 </div>
             `}).join('');
         }
@@ -5826,6 +5876,69 @@
             localStorage.setItem('students', JSON.stringify(students));
             renderMemosList(students[idx]);
             loadStudentManagementList();
+        }
+
+        // 메모 수정 모달 열기
+        function openEditMemoModal(memoId) {
+            const students = JSON.parse(localStorage.getItem('students') || '[]');
+            const student = students.find(s => s.id === currentStudentId);
+            if (!student || !student.memos) return;
+
+            const memo = student.memos.find(m => m.id === memoId);
+            if (!memo) return;
+
+            document.getElementById('editMemoId').value = memoId;
+            document.getElementById('editMemoStartDate').value = memo.startDate;
+            document.getElementById('editMemoEndDate').value = memo.endDate;
+            document.getElementById('editMemoContent').value = memo.content;
+
+            document.getElementById('editMemoModal').classList.remove('hidden');
+            document.getElementById('editMemoModal').classList.add('flex');
+        }
+
+        // 메모 수정 모달 닫기
+        function closeEditMemoModal() {
+            document.getElementById('editMemoModal').classList.add('hidden');
+            document.getElementById('editMemoModal').classList.remove('flex');
+        }
+
+        // 수정된 메모 저장
+        function saveEditedMemo() {
+            const memoId = document.getElementById('editMemoId').value;
+            const startDate = document.getElementById('editMemoStartDate').value;
+            const endDate = document.getElementById('editMemoEndDate').value;
+            const content = document.getElementById('editMemoContent').value.trim();
+
+            if (!startDate || !endDate || !content) {
+                alert('시작일, 종료일, 내용을 입력해주세요.');
+                return;
+            }
+
+            if (startDate > endDate) {
+                alert('종료일은 시작일 이후여야 합니다.');
+                return;
+            }
+
+            const students = JSON.parse(localStorage.getItem('students') || '[]');
+            const idx = students.findIndex(s => s.id === currentStudentId);
+
+            if (idx === -1) return;
+
+            const memoIdx = students[idx].memos.findIndex(m => m.id === memoId);
+            if (memoIdx === -1) return;
+
+            students[idx].memos[memoIdx] = {
+                ...students[idx].memos[memoIdx],
+                startDate,
+                endDate,
+                content
+            };
+
+            localStorage.setItem('students', JSON.stringify(students));
+            renderMemosList(students[idx]);
+            loadStudentManagementList();
+            closeEditMemoModal();
+            alert('메모가 수정되었습니다.');
         }
 
         // 보강시간 목록 렌더링
