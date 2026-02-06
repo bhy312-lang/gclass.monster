@@ -5518,6 +5518,118 @@
             });
         });
 
+        // 메모 목록 렌더링
+        function renderMemosList(student) {
+            const container = document.getElementById('memosList');
+            if (!student.memos || !student.memos.length) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-8">등록된 메모가 없습니다.</p>';
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            container.innerHTML = student.memos.sort((a, b) => b.startDate.localeCompare(a.startDate)).map(m => {
+                const isActive = m.startDate <= today && m.endDate >= today;
+                return `
+                <div class="flex items-start justify-between p-3 ${isActive ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'} rounded-lg">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-sm text-gray-500">${m.startDate} ~ ${m.endDate}</span>
+                            ${isActive ? '<span class="bg-blue-500 text-white text-xs px-2 py-0.5 rounded">활성</span>' : ''}
+                        </div>
+                        <p class="text-gray-800">${m.content}</p>
+                    </div>
+                    <div class="flex gap-1 ml-2">
+                        <button onclick="event.stopPropagation(); openEditMemoModal('${m.id}')" class="text-blue-400 hover:text-blue-600 p-1" title="수정">
+                            <span class="material-symbols-outlined text-lg">edit</span>
+                        </button>
+                        <button onclick="event.stopPropagation(); window.deleteStudentMemo('${m.id}')" class="text-red-400 hover:text-red-600 p-1" title="삭제">
+                            <span class="material-symbols-outlined text-lg">delete</span>
+                        </button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // 보강시간 목록 렌더링
+        function renderMakeupList(student) {
+            const container = document.getElementById('makeupList');
+            if (!student.makeupTimes || !student.makeupTimes.length) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-8">등록된 보강시간이 없습니다.</p>';
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            container.innerHTML = student.makeupTimes.sort((a, b) => b.startDate.localeCompare(a.startDate)).map(m => {
+                const isActive = m.startDate <= today && m.endDate >= today;
+                return `
+                <div class="flex items-start justify-between p-3 ${isActive ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50'} rounded-lg">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-sm text-gray-500">${m.startDate} ~ ${m.endDate}</span>
+                            ${isActive ? '<span class="bg-amber-500 text-white text-xs px-2 py-0.5 rounded">활성</span>' : ''}
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg font-bold text-gray-800">+${m.additionalMinutes}분</span>
+                            ${m.reason ? `<span class="text-sm text-gray-500">${m.reason}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="flex gap-1 ml-2">
+                        <button onclick="event.stopPropagation(); openEditMakeupModal('${m.id}')" class="text-blue-400 hover:text-blue-600 p-1" title="수정">
+                            <span class="material-symbols-outlined text-lg">edit</span>
+                        </button>
+                        <button onclick="event.stopPropagation(); window.deleteMakeupTime('${m.id}')" class="text-red-400 hover:text-red-600 p-1" title="삭제">
+                            <span class="material-symbols-outlined text-lg">delete</span>
+                        </button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // 메모 삭제
+        window.deleteStudentMemo = async function(memoId) {
+            const confirmed = await window.showConfirmModal(
+                '메모 삭제',
+                '이 메모를 삭제하시겠습니까?',
+                '🗑️',
+                '삭제',
+                '취소'
+            );
+            if (!confirmed) return;
+
+            const students = JSON.parse(localStorage.getItem('students') || '[]');
+            const idx = students.findIndex(s => s.id === currentStudentId);
+
+            if (idx === -1) return;
+
+            students[idx].memos = students[idx].memos.filter(m => m.id !== memoId);
+            localStorage.setItem('students', JSON.stringify(students));
+            renderMemosList(students[idx]);
+            loadStudentManagementList();
+            loadStudentManagementList();
+        };
+
+        // 보강시간 삭제
+        window.deleteMakeupTime = async function(makeupId) {
+            const confirmed = await window.showConfirmModal(
+                '보강시간 삭제',
+                '이 보강시간을 삭제하시겠습니까?',
+                '🗑️',
+                '삭제',
+                '취소'
+            );
+            if (!confirmed) return;
+
+            const students = JSON.parse(localStorage.getItem('students') || '[]');
+            const idx = students.findIndex(s => s.id === currentStudentId);
+
+            if (idx === -1) return;
+
+            students[idx].makeupTimes = students[idx].makeupTimes.filter(m => m.id !== makeupId);
+            localStorage.setItem('students', JSON.stringify(students));
+            renderMakeupList(students[idx]);
+            loadStudentManagementList();
+        };
+
         // ===== 학생관리 기능 =====
         let currentStudentId = null;
 
@@ -5846,38 +5958,6 @@
             renderFeedbackList(students[idx]);
         }
 
-        // 메모 목록 렌더링
-        function renderMemosList(student) {
-            const container = document.getElementById('memosList');
-            if (!student.memos || !student.memos.length) {
-                container.innerHTML = '<p class="text-gray-400 text-center py-8">등록된 메모가 없습니다.</p>';
-                return;
-            }
-
-            const today = new Date().toISOString().split('T')[0];
-            container.innerHTML = student.memos.sort((a, b) => b.startDate.localeCompare(a.startDate)).map(m => {
-                const isActive = m.startDate <= today && m.endDate >= today;
-                return `
-                <div class="flex items-start justify-between p-3 ${isActive ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'} rounded-lg">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="text-sm text-gray-500">${m.startDate} ~ ${m.endDate}</span>
-                            ${isActive ? '<span class="bg-blue-500 text-white text-xs px-2 py-0.5 rounded">활성</span>' : ''}
-                        </div>
-                        <p class="text-gray-800">${m.content}</p>
-                    </div>
-                    <div class="flex gap-1 ml-2">
-                        <button onclick="event.stopPropagation(); openEditMemoModal('${m.id}')" class="text-blue-400 hover:text-blue-600 p-1" title="수정">
-                            <span class="material-symbols-outlined text-lg">edit</span>
-                        </button>
-                        <button onclick="event.stopPropagation(); window.deleteStudentMemo('${m.id}')" class="text-red-400 hover:text-red-600 p-1" title="삭제">
-                            <span class="material-symbols-outlined text-lg">delete</span>
-                        </button>
-                    </div>
-                </div>
-            `}).join('');
-        }
-
         // 메모 추가
         function addStudentMemo() {
             const startDate = document.getElementById('newMemoStartDate').value;
@@ -5912,29 +5992,6 @@
             document.getElementById('newMemoStartDate').value = '';
             document.getElementById('newMemoEndDate').value = '';
             document.getElementById('newMemoContent').value = '';
-        }
-
-        // 메모 삭제
-        window.deleteStudentMemo = async function(memoId) {
-            const confirmed = await window.showConfirmModal(
-                '메모 삭제',
-                '이 메모를 삭제하시겠습니까?',
-                '🗑️',
-                '삭제',
-                '취소'
-            );
-            if (!confirmed) return;
-
-            const students = JSON.parse(localStorage.getItem('students') || '[]');
-            const idx = students.findIndex(s => s.id === currentStudentId);
-
-            if (idx === -1) return;
-
-            students[idx].memos = students[idx].memos.filter(m => m.id !== memoId);
-            localStorage.setItem('students', JSON.stringify(students));
-            renderMemosList(students[idx]);
-            loadStudentManagementList();
-            loadStudentManagementList();
         }
 
         // 메모 수정 모달 열기
@@ -6000,41 +6057,6 @@
             showAlertModal('수정 완료', '메모가 수정되었습니다.', '✅');
         }
 
-        // 보강시간 목록 렌더링
-        function renderMakeupList(student) {
-            const container = document.getElementById('makeupList');
-            if (!student.makeupTimes || !student.makeupTimes.length) {
-                container.innerHTML = '<p class="text-gray-400 text-center py-8">등록된 보강시간이 없습니다.</p>';
-                return;
-            }
-
-            const today = new Date().toISOString().split('T')[0];
-            container.innerHTML = student.makeupTimes.sort((a, b) => b.startDate.localeCompare(a.startDate)).map(m => {
-                const isActive = m.startDate <= today && m.endDate >= today;
-                return `
-                <div class="flex items-start justify-between p-3 ${isActive ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50'} rounded-lg">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="text-sm text-gray-500">${m.startDate} ~ ${m.endDate}</span>
-                            ${isActive ? '<span class="bg-amber-500 text-white text-xs px-2 py-0.5 rounded">활성</span>' : ''}
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <span class="text-lg font-bold text-gray-800">+${m.additionalMinutes}분</span>
-                            ${m.reason ? `<span class="text-sm text-gray-500">${m.reason}</span>` : ''}
-                        </div>
-                    </div>
-                    <div class="flex gap-1 ml-2">
-                        <button onclick="event.stopPropagation(); openEditMakeupModal('${m.id}')" class="text-blue-400 hover:text-blue-600 p-1" title="수정">
-                            <span class="material-symbols-outlined text-lg">edit</span>
-                        </button>
-                        <button onclick="event.stopPropagation(); window.deleteMakeupTime('${m.id}')" class="text-red-400 hover:text-red-600 p-1" title="삭제">
-                            <span class="material-symbols-outlined text-lg">delete</span>
-                        </button>
-                    </div>
-                </div>
-            `}).join('');
-        }
-
         // 보강시간 추가
         function addMakeupTime() {
             const startDate = document.getElementById('newMakeupStartDate').value;
@@ -6084,28 +6106,6 @@
             document.getElementById('newMakeupEndDate').value = '';
             document.getElementById('newMakeupMinutes').value = '';
             document.getElementById('newMakeupReason').value = '';
-        }
-
-        // 보강시간 삭제
-        window.deleteMakeupTime = async function(makeupId) {
-            const confirmed = await window.showConfirmModal(
-                '보강시간 삭제',
-                '이 보강시간을 삭제하시겠습니까?',
-                '🗑️',
-                '삭제',
-                '취소'
-            );
-            if (!confirmed) return;
-
-            const students = JSON.parse(localStorage.getItem('students') || '[]');
-            const idx = students.findIndex(s => s.id === currentStudentId);
-
-            if (idx === -1) return;
-
-            students[idx].makeupTimes = students[idx].makeupTimes.filter(m => m.id !== makeupId);
-            localStorage.setItem('students', JSON.stringify(students));
-            renderMakeupList(students[idx]);
-            loadStudentManagementList();
         }
 
         // 보강시간 수정 모달 열기
