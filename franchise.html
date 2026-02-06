@@ -5578,6 +5578,9 @@
             `}).join('');
         }
 
+        // ===== 학생관리 기능 =====
+        let currentStudentId = null;
+
         // 메모 삭제
         window.deleteStudentMemo = async function(memoId) {
             const confirmed = await window.showConfirmModal(
@@ -5622,9 +5625,6 @@
             renderMakeupList(students[idx]);
             loadStudentManagementList();
         };
-
-        // ===== 학생관리 기능 =====
-        let currentStudentId = null;
 
         // 학생 목록 로드 및 렌더링
         function loadStudentManagementList() {
