@@ -5852,10 +5852,10 @@
                         <p class="text-gray-800">${m.content}</p>
                     </div>
                     <div class="flex gap-1 ml-2">
-                        <button onclick="openEditMemoModal('${m.id}')" class="text-blue-400 hover:text-blue-600 p-1" title="수정">
+                        <button onclick="event.stopPropagation(); openEditMemoModal('${m.id}')" class="text-blue-400 hover:text-blue-600 p-1" title="수정">
                             <span class="material-symbols-outlined text-lg">edit</span>
                         </button>
-                        <button onclick="deleteStudentMemo('${m.id}')" class="text-red-400 hover:text-red-600 p-1" title="삭제">
+                        <button onclick="event.stopPropagation(); window.deleteStudentMemo('${m.id}')" class="text-red-400 hover:text-red-600 p-1" title="삭제">
                             <span class="material-symbols-outlined text-lg">delete</span>
                         </button>
                     </div>
@@ -6009,10 +6009,10 @@
                         </div>
                     </div>
                     <div class="flex gap-1 ml-2">
-                        <button onclick="openEditMakeupModal('${m.id}')" class="text-blue-400 hover:text-blue-600 p-1" title="수정">
+                        <button onclick="event.stopPropagation(); openEditMakeupModal('${m.id}')" class="text-blue-400 hover:text-blue-600 p-1" title="수정">
                             <span class="material-symbols-outlined text-lg">edit</span>
                         </button>
-                        <button onclick="deleteMakeupTime('${m.id}')" class="text-red-400 hover:text-red-600 p-1" title="삭제">
+                        <button onclick="event.stopPropagation(); window.deleteMakeupTime('${m.id}')" class="text-red-400 hover:text-red-600 p-1" title="삭제">
                             <span class="material-symbols-outlined text-lg">delete</span>
                         </button>
                     </div>
