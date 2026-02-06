@@ -3349,8 +3349,57 @@
         let alarmAudioContext = null;
         let waitingAlarmState = {}; // 등원 목록 학생 알람 상태 (id: { alarming, alarmStopped })
         let currentSeatId = null;
+
+        // ========== 학생관리 전역 변수 ==========
+        let currentStudentId = null;
+
         const SEAT_WIDTH = 128; // w-32 = 128px
         const SEAT_HEIGHT = 144; // h-36 = 144px
+
+        // ========== 학생관리 삭제 함수 (전역) ==========
+        // 메모 삭제
+        window.deleteStudentMemo = async function(memoId) {
+            const confirmed = await window.showConfirmModal(
+                '메모 삭제',
+                '이 메모를 삭제하시겠습니까?',
+                '🗑️',
+                '삭제',
+                '취소'
+            );
+            if (!confirmed) return;
+
+            const students = JSON.parse(localStorage.getItem('students') || '[]');
+            const idx = students.findIndex(s => s.id === currentStudentId);
+
+            if (idx === -1) return;
+
+            students[idx].memos = students[idx].memos.filter(m => m.id !== memoId);
+            localStorage.setItem('students', JSON.stringify(students));
+            if (window.renderMemosList) window.renderMemosList(students[idx]);
+            if (window.loadStudentManagementList) window.loadStudentManagementList();
+        };
+
+        // 보강시간 삭제
+        window.deleteMakeupTime = async function(makeupId) {
+            const confirmed = await window.showConfirmModal(
+                '보강시간 삭제',
+                '이 보강시간을 삭제하시겠습니까?',
+                '🗑️',
+                '삭제',
+                '취소'
+            );
+            if (!confirmed) return;
+
+            const students = JSON.parse(localStorage.getItem('students') || '[]');
+            const idx = students.findIndex(s => s.id === currentStudentId);
+
+            if (idx === -1) return;
+
+            students[idx].makeupTimes = students[idx].makeupTimes.filter(m => m.id !== makeupId);
+            localStorage.setItem('students', JSON.stringify(students));
+            if (window.renderMakeupList) window.renderMakeupList(students[idx]);
+            if (window.loadStudentManagementList) window.loadStudentManagementList();
+        };
 
         // ========== 학생 출결 관리 ==========
         let students = [
@@ -5512,7 +5561,7 @@
         });
 
         // 메모 목록 렌더링
-        function renderMemosList(student) {
+        window.renderMemosList = function(student) {
             const container = document.getElementById('memosList');
             if (!student.memos || !student.memos.length) {
                 container.innerHTML = '<p class="text-gray-400 text-center py-8">등록된 메모가 없습니다.</p>';
@@ -5523,11 +5572,11 @@
             container.innerHTML = student.memos.sort((a, b) => b.startDate.localeCompare(a.startDate)).map(m => {
                 const isActive = m.startDate <= today && m.endDate >= today;
                 return `
-                <div class="flex items-start justify-between p-3 ${isActive ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'} rounded-lg">
+                <div class="flex items-start justify-between p-3 ${isActive ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50'} rounded-lg">
                     <div class="flex-1">
                         <div class="flex items-center gap-2 mb-1">
                             <span class="text-sm text-gray-500">${m.startDate} ~ ${m.endDate}</span>
-                            ${isActive ? '<span class="bg-blue-500 text-white text-xs px-2 py-0.5 rounded">활성</span>' : ''}
+                            ${isActive ? '<span class="bg-amber-500 text-white text-xs px-2 py-0.5 rounded">활성</span>' : ''}
                         </div>
                         <p class="text-gray-800">${m.content}</p>
                     </div>
@@ -5544,7 +5593,7 @@
         }
 
         // 보강시간 목록 렌더링
-        function renderMakeupList(student) {
+        window.renderMakeupList = function(student) {
             const container = document.getElementById('makeupList');
             if (!student.makeupTimes || !student.makeupTimes.length) {
                 container.innerHTML = '<p class="text-gray-400 text-center py-8">등록된 보강시간이 없습니다.</p>';
@@ -5578,56 +5627,8 @@
             `}).join('');
         }
 
-        // ===== 학생관리 기능 =====
-        let currentStudentId = null;
-
-        // 메모 삭제
-        window.deleteStudentMemo = async function(memoId) {
-            const confirmed = await window.showConfirmModal(
-                '메모 삭제',
-                '이 메모를 삭제하시겠습니까?',
-                '🗑️',
-                '삭제',
-                '취소'
-            );
-            if (!confirmed) return;
-
-            const students = JSON.parse(localStorage.getItem('students') || '[]');
-            const idx = students.findIndex(s => s.id === currentStudentId);
-
-            if (idx === -1) return;
-
-            students[idx].memos = students[idx].memos.filter(m => m.id !== memoId);
-            localStorage.setItem('students', JSON.stringify(students));
-            renderMemosList(students[idx]);
-            loadStudentManagementList();
-            loadStudentManagementList();
-        };
-
-        // 보강시간 삭제
-        window.deleteMakeupTime = async function(makeupId) {
-            const confirmed = await window.showConfirmModal(
-                '보강시간 삭제',
-                '이 보강시간을 삭제하시겠습니까?',
-                '🗑️',
-                '삭제',
-                '취소'
-            );
-            if (!confirmed) return;
-
-            const students = JSON.parse(localStorage.getItem('students') || '[]');
-            const idx = students.findIndex(s => s.id === currentStudentId);
-
-            if (idx === -1) return;
-
-            students[idx].makeupTimes = students[idx].makeupTimes.filter(m => m.id !== makeupId);
-            localStorage.setItem('students', JSON.stringify(students));
-            renderMakeupList(students[idx]);
-            loadStudentManagementList();
-        };
-
         // 학생 목록 로드 및 렌더링
-        function loadStudentManagementList() {
+        window.loadStudentManagementList = function() {
             const students = JSON.parse(localStorage.getItem('students') || '[]');
             const grid = document.getElementById('studentListGrid');
             const noStudentsMsg = document.getElementById('noStudentsMessage');
