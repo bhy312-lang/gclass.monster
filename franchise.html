@@ -5916,7 +5916,7 @@
 
         // 메모 삭제
         window.deleteStudentMemo = async function(memoId) {
-            const confirmed = await showConfirmModal(
+            const confirmed = await window.showConfirmModal(
                 '메모 삭제',
                 '이 메모를 삭제하시겠습니까?',
                 '🗑️',
@@ -6088,7 +6088,7 @@
 
         // 보강시간 삭제
         window.deleteMakeupTime = async function(makeupId) {
-            const confirmed = await showConfirmModal(
+            const confirmed = await window.showConfirmModal(
                 '보강시간 삭제',
                 '이 보강시간을 삭제하시겠습니까?',
                 '🗑️',
