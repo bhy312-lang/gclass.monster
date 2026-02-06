@@ -3359,6 +3359,10 @@
         // ========== 학생관리 삭제 함수 (전역) ==========
         // 메모 삭제
         window.deleteStudentMemo = async function(memoId) {
+            console.log('[deleteStudentMemo] 호출됨, memoId:', memoId);
+            console.log('[deleteStudentMemo] currentStudentId:', currentStudentId);
+            console.log('[deleteStudentMemo] window.showConfirmModal 존재?:', typeof window.showConfirmModal);
+
             const confirmed = await window.showConfirmModal(
                 '메모 삭제',
                 '이 메모를 삭제하시겠습니까?',
@@ -3366,10 +3370,12 @@
                 '삭제',
                 '취소'
             );
+            console.log('[deleteStudentMemo] confirmed:', confirmed);
             if (!confirmed) return;
 
             const students = JSON.parse(localStorage.getItem('students') || '[]');
             const idx = students.findIndex(s => s.id === currentStudentId);
+            console.log('[deleteStudentMemo] idx:', idx);
 
             if (idx === -1) return;
 
@@ -3377,6 +3383,7 @@
             localStorage.setItem('students', JSON.stringify(students));
             if (window.renderMemosList) window.renderMemosList(students[idx]);
             if (window.loadStudentManagementList) window.loadStudentManagementList();
+            console.log('[deleteStudentMemo] 삭제 완료');
         };
 
         // 보강시간 삭제
@@ -5581,30 +5588,35 @@
                         <p class="text-gray-800">${m.content}</p>
                     </div>
                     <div class="flex gap-1 ml-2">
-                        <button class="edit-memo-btn text-blue-400 hover:text-blue-600 p-1" title="수정" data-memo-id="${m.id}">
+                        <button class="edit-memo-btn text-blue-400 hover:text-blue-600 p-1 cursor-pointer" title="수정" data-memo-id="${m.id}">
                             <span class="material-symbols-outlined text-lg pointer-events-none">edit</span>
                         </button>
-                        <button class="delete-memo-btn text-red-400 hover:text-red-600 p-1" title="삭제" data-memo-id="${m.id}">
+                        <button class="delete-memo-btn text-red-400 hover:text-red-600 p-1 cursor-pointer" title="삭제" data-memo-id="${m.id}">
                             <span class="material-symbols-outlined text-lg pointer-events-none">delete</span>
                         </button>
                     </div>
                 </div>
             `}).join('');
 
-            // 이벤트 리스너 추가
-            container.querySelectorAll('.edit-memo-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openEditMemoModal(btn.dataset.memoId);
-                });
-            });
+            // 이벤트 위임 등록 (아직 안된 경우만)
+            if (!container.hasAttribute('data-event-delegated')) {
+                container.addEventListener('click', function(e) {
+                    const deleteBtn = e.target.closest('.delete-memo-btn');
+                    const editBtn = e.target.closest('.edit-memo-btn');
 
-            container.querySelectorAll('.delete-memo-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    window.deleteStudentMemo(btn.dataset.memoId);
+                    if (deleteBtn) {
+                        e.stopPropagation();
+                        console.log('[이벤트 위임] 삭제 버튼 클릭, memoId:', deleteBtn.dataset.memoId);
+                        window.deleteStudentMemo(deleteBtn.dataset.memoId);
+                    } else if (editBtn) {
+                        e.stopPropagation();
+                        console.log('[이벤트 위임] 수정 버튼 클릭, memoId:', editBtn.dataset.memoId);
+                        openEditMemoModal(editBtn.dataset.memoId);
+                    }
                 });
-            });
+                container.setAttribute('data-event-delegated', 'true');
+                console.log('[이벤트 위임] 메모 목록 컨테이너에 이벤트 리스너 등록 완료');
+            }
         }
 
         // 보강시간 목록 렌더링
@@ -5631,31 +5643,37 @@
                         </div>
                     </div>
                     <div class="flex gap-1 ml-2">
-                        <button class="edit-makeup-btn text-blue-400 hover:text-blue-600 p-1" title="수정" data-makeup-id="${m.id}">
+                        <button class="edit-makeup-btn text-blue-400 hover:text-blue-600 p-1 cursor-pointer" title="수정" data-makeup-id="${m.id}">
                             <span class="material-symbols-outlined text-lg pointer-events-none">edit</span>
                         </button>
-                        <button class="delete-makeup-btn text-red-400 hover:text-red-600 p-1" title="삭제" data-makeup-id="${m.id}">
+                        <button class="delete-makeup-btn text-red-400 hover:text-red-600 p-1 cursor-pointer" title="삭제" data-makeup-id="${m.id}">
                             <span class="material-symbols-outlined text-lg pointer-events-none">delete</span>
                         </button>
                     </div>
                 </div>
             `}).join('');
 
-            // 이벤트 리스너 추가
-            container.querySelectorAll('.edit-makeup-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openEditMakeupModal(btn.dataset.makeupId);
-                });
-            });
+            // 이벤트 위임 등록 (아직 안된 경우만)
+            if (!container.hasAttribute('data-event-delegated')) {
+                container.addEventListener('click', function(e) {
+                    const deleteBtn = e.target.closest('.delete-makeup-btn');
+                    const editBtn = e.target.closest('.edit-makeup-btn');
 
-            container.querySelectorAll('.delete-makeup-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    window.deleteMakeupTime(btn.dataset.makeupId);
+                    if (deleteBtn) {
+                        e.stopPropagation();
+                        console.log('[이벤트 위임] 보강 삭제 버튼 클릭, makeupId:', deleteBtn.dataset.makeupId);
+                        window.deleteMakeupTime(deleteBtn.dataset.makeupId);
+                    } else if (editBtn) {
+                        e.stopPropagation();
+                        console.log('[이벤트 위임] 보강 수정 버튼 클릭, makeupId:', editBtn.dataset.makeupId);
+                        openEditMakeupModal(editBtn.dataset.makeupId);
+                    }
                 });
-            });
+                container.setAttribute('data-event-delegated', 'true');
+                console.log('[이벤트 위임] 보강 목록 컨테이너에 이벤트 리스너 등록 완료');
+            }
         }
+
 
         // 학생 목록 로드 및 렌더링
         window.loadStudentManagementList = function() {
