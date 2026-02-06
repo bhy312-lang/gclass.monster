@@ -3280,6 +3280,67 @@
     </footer>
 
     <script>
+        // ========== 전역 모달 함수 ==========
+        window.showConfirmModal = function(title, message, icon, confirmText, cancelText) {
+            return new Promise((resolve) => {
+                let modal = document.getElementById('confirm-modal');
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'confirm-modal';
+                    modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-md z-[99999] flex items-center justify-center';
+                    document.body.appendChild(modal);
+                }
+
+                modal.innerHTML = `
+                    <div class="relative">
+                        <div class="absolute -inset-1 bg-gradient-to-r from-purple-400 via-pink-400 to-rose-400 rounded-3xl blur-lg opacity-50 animate-pulse"></div>
+                        <div class="relative bg-gradient-to-br from-white via-purple-50 to-pink-50 rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl border border-white/50">
+                            <div class="text-center mb-6">
+                                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg mb-4">
+                                    <span class="text-4xl">${icon || '❓'}</span>
+                                </div>
+                                <h3 class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">${title}</h3>
+                                <p class="text-gray-600 mt-3 text-base">${message}</p>
+                            </div>
+                            <div class="flex gap-3 justify-center">
+                                <button id="confirm-ok-btn" class="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:shadow-lg hover:scale-105 transition-all">
+                                    ${confirmText || '확인'}
+                                </button>
+                                <button id="confirm-cancel-btn" class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-all">
+                                    ${cancelText || '취소'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                modal.style.display = 'flex';
+
+                const oldOkBtn = document.getElementById('confirm-ok-btn');
+                const oldCancelBtn = document.getElementById('confirm-cancel-btn');
+                if (oldOkBtn) oldOkBtn.replaceWith(oldOkBtn.cloneNode(true));
+                if (oldCancelBtn) oldCancelBtn.replaceWith(oldCancelBtn.cloneNode(true));
+
+                requestAnimationFrame(() => {
+                    const okBtn = document.getElementById('confirm-ok-btn');
+                    const cancelBtn = document.getElementById('confirm-cancel-btn');
+
+                    if (okBtn) {
+                        okBtn.onclick = () => {
+                            modal.style.display = 'none';
+                            resolve(true);
+                        };
+                    }
+                    if (cancelBtn) {
+                        cancelBtn.onclick = () => {
+                            modal.style.display = 'none';
+                            resolve(false);
+                        };
+                    }
+                });
+            });
+        };
+
         // ========== 좌석 모니터링 시스템 ==========
         let seats = [];
         let draggedAttendanceId = null; // 등원 학생 드래그용
@@ -4934,74 +4995,6 @@
                 }
             });
         }
-
-        // 입체적 확인 모달
-        window.showConfirmModal = function(title, message, icon, confirmText, cancelText) {
-            return new Promise((resolve) => {
-                let modal = document.getElementById('confirm-modal');
-                if (!modal) {
-                    modal = document.createElement('div');
-                    modal.id = 'confirm-modal';
-                    modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-md z-[99999] flex items-center justify-center';
-                    document.body.appendChild(modal);
-                }
-
-                modal.innerHTML = `
-                    <div class="relative">
-                        <!-- 배경 광택 효과 -->
-                        <div class="absolute -inset-1 bg-gradient-to-r from-purple-400 via-pink-400 to-rose-400 rounded-3xl blur-lg opacity-50 animate-pulse"></div>
-
-                        <div class="relative bg-gradient-to-br from-white via-purple-50 to-pink-50 rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl border border-white/50">
-                            <!-- 헤더 -->
-                            <div class="text-center mb-6">
-                                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg mb-4">
-                                    <span class="text-4xl">${icon || '❓'}</span>
-                                </div>
-                                <h3 class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">${title}</h3>
-                                <p class="text-gray-600 mt-3 text-base">${message}</p>
-                            </div>
-
-                            <!-- 버튼 -->
-                            <div class="flex gap-3 justify-center">
-                                <button id="confirm-ok-btn" class="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:shadow-lg hover:scale-105 transition-all">
-                                    ${confirmText || '확인'}
-                                </button>
-                                <button id="confirm-cancel-btn" class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-all">
-                                    ${cancelText || '취소'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                modal.style.display = 'flex';
-
-                // 기존 이벤트 리스너 제거
-                const oldOkBtn = document.getElementById('confirm-ok-btn');
-                const oldCancelBtn = document.getElementById('confirm-cancel-btn');
-                if (oldOkBtn) oldOkBtn.replaceWith(oldOkBtn.cloneNode(true));
-                if (oldCancelBtn) oldCancelBtn.replaceWith(oldCancelBtn.cloneNode(true));
-
-                // 새로운 이벤트 리스너 추가
-                requestAnimationFrame(() => {
-                    const okBtn = document.getElementById('confirm-ok-btn');
-                    const cancelBtn = document.getElementById('confirm-cancel-btn');
-
-                    if (okBtn) {
-                        okBtn.onclick = () => {
-                            modal.style.display = 'none';
-                            resolve(true);
-                        };
-                    }
-                    if (cancelBtn) {
-                        cancelBtn.onclick = () => {
-                            modal.style.display = 'none';
-                            resolve(false);
-                        };
-                    }
-                });
-            });
-        };
 
         // 입체적 알림 모달
         function showAlertModal(title, message, icon) {
