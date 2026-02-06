@@ -2845,26 +2845,26 @@
                 </div>
 
                 <!-- 탭 네비게이션 -->
-                <div class="border-b border-gray-200 bg-gray-50">
-                    <nav class="flex overflow-x-auto" id="studentDetailTabs">
-                        <button onclick="switchStudentTab('info')" data-tab="info"
-                            class="student-tab-btn active px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 border-[#58d3d3] text-[#58d3d3]">
+                <div class="bg-gray-100 pt-2 px-2">
+                    <nav class="flex gap-1 overflow-x-auto" id="studentDetailTabs">
+                        <button onclick="switchStudentTab('info')" data-tab="info" data-color="teal"
+                            class="student-tab-btn active px-5 py-2.5 text-sm font-semibold whitespace-nowrap rounded-t-xl border-2 border-b-0 bg-gradient-to-b from-teal-50 to-white border-teal-400 text-teal-600 shadow-sm relative z-10 transition-all">
                             <span class="material-symbols-outlined text-base align-middle mr-1">badge</span>기본정보
                         </button>
-                        <button onclick="switchStudentTab('grades')" data-tab="grades"
-                            class="student-tab-btn px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        <button onclick="switchStudentTab('grades')" data-tab="grades" data-color="amber"
+                            class="student-tab-btn px-5 py-2.5 text-sm font-medium whitespace-nowrap rounded-t-xl border-2 border-b-0 bg-gradient-to-b from-gray-200 to-gray-100 border-gray-300 text-gray-500 hover:from-amber-50 hover:to-amber-100 hover:border-amber-300 hover:text-amber-600 transition-all">
                             <span class="material-symbols-outlined text-base align-middle mr-1">grade</span>성적
                         </button>
-                        <button onclick="switchStudentTab('feedback')" data-tab="feedback"
-                            class="student-tab-btn px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        <button onclick="switchStudentTab('feedback')" data-tab="feedback" data-color="violet"
+                            class="student-tab-btn px-5 py-2.5 text-sm font-medium whitespace-nowrap rounded-t-xl border-2 border-b-0 bg-gradient-to-b from-gray-200 to-gray-100 border-gray-300 text-gray-500 hover:from-violet-50 hover:to-violet-100 hover:border-violet-300 hover:text-violet-600 transition-all">
                             <span class="material-symbols-outlined text-base align-middle mr-1">chat</span>피드백
                         </button>
-                        <button onclick="switchStudentTab('memos')" data-tab="memos"
-                            class="student-tab-btn px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        <button onclick="switchStudentTab('memos')" data-tab="memos" data-color="blue"
+                            class="student-tab-btn px-5 py-2.5 text-sm font-medium whitespace-nowrap rounded-t-xl border-2 border-b-0 bg-gradient-to-b from-gray-200 to-gray-100 border-gray-300 text-gray-500 hover:from-blue-50 hover:to-blue-100 hover:border-blue-300 hover:text-blue-600 transition-all">
                             <span class="material-symbols-outlined text-base align-middle mr-1">sticky_note_2</span>메모설정
                         </button>
-                        <button onclick="switchStudentTab('makeup')" data-tab="makeup"
-                            class="student-tab-btn px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        <button onclick="switchStudentTab('makeup')" data-tab="makeup" data-color="rose"
+                            class="student-tab-btn px-5 py-2.5 text-sm font-medium whitespace-nowrap rounded-t-xl border-2 border-b-0 bg-gradient-to-b from-gray-200 to-gray-100 border-gray-300 text-gray-500 hover:from-rose-50 hover:to-rose-100 hover:border-rose-300 hover:text-rose-600 transition-all">
                             <span class="material-symbols-outlined text-base align-middle mr-1">timer</span>보강시간
                         </button>
                     </nav>
@@ -2962,15 +2962,15 @@
                             <div class="grid grid-cols-2 gap-3 mb-3">
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1">시작일</label>
-                                    <input type="date" id="newMemoStartDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <input type="date" id="newMemoStartDate" max="9999-12-31" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 </div>
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1">종료일</label>
-                                    <input type="date" id="newMemoEndDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <input type="date" id="newMemoEndDate" max="9999-12-31" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 </div>
                             </div>
                             <div class="flex gap-3">
-                                <input type="text" id="newMemoContent" placeholder="메모 내용" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <input type="text" id="newMemoContent" placeholder="메모 내용" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" onkeydown="if(event.key === 'Enter') { event.preventDefault(); addStudentMemo(); }">
                                 <button onclick="addStudentMemo()" class="bg-[#58d3d3] hover:bg-[#45b8b8] text-white px-4 py-2 rounded-lg text-sm transition">
                                     추가
                                 </button>
@@ -3002,11 +3002,11 @@
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1">시작일</label>
-                                    <input type="date" id="newMakeupStartDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <input type="date" id="newMakeupStartDate" max="9999-12-31" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 </div>
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1">종료일</label>
-                                    <input type="date" id="newMakeupEndDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <input type="date" id="newMakeupEndDate" max="9999-12-31" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 </div>
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1">추가 시간(분)</label>
@@ -3109,12 +3109,12 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">시작일</label>
-                                <input type="date" id="editMemoStartDate"
+                                <input type="date" id="editMemoStartDate" max="9999-12-31"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">종료일</label>
-                                <input type="date" id="editMemoEndDate"
+                                <input type="date" id="editMemoEndDate" max="9999-12-31"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
                         </div>
@@ -5816,13 +5816,27 @@
 
         // 학생 탭 전환
         function switchStudentTab(tabName) {
+            const colorMap = {
+                info: { from: 'from-teal-50', to: 'to-white', border: 'border-teal-400', text: 'text-teal-600' },
+                grades: { from: 'from-amber-50', to: 'to-white', border: 'border-amber-400', text: 'text-amber-600' },
+                feedback: { from: 'from-violet-50', to: 'to-white', border: 'border-violet-400', text: 'text-violet-600' },
+                memos: { from: 'from-blue-50', to: 'to-white', border: 'border-blue-400', text: 'text-blue-600' },
+                makeup: { from: 'from-rose-50', to: 'to-white', border: 'border-rose-400', text: 'text-rose-600' }
+            };
+
             document.querySelectorAll('.student-tab-btn').forEach(btn => {
-                btn.classList.remove('active', 'border-[#58d3d3]', 'text-[#58d3d3]');
-                btn.classList.add('border-transparent', 'text-gray-500');
+                const tab = btn.dataset.tab;
+                const colors = colorMap[tab];
+                btn.classList.remove('active', 'font-semibold', 'shadow-sm', 'z-10',
+                    colors.from, colors.to, colors.border, colors.text);
+                btn.classList.add('font-medium', 'from-gray-200', 'to-gray-100', 'border-gray-300', 'text-gray-500');
             });
 
-            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active', 'border-[#58d3d3]', 'text-[#58d3d3]');
-            document.querySelector(`[data-tab="${tabName}"]`).classList.remove('border-transparent', 'text-gray-500');
+            const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
+            const activeColors = colorMap[tabName];
+            activeBtn.classList.remove('font-medium', 'from-gray-200', 'to-gray-100', 'border-gray-300', 'text-gray-500');
+            activeBtn.classList.add('active', 'font-semibold', 'shadow-sm', 'z-10',
+                activeColors.from, activeColors.to, activeColors.border, activeColors.text);
 
             document.querySelectorAll('.student-tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(`studentTab-${tabName}`).classList.remove('hidden');
@@ -6175,11 +6189,11 @@
                         <div class="space-y-3">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">시작일</label>
-                                <input type="date" id="editMakeupStartDate" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-400 focus:outline-none">
+                                <input type="date" id="editMakeupStartDate" max="9999-12-31" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-400 focus:outline-none">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">종료일</label>
-                                <input type="date" id="editMakeupEndDate" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-400 focus:outline-none">
+                                <input type="date" id="editMakeupEndDate" max="9999-12-31" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-400 focus:outline-none">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">추가 시간 (분)</label>
