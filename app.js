@@ -103,18 +103,20 @@ function setupRealtimeSubscriptions() {
         })
         .subscribe();
 
-    // 좌석 실시간 구독
-    supabase
-        .channel('seats-changes')
-        .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'seats'
-        }, (payload) => {
-            console.log('좌석 변경:', payload);
-            loadSeats();
-        })
-        .subscribe();
+    // 좌석 실시간 구독 - 비활성화 (좌석 초기화 문제 방지)
+    // supabase
+    //     .channel('seats-changes')
+    //     .on('postgres_changes', {
+    //         event: '*',
+    //         schema: 'public',
+    //         table: 'seats'
+    //     }, (payload) => {
+    //         console.log('좌석 변경:', payload);
+    //         loadSeats();
+    //     })
+    //     .subscribe();
+
+    console.log('실시간 구독: 좌석 변경 구독 비활성화됨 (좌석 초기화 문제 방지)');
 }
 
 // ========== 좌석 로드/저장 ==========
