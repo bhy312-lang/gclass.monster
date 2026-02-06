@@ -3287,7 +3287,8 @@
                 if (!modal) {
                     modal = document.createElement('div');
                     modal.id = 'confirm-modal';
-                    modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-md z-[99999] flex items-center justify-center';
+                    modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center';
+                    modal.style.zIndex = '99999';
                     document.body.appendChild(modal);
                 }
 
