@@ -516,11 +516,17 @@
 
         /* 천천히 회전하는 새로고침 아이콘 애니메이션 */
         @keyframes spin-slow {
-            from {
+            0% {
                 transform: rotate(0deg);
+                color: #f472b6;
             }
-            to {
+            50% {
+                transform: rotate(180deg);
+                color: #10b981;
+            }
+            100% {
                 transform: rotate(360deg);
+                color: #f472b6;
             }
         }
 
@@ -2464,9 +2470,7 @@
                     <!-- 상단: 제목 (중앙 정렬 + 새로고침 버튼) -->
                     <div class="text-center py-2 flex items-center justify-center gap-2">
                         <h3 class="text-lg font-bold text-gray-800">To-Do List</h3>
-                        <button onclick="loadTodos(); loadTodosForDate();" class="hover:scale-110 transition cursor-pointer" title="새로고침">
-                            <span class="material-symbols-outlined text-pink-400 text-lg lg:text-xl" style="animation: spin-slow 3s linear infinite; color: rgb(16, 185, 129);">refresh</span>
-                        </button>
+                        <span id="todo-refresh-icon" class="material-symbols-outlined text-pink-400 text-lg lg:text-xl" style="animation: 3s linear 0s infinite normal none running spin-slow;">refresh</span>
                     </div>
 
                     <!-- 날짜 선택 & 진행률 (같은 행) -->
@@ -3469,6 +3473,15 @@
 
         // 선택한 날짜의 To-Do 불러오기 (가로형)
         function loadTodosForDate() {
+            // 새로고침 아이콘에 업데이트 효과
+            const todoRefreshIcon = document.getElementById('todo-refresh-icon');
+            if (todoRefreshIcon) {
+                todoRefreshIcon.style.color = '#10b981';
+                setTimeout(() => {
+                    todoRefreshIcon.style.color = '';
+                }, 500);
+            }
+
             const dateInput = document.getElementById('todo-date');
             if (dateInput.value) {
                 currentDate = dateInput.value;
