@@ -5581,15 +5581,30 @@
                         <p class="text-gray-800">${m.content}</p>
                     </div>
                     <div class="flex gap-1 ml-2">
-                        <button onclick="event.stopPropagation(); openEditMemoModal('${m.id}')" class="text-blue-400 hover:text-blue-600 p-1" title="수정">
-                            <span class="material-symbols-outlined text-lg">edit</span>
+                        <button class="edit-memo-btn text-blue-400 hover:text-blue-600 p-1" title="수정" data-memo-id="${m.id}">
+                            <span class="material-symbols-outlined text-lg pointer-events-none">edit</span>
                         </button>
-                        <button onclick="event.stopPropagation(); window.deleteStudentMemo('${m.id}')" class="text-red-400 hover:text-red-600 p-1" title="삭제">
-                            <span class="material-symbols-outlined text-lg" onclick="event.stopPropagation(); window.deleteStudentMemo('${m.id}')">delete</span>
+                        <button class="delete-memo-btn text-red-400 hover:text-red-600 p-1" title="삭제" data-memo-id="${m.id}">
+                            <span class="material-symbols-outlined text-lg pointer-events-none">delete</span>
                         </button>
                     </div>
                 </div>
             `}).join('');
+
+            // 이벤트 리스너 추가
+            container.querySelectorAll('.edit-memo-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openEditMemoModal(btn.dataset.memoId);
+                });
+            });
+
+            container.querySelectorAll('.delete-memo-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.deleteStudentMemo(btn.dataset.memoId);
+                });
+            });
         }
 
         // 보강시간 목록 렌더링
@@ -5616,15 +5631,30 @@
                         </div>
                     </div>
                     <div class="flex gap-1 ml-2">
-                        <button onclick="event.stopPropagation(); openEditMakeupModal('${m.id}')" class="text-blue-400 hover:text-blue-600 p-1" title="수정">
-                            <span class="material-symbols-outlined text-lg">edit</span>
+                        <button class="edit-makeup-btn text-blue-400 hover:text-blue-600 p-1" title="수정" data-makeup-id="${m.id}">
+                            <span class="material-symbols-outlined text-lg pointer-events-none">edit</span>
                         </button>
-                        <button onclick="event.stopPropagation(); window.deleteMakeupTime('${m.id}')" class="text-red-400 hover:text-red-600 p-1" title="삭제">
-                            <span class="material-symbols-outlined text-lg" onclick="event.stopPropagation(); window.deleteMakeupTime('${m.id}')">delete</span>
+                        <button class="delete-makeup-btn text-red-400 hover:text-red-600 p-1" title="삭제" data-makeup-id="${m.id}">
+                            <span class="material-symbols-outlined text-lg pointer-events-none">delete</span>
                         </button>
                     </div>
                 </div>
             `}).join('');
+
+            // 이벤트 리스너 추가
+            container.querySelectorAll('.edit-makeup-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openEditMakeupModal(btn.dataset.makeupId);
+                });
+            });
+
+            container.querySelectorAll('.delete-makeup-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.deleteMakeupTime(btn.dataset.makeupId);
+                });
+            });
         }
 
         // 학생 목록 로드 및 렌더링
