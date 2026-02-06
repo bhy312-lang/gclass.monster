@@ -118,7 +118,7 @@ async function loadUserProfile() {
 // Google 로그인
 async function signInWithGoogle(redirectUrl = null) {
     if (!redirectUrl) {
-        redirectUrl = getRedirectUrl('index.html');
+        redirectUrl = getRedirectUrl('franchise.html');
     }
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -139,7 +139,7 @@ async function signInWithGoogle(redirectUrl = null) {
 // Kakao 로그인
 async function signInWithKakao(redirectUrl = null) {
     if (!redirectUrl) {
-        redirectUrl = getRedirectUrl('index.html');
+        redirectUrl = getRedirectUrl('franchise.html');
     }
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'kakao',
@@ -264,8 +264,12 @@ async function deleteStudent(studentId) {
 
 // UI 업데이트 (헤더 로그인 버튼 등)
 function updateAuthUI() {
+    console.log('[Auth] updateAuthUI 호출, currentUser:', currentUser ? currentUser.email : 'null');
+
     const loginBtn = document.getElementById('login-btn');
     const userInfo = document.getElementById('user-info');
+
+    console.log('[Auth] DOM 요소 - loginBtn:', !!loginBtn, ', userInfo:', !!userInfo);
     const profileBtn = document.getElementById('profile-btn');
     const profileInitial = document.getElementById('profile-initial');
     const dropdownEmail = document.getElementById('dropdown-email');
@@ -349,13 +353,23 @@ function showAlert(message, type = 'info') {
 
 // 현재 세션 확인
 async function checkSession() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-        currentUser = session.user;
-        await loadUserProfile();
-        updateAuthUI();
+    try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+            console.error('[Auth] 세션 확인 실패:', error);
+            return null;
+        }
+        console.log('[Auth] 세션 확인:', session ? '로그인됨 (' + session.user.email + ')' : '로그아웃 상태');
+        if (session?.user) {
+            currentUser = session.user;
+            await loadUserProfile();
+            updateAuthUI();
+        }
+        return session;
+    } catch (e) {
+        console.error('[Auth] checkSession 예외:', e);
+        return null;
     }
-    return session;
 }
 
 // 페이지 로드 시 세션 확인

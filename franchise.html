@@ -2158,7 +2158,7 @@
 
             <div class="flex items-center gap-3">
                 <a href="index.html" class="text-xs font-bold text-[#58d3d3] bg-teal-50 px-3 py-1.5 rounded-full hover:bg-teal-100 transition">메인페이지</a>
-                <button id="login-btn" onclick="window.location.href='login.html'" class="text-xs font-bold text-pink-500 bg-pink-50 px-3 py-1.5 rounded-full hover:bg-pink-100 transition">LOGIN</button>
+                <button id="login-btn" onclick="window.location.href='login.html?redirect=' + encodeURIComponent(window.location.pathname)" class="text-xs font-bold text-pink-500 bg-pink-50 px-3 py-1.5 rounded-full hover:bg-pink-100 transition">LOGIN</button>
 
                 <!-- 프로필 아이콘과 드롭다운 메뉴 -->
                 <div id="user-info" class="hidden relative">

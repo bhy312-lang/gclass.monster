@@ -202,7 +202,7 @@
         async function checkAuth() {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
-                const redirectUrl = getRedirectUrl('index.html');
+                const redirectUrl = getRedirectUrl('franchise.html');
                 window.location.href = redirectUrl;
             }
         }
@@ -219,7 +219,7 @@
                 return;
             }
 
-            const redirectUrl = getRedirectUrl('index.html');
+            const redirectUrl = getRedirectUrl('franchise.html');
 
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
@@ -241,7 +241,7 @@
                 return;
             }
 
-            const redirectUrl = getRedirectUrl('index.html');
+            const redirectUrl = getRedirectUrl('franchise.html');
 
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'kakao',
