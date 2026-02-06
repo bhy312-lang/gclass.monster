@@ -5585,7 +5585,7 @@
                             <span class="material-symbols-outlined text-lg">edit</span>
                         </button>
                         <button onclick="event.stopPropagation(); window.deleteStudentMemo('${m.id}')" class="text-red-400 hover:text-red-600 p-1" title="삭제">
-                            <span class="material-symbols-outlined text-lg">delete</span>
+                            <span class="material-symbols-outlined text-lg" onclick="event.stopPropagation(); window.deleteStudentMemo('${m.id}')">delete</span>
                         </button>
                     </div>
                 </div>
@@ -5620,7 +5620,7 @@
                             <span class="material-symbols-outlined text-lg">edit</span>
                         </button>
                         <button onclick="event.stopPropagation(); window.deleteMakeupTime('${m.id}')" class="text-red-400 hover:text-red-600 p-1" title="삭제">
-                            <span class="material-symbols-outlined text-lg">delete</span>
+                            <span class="material-symbols-outlined text-lg" onclick="event.stopPropagation(); window.deleteMakeupTime('${m.id}')">delete</span>
                         </button>
                     </div>
                 </div>
