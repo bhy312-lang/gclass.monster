@@ -61,6 +61,9 @@ async function initializeParentPortal() {
     // 실시간 업데이트 구독
     subscribeToRealtimeUpdates();
 
+    // 학습 피드백 로드
+    await loadFeedbacks();
+
     console.log('[Parent Portal] 초기화 완료');
 
   } catch (error) {
@@ -654,6 +657,118 @@ function showError(message) {
 function showInfo(message) {
   console.log('[Parent Portal] 정보:', message);
   alert(message);
+}
+
+// 학습 피드백 로드
+async function loadFeedbacks() {
+  const container = document.getElementById('feedback-list');
+  if (!container) return;
+
+  try {
+    const { data: feedbacks, error } = await supabase
+      .from('student_feedbacks')
+      .select('id, feedback_period, generated_message, sent_at, created_at, students(name)')
+      .in('student_id', childrenData.map(c => c.id))
+      .eq('send_status', 'sent')
+      .order('sent_at', { ascending: false })
+      .limit(10);
+
+    if (error) throw error;
+
+    if (!feedbacks || feedbacks.length === 0) {
+      container.innerHTML = `
+        <div class="text-center text-gray-500 py-6">
+          <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <p class="text-sm">아직 피드백이 없습니다.</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = feedbacks.map(feedback => {
+      const date = feedback.sent_at
+        ? new Date(feedback.sent_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
+        : '';
+      const shortMessage = feedback.generated_message
+        ? feedback.generated_message.substring(0, 80) + '...'
+        : '피드백 내용';
+
+      return `
+        <div class="border border-pink-100 rounded-xl p-4 cursor-pointer hover:bg-pink-50 transition-colors"
+             onclick="showFeedbackDetail('${feedback.id}')">
+          <div class="flex justify-between items-start mb-2">
+            <span class="font-bold text-gray-800">${feedback.students?.name || '학생'}</span>
+            <span class="text-xs text-gray-500">${date}</span>
+          </div>
+          <p class="text-xs text-pink-600 mb-2">${feedback.feedback_period || ''}</p>
+          <p class="text-sm text-gray-600 line-clamp-2">${shortMessage}</p>
+        </div>
+      `;
+    }).join('');
+
+  } catch (error) {
+    console.error('[Parent Portal] 피드백 로드 실패:', error);
+    container.innerHTML = `
+      <div class="text-center text-red-500 py-4">
+        <p class="text-sm">피드백을 불러오는데 실패했습니다.</p>
+      </div>
+    `;
+  }
+}
+
+// 피드백 상세 보기
+async function showFeedbackDetail(feedbackId) {
+  try {
+    const { data: feedback, error } = await supabase
+      .from('student_feedbacks')
+      .select('*, students(name)')
+      .eq('id', feedbackId)
+      .single();
+
+    if (error) throw error;
+
+    // 모달로 상세 내용 표시
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+    modal.onclick = (e) => {
+      if (e.target === modal) modal.remove();
+    };
+
+    const date = feedback.sent_at
+      ? new Date(feedback.sent_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
+      : '';
+
+    modal.innerHTML = `
+      <div class="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-2xl">
+        <div class="sticky top-0 bg-gradient-to-r from-pink-500 to-pink-600 text-white p-4 rounded-t-2xl">
+          <div class="flex justify-between items-center">
+            <div>
+              <h3 class="font-bold text-lg">${feedback.students?.name || '학생'} 학습 피드백</h3>
+              <p class="text-sm text-pink-100">${feedback.feedback_period || ''} · ${date}</p>
+            </div>
+            <button onclick="this.closest('.fixed').remove()" class="p-2 hover:bg-white/20 rounded-full">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="p-5">
+          <div class="prose prose-sm max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
+            ${feedback.generated_message || '피드백 내용이 없습니다.'}
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+  } catch (error) {
+    console.error('[Parent Portal] 피드백 상세 로드 실패:', error);
+    showError('피드백을 불러오는데 실패했습니다.');
+  }
 }
 
 // 페이지 언로드 시 채널 정리
