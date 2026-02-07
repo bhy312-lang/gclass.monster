@@ -167,7 +167,8 @@ async function signOut() {
         return false;
     }
 
-    window.location.href = 'index.html';
+    // 현재 페이지에서 새로고침 (로그인 필수 페이지가 아니면 그대로 유지)
+    window.location.reload();
     return true;
 }
 
