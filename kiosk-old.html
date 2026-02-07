@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>키오스크 - 꿈터공부방</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #fce7f3 0%, #e9d5ff 25%, #dbeafe 50%, #fef3c7 75%, #fef2f2 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-6">
+    <div class="bg-gradient-to-br from-white to-pink-50/30 rounded-[40px] p-12 max-w-lg w-full shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-white/50">
+        <div class="text-center mb-10">
+            <div class="w-24 h-24 bg-gradient-to-br from-pink-200 to-purple-200 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-200/50">
+                <span class="material-symbols-outlined text-pink-600 text-6xl">touch_app</span>
+            </div>
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-3">키오스크</h1>
+            <p class="text-gray-400 text-lg">부모님 휴대폰 번호 뒷자리 4자리</p>
+        </div>
+
+        <!-- 학생 정보 표시 영역 -->
+        <div id="student-info" class="hidden mb-2">
+            <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-2 border-2 border-emerald-200">
+                <div class="text-center">
+                    <div id="student-name" class="text-lg font-bold text-emerald-700"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 번호 입력 표시 -->
+        <div class="mb-10">
+            <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-8 text-center shadow-inner border-2 border-purple-100">
+                <div class="flex justify-center gap-4 mb-3">
+                    <div id="kiosk-digit-1" class="w-16 h-18 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-3xl font-bold text-purple-500 min-h-[72px]"></div>
+                    <div id="kiosk-digit-2" class="w-16 h-18 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-3xl font-bold text-purple-500 min-h-[72px]"></div>
+                    <div id="kiosk-digit-3" class="w-16 h-18 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-3xl font-bold text-purple-500 min-h-[72px]"></div>
+                    <div id="kiosk-digit-4" class="w-16 h-18 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-3xl font-bold text-purple-500 min-h-[72px]"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 숫자 키패드 -->
+        <div class="grid grid-cols-3 gap-5 mb-10">
+            <button onclick="kioskPressKey('1')" class="kiosk-key bg-gradient-to-br from-pink-100 to-pink-200 hover:from-pink-200 hover:to-pink-300 text-3xl font-bold text-pink-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-pink-200/50 hover:shadow-xl hover:shadow-pink-300/50 active:scale-95 active:shadow-md">1</button>
+            <button onclick="kioskPressKey('2')" class="kiosk-key bg-gradient-to-br from-purple-100 to-purple-200 hover:from-purple-200 hover:to-purple-300 text-3xl font-bold text-purple-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-purple-200/50 hover:shadow-xl hover:shadow-purple-300/50 active:scale-95 active:shadow-md">2</button>
+            <button onclick="kioskPressKey('3')" class="kiosk-key bg-gradient-to-br from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 text-3xl font-bold text-blue-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-blue-200/50 hover:shadow-xl hover:shadow-blue-300/50 active:scale-95 active:shadow-md">3</button>
+            <button onclick="kioskPressKey('4')" class="kiosk-key bg-gradient-to-br from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 text-3xl font-bold text-green-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-green-200/50 hover:shadow-xl hover:shadow-green-300/50 active:scale-95 active:shadow-md">4</button>
+            <button onclick="kioskPressKey('5')" class="kiosk-key bg-gradient-to-br from-yellow-100 to-yellow-200 hover:from-yellow-200 hover:to-yellow-300 text-3xl font-bold text-yellow-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-yellow-200/50 hover:shadow-xl hover:shadow-yellow-300/50 active:scale-95 active:shadow-md">5</button>
+            <button onclick="kioskPressKey('6')" class="kiosk-key bg-gradient-to-br from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 text-3xl font-bold text-orange-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-orange-200/50 hover:shadow-xl hover:shadow-orange-300/50 active:scale-95 active:shadow-md">6</button>
+            <button onclick="kioskPressKey('7')" class="kiosk-key bg-gradient-to-br from-teal-100 to-teal-200 hover:from-teal-200 hover:to-teal-300 text-3xl font-bold text-teal-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 active:scale-95 active:shadow-md">7</button>
+            <button onclick="kioskPressKey('8')" class="kiosk-key bg-gradient-to-br from-indigo-100 to-indigo-200 hover:from-indigo-200 hover:to-indigo-300 text-3xl font-bold text-indigo-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-indigo-200/50 hover:shadow-xl hover:shadow-indigo-300/50 active:scale-95 active:shadow-md">8</button>
+            <button onclick="kioskPressKey('9')" class="kiosk-key bg-gradient-to-br from-rose-100 to-rose-200 hover:from-rose-200 hover:to-rose-300 text-3xl font-bold text-rose-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-rose-200/50 hover:shadow-xl hover:shadow-rose-300/50 active:scale-95 active:shadow-md">9</button>
+            <button onclick="kioskClearInput()" class="bg-gradient-to-br from-red-100 to-red-200 hover:from-red-200 hover:to-red-300 text-xl font-bold text-red-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-red-200/50 hover:shadow-xl hover:shadow-red-300/50 active:scale-95">지우기</button>
+            <button onclick="kioskPressKey('0')" class="kiosk-key bg-gradient-to-br from-cyan-100 to-cyan-200 hover:from-cyan-200 hover:to-cyan-300 text-3xl font-bold text-cyan-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-cyan-200/50 hover:shadow-xl hover:shadow-cyan-300/50 active:scale-95 active:shadow-md">0</button>
+            <button onclick="kioskBackspace()" class="bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-2xl font-bold text-gray-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-300/50 active:scale-95">←</button>
+        </div>
+
+        <!-- 등원/하원 버튼 -->
+        <div class="flex gap-5">
+            <button onclick="kioskCheckIn()"
+                class="flex-1 px-8 py-6 bg-gradient-to-br from-emerald-300 to-emerald-400 text-white font-bold rounded-2xl shadow-lg shadow-emerald-200/50 hover:shadow-xl hover:shadow-emerald-300/50 transition-all duration-150 text-xl active:scale-95">
+                <span class="material-symbols-outlined inline align-middle mr-2 text-2xl">login</span>
+                등원
+            </button>
+            <button onclick="kioskCheckOut()"
+                class="flex-1 px-8 py-6 bg-gradient-to-br from-amber-300 to-orange-400 text-white font-bold rounded-2xl shadow-lg shadow-orange-200/50 hover:shadow-xl hover:shadow-orange-300/50 transition-all duration-150 text-xl active:scale-95">
+                <span class="material-symbols-outlined inline align-middle mr-2 text-2xl">logout</span>
+                하원
+            </button>
+        </div>
+
+        <!-- 메인으로 돌아가기 -->
+        <div class="mt-8 text-center">
+            <a href="index.html" class="inline-flex items-center gap-2 px-6 py-3 bg-white/60 text-gray-400 font-semibold rounded-xl hover:bg-white/80 transition-all duration-150">
+                <span class="material-symbols-outlined">home</span>
+                메인으로 돌아가기
+            </a>
+        </div>
+    </div>
+
+    <!-- 알림 모달 -->
+    <div id="alert-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-3xl p-10 max-w-sm w-full mx-4 shadow-2xl text-center">
+            <div id="alert-icon" class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span class="material-symbols-outlined text-5xl"></span>
+            </div>
+            <h3 id="alert-title" class="text-2xl font-bold text-gray-800 mb-3"></h3>
+            <p id="alert-message" class="text-gray-600 mb-8"></p>
+            <button onclick="closeAlertModal()" class="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:shadow-lg transition">확인</button>
+        </div>
+    </div>
+
+    <!-- 학생 선택 모달 (같은 번호로 여러 학생이 있을 경우) -->
+    <div id="student-select-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">학생 선택</h3>
+            <div id="student-select-list" class="space-y-3 max-h-60 overflow-y-auto">
+                <!-- 학생 버튼들이 동적으로 추가됨 -->
+            </div>
+            <button onclick="closeStudentSelectModal()" class="w-full mt-4 px-6 py-3 bg-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-300 transition">취소</button>
+        </div>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+
+    <script>
+        // Supabase 클라이언트 (DOMContentLoaded 후 할당)
+        let sb = null;
+
+        let kioskInput = '';
+        let foundStudents = [];
+        let selectedStudent = null;
+        let pendingAction = null; // 'checkIn' or 'checkOut'
+
+        // Demo mode students (local testing without Supabase)
+        const DEMO_STUDENTS = [
+            { id: 'demo-1', name: '강지민', parent_phone_last4: '5100' },
+            { id: 'demo-2', name: '강서준', parent_phone_last4: '4397' }
+        ];
+
+        function kioskPressKey(key) {
+            if (kioskInput.length < 4) {
+                kioskInput += key;
+                updateKioskDisplay();
+
+                // 4자리 입력 완료 시 자동 검색
+                if (kioskInput.length === 4) {
+                    searchStudents();
+                }
+            }
+        }
+
+        function kioskBackspace() {
+            kioskInput = kioskInput.slice(0, -1);
+            updateKioskDisplay();
+            hideStudentInfo();
+        }
+
+        function kioskClearInput() {
+            kioskInput = '';
+            updateKioskDisplay();
+            hideStudentInfo();
+            foundStudents = [];
+            selectedStudent = null;
+        }
+
+        function updateKioskDisplay() {
+            for (let i = 1; i <= 4; i++) {
+                const digitEl = document.getElementById(`kiosk-digit-${i}`);
+                if (digitEl) {
+                    digitEl.textContent = kioskInput[i - 1] || '';
+                }
+            }
+        }
+
+        function showStudentInfo(student, statusText) {
+            const infoEl = document.getElementById('student-info');
+            const nameEl = document.getElementById('student-name');
+
+            nameEl.textContent = student.name;
+            infoEl.classList.remove('hidden');
+        }
+
+        function hideStudentInfo() {
+            document.getElementById('student-info').classList.add('hidden');
+        }
+
+        // Supabase에서 학생 검색 (직접 fetch만 사용 - 빠른 응답)
+        async function searchStudents() {
+            console.log('[searchStudents] 시작, 입력값:', kioskInput);
+
+            // isSupabaseConfigured 함수가 없으면 항상 false 처리 (데모 모드)
+            const hasConfigFunction = typeof window.isSupabaseConfigured === 'function';
+            const sbOk = hasConfigFunction && window.isSupabaseConfigured();
+            console.log('[searchStudents] 데모 모드:', !sbOk);
+
+            if (sbOk) {
+                // 직접 fetch로 바로 검색 (SDK 거치지 않음 - 더 빠름)
+                console.log('[searchStudents] 직접 fetch로 검색 시작...');
+                const { data: fetchData, error: fetchError } = await searchStudentsDirectFetch(kioskInput);
+
+                if (fetchError) {
+                    console.error('학생 검색 오류 (직접 fetch):', fetchError);
+                    showAlert('error', '오류', `검색 중 오류가 발생했습니다.\n${fetchError.message || 'Unknown error'}`);
+                    return;
+                }
+
+                if (fetchData && fetchData.length > 0) {
+                    foundStudents = fetchData;
+                    if (fetchData.length === 1) {
+                        // 학생이 1명이면 바로 선택
+                        selectedStudent = fetchData[0];
+                        showStudentInfo(selectedStudent, '학생을 찾았습니다');
+                    } else {
+                        // 여러 명이면 선택 모달 표시 (등원/하원 버튼 클릭 시)
+                        selectedStudent = null;
+                        showStudentInfo({ name: `${fetchData.length}명의 학생` }, '등원/하원 버튼을 눌러주세요');
+                    }
+                } else {
+                    foundStudents = [];
+                    selectedStudent = null;
+                    showAlert('error', '검색 결과 없음', '등록되지 않은 번호입니다.\n회원가입 후 이용해주세요.');
+                    kioskClearInput();
+                }
+            } else {
+                // 데모 모드 - 로컬 학생 데이터 검색
+                console.log('[searchStudents] 데모 모드 실행, DEMO_STUDENTS:', DEMO_STUDENTS);
+                const matched = DEMO_STUDENTS.filter(s => s.parent_phone_last4 === kioskInput);
+                console.log('[searchStudents] matched 결과:', matched);
+
+                if (matched.length > 0) {
+                    foundStudents = matched;
+                    if (matched.length === 1) {
+                        selectedStudent = matched[0];
+                        showStudentInfo(selectedStudent, '학생을 찾았습니다 (데모 모드)');
+                    } else {
+                        selectedStudent = null;
+                        showStudentInfo({ name: `${matched.length}명의 학생` }, '등원/하원 버튼을 눌러주세요 (데모 모드)');
+                    }
+                } else {
+                    foundStudents = [];
+                    selectedStudent = null;
+                    showAlert('error', '검색 결과 없음', '등록되지 않은 번호입니다.\n데모 모드: 5100(강지민), 4397(강서준)');
+                    kioskClearInput();
+                }
+            }
+            console.log('[searchStudents] 완료, foundStudents:', foundStudents, 'selectedStudent:', selectedStudent);
+        }
+
+        // 학생 선택 모달 표시
+        function showStudentSelectModal(action) {
+            pendingAction = action;
+            const modal = document.getElementById('student-select-modal');
+            const list = document.getElementById('student-select-list');
+
+            list.innerHTML = foundStudents.map(student => `
+                <button onclick="selectStudent('${student.id}')"
+                    class="w-full px-6 py-4 bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-gray-700 font-bold rounded-xl transition-all">
+                    ${escapeHtml(student.name)}
+                </button>
+            `).join('');
+
+            modal.style.display = 'flex';
+            modal.classList.remove('hidden');
+        }
+
+        function closeStudentSelectModal() {
+            const modal = document.getElementById('student-select-modal');
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+            pendingAction = null;
+        }
+
+        function selectStudent(studentId) {
+            selectedStudent = foundStudents.find(s => s.id === studentId);
+            closeStudentSelectModal();
+
+            if (pendingAction === 'checkIn') {
+                performCheckIn();
+            } else if (pendingAction === 'checkOut') {
+                performCheckOut();
+            }
+        }
+
+        // 등원 처리
+        async function kioskCheckIn() {
+            console.log('[kioskCheckIn] 시작');
+            console.log('[kioskCheckIn] kioskInput:', kioskInput, 'length:', kioskInput.length);
+            console.log('[kioskCheckIn] foundStudents:', foundStudents);
+            console.log('[kioskCheckIn] selectedStudent:', selectedStudent);
+
+            if (kioskInput.length !== 4) {
+                showAlert('warning', '알림', '번호 4자리를 모두 입력해주세요.');
+                return;
+            }
+
+            if (foundStudents.length === 0) {
+                showAlert('error', '오류', '학생을 먼저 검색해주세요.');
+                return;
+            }
+
+            if (foundStudents.length > 1 && !selectedStudent) {
+                showStudentSelectModal('checkIn');
+                return;
+            }
+
+            await performCheckIn();
+        }
+
+        async function performCheckIn() {
+            if (!selectedStudent) {
+                selectedStudent = foundStudents[0];
+            }
+
+            const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
+
+            if (sbOk) {
+                // 직접 fetch로 바로 등원 처리 (SDK 거치지 않음 - 더 빠름)
+                console.log('[performCheckIn] 직접 fetch로 등원 처리 시작...');
+                const fetchResult = await performCheckInDirectFetch();
+
+                if (fetchResult.success) {
+                    const { now, alarmTime } = fetchResult;
+                    const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+                    const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+                    showAlert('success', '등원 완료',
+                        `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}`);
+                    kioskClearInput();
+                } else {
+                    if (fetchResult.alreadyCheckedIn) {
+                        showAlert('info', '알림', fetchResult.error);
+                    } else {
+                        showAlert('error', '오류', `등원 처리 중 오류가 발생했습니다.\n${fetchResult.error || 'Unknown error'}`);
+                    }
+                }
+            } else {
+                // 데모 모드 - localStorage에 저장
+                const now = new Date();
+                const alarmTime = new Date(now.getTime() + 60 * 60 * 1000); // +60분
+                const today = now.toISOString().split('T')[0];
+
+                // 이미 등원했는지 확인 (waiting 또는 seated 상태) - 오늘 날짜만
+                const existingAttendance = getLocalAttendance();
+                const existingRecord = existingAttendance.find(
+                    a => a.student_id === selectedStudent.id &&
+                         (a.status === 'waiting' || a.status === 'seated') &&
+                         a.check_in_time && a.check_in_time.startsWith(today)
+                );
+
+                if (existingRecord) {
+                    const statusText = existingRecord.status === 'seated' ? '이미 좌석에 배정되었습니다' : '이미 등원 처리되었습니다';
+                    showAlert('info', '알림', `${selectedStudent.name}님은 ${statusText}.`);
+                    kioskClearInput();
+                    return;
+                }
+
+                // 새 등원 기록 생성
+                const attendanceId = `demo-attendance-${Date.now()}`;
+                const newAttendance = {
+                    id: attendanceId,
+                    student_id: selectedStudent.id,
+                    student_name: selectedStudent.name,
+                    type: 'check_in',
+                    check_in_time: now.toISOString(),
+                    alarm_time: alarmTime.toISOString(),
+                    date: today,
+                    status: 'waiting'
+                };
+
+                // localStorage에 저장
+                existingAttendance.push(newAttendance);
+                localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
+
+                const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+                const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+                showAlert('success', '등원 완료 (데모 모드)',
+                    `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}`);
+                kioskClearInput();
+            }
+        }
+
+        // 하원 처리
+        async function kioskCheckOut() {
+            if (kioskInput.length !== 4) {
+                showAlert('warning', '알림', '번호 4자리를 모두 입력해주세요.');
+                return;
+            }
+
+            if (foundStudents.length === 0) {
+                showAlert('error', '오류', '학생을 먼저 검색해주세요.');
+                return;
+            }
+
+            if (foundStudents.length > 1 && !selectedStudent) {
+                showStudentSelectModal('checkOut');
+                return;
+            }
+
+            await performCheckOut();
+        }
+
+        async function performCheckOut() {
+            if (!selectedStudent) {
+                selectedStudent = foundStudents[0];
+            }
+
+            const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
+
+            if (sbOk) {
+                console.log('[performCheckOut] 직접 fetch로 하원 처리 시작...');
+                const fetchResult = await performCheckOutDirectFetch();
+
+                if (fetchResult.success) {
+                    const checkOutTime = new Date();
+                    const timeStr = checkOutTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+                    showAlert('success', '하원 완료',
+                        `${selectedStudent.name}님, 하원 완료되었습니다!\n안녕히 가세요!\n\n하원시간: ${timeStr}`);
+                    kioskClearInput();
+                } else if (fetchResult.alreadyCheckedOut) {
+                    showAlert('info', '알림', fetchResult.error);
+                    kioskClearInput();
+                } else if (fetchResult.noCheckIn) {
+                    showAlert('info', '알림', fetchResult.error);
+                    kioskClearInput();
+                } else {
+                    showAlert('error', '오류', `하원 처리 중 오류가 발생했습니다.\n${fetchResult.error}`);
+                }
+            } else {
+                // 데모 모드 - localStorage 업데이트
+                const existingAttendance = getLocalAttendance();
+                const today = new Date().toISOString().split('T')[0];
+
+                // 이미 하원했는지 확인 (completed 상태) - 오늘 날짜만
+                const completedIndex = existingAttendance.findIndex(
+                    a => a.student_id === selectedStudent.id &&
+                         a.status === 'completed' &&
+                         a.check_in_time && a.check_in_time.startsWith(today)
+                );
+                if (completedIndex !== -1) {
+                    showAlert('info', '알림', `${selectedStudent.name}님은 이미 하원 처리되었습니다.`);
+                    kioskClearInput();
+                    return;
+                }
+
+                const attendanceIndex = existingAttendance.findIndex(
+                    a => a.student_id === selectedStudent.id &&
+                         (a.status === 'waiting' || a.status === 'seated') &&
+                         a.check_in_time && a.check_in_time.startsWith(today)
+                );
+
+                if (attendanceIndex === -1) {
+                    showAlert('info', '알림', `${selectedStudent.name}님은 등원 기록이 없습니다.`);
+                    kioskClearInput();
+                    return;
+                }
+
+                const attendance = existingAttendance[attendanceIndex];
+
+                // 상태를 completed로 업데이트
+                existingAttendance[attendanceIndex].status = 'completed';
+                existingAttendance[attendanceIndex].type = 'check_out';
+
+                localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
+
+                // 좌석에 배정되어 있었다면 좌석 비우기
+                if (attendance.seat_id) {
+                    try {
+                        const seatsData = localStorage.getItem('seats');
+                        if (seatsData) {
+                            const seats = JSON.parse(seatsData);
+                            const seatIndex = seats.findIndex(s => s.id == attendance.seat_id);
+                            if (seatIndex !== -1) {
+                                seats[seatIndex].name = '';
+                                seats[seatIndex].occupied = false;
+                                seats[seatIndex].alarmTime = null;
+                                seats[seatIndex].alarming = false;
+                                seats[seatIndex].alarmStopped = false;
+                                localStorage.setItem('seats', JSON.stringify(seats));
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error clearing seat:', e);
+                    }
+                }
+
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+                showAlert('success', '하원 완료 (데모 모드)',
+                    `${selectedStudent.name}님, 하원 완료되었습니다!\n안녕히 가세요!\n\n하원시간: ${timeStr}`);
+                kioskClearInput();
+            }
+        }
+
+        // Web Push 알림 전송 함수
+        // student 객체를 직접 받아서 불필요한 DB 조회 제거
+        async function sendWebPushNotification(student, type) {
+            try {
+                // Supabase가 구성되어 있는지 확인
+                const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
+
+                if (!sbOk) {
+                    console.log('[Kiosk] 데모 모드 - Push 알림 스킵');
+                    return;
+                }
+
+                if (!student) {
+                    console.error('[Kiosk] 학생 정보가 없음');
+                    return;
+                }
+
+                console.log(`[Kiosk] Web Push 알림 전송 시도: student_id=${student.id}, name=${student.name}, parent_id=${student.parent_id}, type=${type}`);
+
+                if (!student.parent_id) {
+                    console.log('[Kiosk] 부모 ID가 없음 - 알림 스킵');
+                    return;
+                }
+
+                const requestBody = {
+                    student_id: student.id,
+                    parent_id: student.parent_id,
+                    type: type,
+                    student_name: student.name
+                };
+
+                console.log('[Kiosk] Edge Function 요청 body:', JSON.stringify(requestBody));
+
+                // SDK 대신 직접 fetch만 사용 (FunctionsFetchError 방지)
+                console.log('[Kiosk] 직접 fetch로 Web Push 전송 시도...');
+                await sendWebPushDirectFetch(requestBody);
+
+            } catch (error) {
+                console.error('[Kiosk] Push 알림 전송 중 오류:', error);
+                console.error('[Kiosk] 오류 상세:', error.message, error.stack);
+                // 키오스크 동작에는 영향 없음
+            }
+        }
+
+        // 직접 fetch로 Edge Function 호출 (폴백용)
+        async function sendWebPushDirectFetch(requestBody) {
+            try {
+                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+
+                const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/send-web-push-notification`;
+                console.log('[Kiosk] Edge Function URL:', edgeFunctionUrl);
+
+                const response = await fetch(edgeFunctionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                console.log('[Kiosk] Edge Function 응답 상태:', response.status);
+
+                const responseText = await response.text();
+                console.log('[Kiosk] Edge Function 응답:', responseText);
+
+                if (!response.ok) {
+                    console.error('[Kiosk] Edge Function 호출 실패:', response.status, responseText);
+                } else {
+                    try {
+                        const data = JSON.parse(responseText);
+                        console.log('[Kiosk] Web Push 알림 전송 성공 (직접 fetch):', data);
+                    } catch (e) {
+                        console.log('[Kiosk] 응답 파싱 실패, 원본:', responseText);
+                    }
+                }
+
+            } catch (error) {
+                console.error('[Kiosk] 직접 fetch 오류:', error);
+            }
+        }
+
+        // Helper function to get demo attendance from localStorage
+        function getLocalAttendance() {
+            try {
+                const stored = localStorage.getItem('demo_attendance');
+                return stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                console.error('Error reading demo attendance:', e);
+                return [];
+            }
+        }
+
+        function showAlert(type, title, message) {
+            const modal = document.getElementById('alert-modal');
+            const icon = document.getElementById('alert-icon');
+            const titleEl = document.getElementById('alert-title');
+            const messageEl = document.getElementById('alert-message');
+
+            titleEl.textContent = title;
+            messageEl.innerHTML = message.replace(/\n/g, '<br>');
+
+            // 아이콘 스타일 설정
+            if (type === 'success') {
+                icon.className = 'w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6';
+                icon.innerHTML = '<span class="material-symbols-outlined text-green-600 text-5xl">check_circle</span>';
+            } else if (type === 'error') {
+                icon.className = 'w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6';
+                icon.innerHTML = '<span class="material-symbols-outlined text-red-600 text-5xl">error</span>';
+            } else if (type === 'warning') {
+                icon.className = 'w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6';
+                icon.innerHTML = '<span class="material-symbols-outlined text-yellow-600 text-5xl">warning</span>';
+            } else {
+                icon.className = 'w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6';
+                icon.innerHTML = '<span class="material-symbols-outlined text-blue-600 text-5xl">info</span>';
+            }
+
+            modal.style.display = 'flex';
+            modal.classList.remove('hidden');
+        }
+
+        function closeAlertModal() {
+            const modal = document.getElementById('alert-modal');
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+        }
+
+        // XSS 방지
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 초기화
+        function initKiosk() {
+            // Supabase 클라이언트 할당
+            sb = window.supabase || window.supabaseClient;
+
+            // 디버깅용 로그
+            console.log('[Kiosk] Supabase 클라이언트:', sb ? '로드됨' : '로드 실패');
+            console.log('[Kiosk] sb.from 함수:', typeof sb?.from);
+            console.log('[Kiosk] isSupabaseConfigured:', typeof window.isSupabaseConfigured === 'function' ? window.isSupabaseConfigured() : '함수 없음');
+            console.log('[Kiosk] SUPABASE_URL:', typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '정의되지 않음');
+
+            // Supabase 클라이언트 내부 확인
+            if (sb) {
+                console.log('[Kiosk] sb.auth:', typeof sb.auth);
+                console.log('[Kiosk] sb.storage:', typeof sb.storage);
+                console.log('[Kiosk] sb.functions:', typeof sb.functions);
+                console.log('[Kiosk] sb.rest:', typeof sb.rest);
+                if (sb.rest) {
+                    console.log('[Kiosk] sb.rest.url:', sb.rest?.url);
+                }
+            }
+
+            updateKioskDisplay();
+
+            // 옛날 출결 기록 정리 (비동기 실행)
+            cleanupOldAttendance();
+        }
+
+        // 옛날 미완료 출결 기록 정리
+        async function cleanupOldAttendance() {
+            const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured() && sb;
+
+            if (sbOk) {
+                // Supabase 모드 - 어제 및 그 이전 미완료 기록을 completed로 변경
+                try {
+                    const today = new Date().toISOString().split('T')[0];
+
+                    // 어제 및 그 이전의 waiting/seated 상태 기록 찾기
+                    const { data: oldRecords, error } = await sb
+                        .from('attendance')
+                        .select('id, student_id, student_name, check_in_time, date')
+                        .in('status', ['waiting', 'seated'])
+                        .lt('date', today);
+
+                    if (error) {
+                        // 타임아웃/AbortError는 치명적이지 않으므로 조용히 처리
+                        const isTimeoutError =
+                            error.message?.includes('timeout') ||
+                            error.message?.includes('AbortError') ||
+                            error.message?.includes('aborted') ||
+                            error.hint?.includes('timeout') ||
+                            error.hint?.includes('aborted');
+
+                        if (isTimeoutError) {
+                            console.warn('[정리] 옛날 기록 조회 타임아웃 (무시)');
+                        } else {
+                            console.error('[정리] 옛날 기록 조회 실패:', error);
+                        }
+                        return;
+                    }
+
+                    if (oldRecords && oldRecords.length > 0) {
+                        console.log('[정리] 미완료 기록', oldRecords.length, '개 발견, 정리 시작...');
+
+                        // 모두 completed 상태로 변경
+                        const { error: updateError } = await sb
+                            .from('attendance')
+                            .update({
+                                status: 'completed',
+                                type: 'check_out',
+                                check_out: new Date().toISOString()
+                            })
+                            .in('id', oldRecords.map(r => r.id));
+
+                        if (updateError) {
+                            console.error('[정리] 기록 업데이트 실패:', updateError);
+                        } else {
+                            console.log('[정리] 미완료 기록', oldRecords.length, '개를 완료 처리했습니다.');
+                        }
+                    } else {
+                        console.log('[정리] 정리할 미완료 기록이 없습니다.');
+                    }
+
+                } catch (e) {
+                    // 타임아웃/AbortError는 치명적이지 않으므로 조용히 처리
+                    const isTimeoutError =
+                        e.message?.includes('timeout') ||
+                        e.message?.includes('AbortError') ||
+                        e.message?.includes('aborted');
+
+                    if (isTimeoutError) {
+                        console.warn('[정리] 타임아웃 오류 (무시)');
+                    } else {
+                        console.error('[정리] 오류:', e);
+                    }
+                }
+            } else {
+                // 데모 모드 - localStorage 정리
+                try {
+                    const today = new Date().toISOString().split('T')[0];
+                    const existingAttendance = getLocalAttendance();
+
+                    const needsUpdate = existingAttendance.some(a =>
+                        (a.status === 'waiting' || a.status === 'seated') &&
+                        a.check_in_time && !a.check_in_time.startsWith(today)
+                    );
+
+                    if (needsUpdate) {
+                        console.log('[정리] 데모 모드: 미완료 기록 정리...');
+
+                        existingAttendance.forEach(a => {
+                            if ((a.status === 'waiting' || a.status === 'seated') &&
+                                a.check_in_time && !a.check_in_time.startsWith(today)) {
+                                a.status = 'completed';
+                                a.type = 'check_out';
+                            }
+                        });
+
+                        localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
+                        console.log('[정리] 데모 모드: 정리 완료');
+                    }
+
+                } catch (e) {
+                    console.error('[정리] 데모 모드 오류:', e);
+                }
+            }
+        }
+
+        // 직접 fetch로 학생 검색 (빠른 응답을 위한 타임아웃 5초)
+        async function searchStudentsDirectFetch(phoneLast4) {
+            console.log('[searchStudentsDirectFetch] 직접 fetch 시도...');
+            try {
+                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+
+                // 타임아웃 컨트롤러 (5초 - 빠른 응답)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/students?parent_phone_last4=eq.${phoneLast4}&select=id,name,parent_id,parent_phone_last4`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                console.log('[searchStudentsDirectFetch] 응답 상태:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('[searchStudentsDirectFetch] 에러 응답:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('[searchStudentsDirectFetch] 성공, 데이터:', data);
+                return { data, error: null };
+
+            } catch (error) {
+                console.error('[searchStudentsDirectFetch] 오류:', error);
+                return { data: null, error };
+            }
+        }
+
+        // 직접 fetch로 등원 처리 (Supabase 클라이언트 오류 시 폴백)
+        async function performCheckInDirectFetch() {
+            console.log('[performCheckInDirectFetch] 직접 fetch로 등원 처리 시도...');
+            try {
+                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+
+                const today = new Date().toISOString().split('T')[0];
+
+                // 타임아웃 컨트롤러 (5초 - 빠른 응답)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+                // 1. 기존 등원 확인
+                console.log('[performCheckInDirectFetch] 기존 등원 확인 요청:', {
+                    student_id: selectedStudent.id,
+                    date: today,
+                    url: `${SUPABASE_URL}/rest/v1/attendance?student_id=eq.${selectedStudent.id}&date=eq.${today}&status=in.(waiting,seated)&select=*`
+                });
+                const checkResponse = await fetch(
+                    `${SUPABASE_URL}/rest/v1/attendance?student_id=eq.${selectedStudent.id}&date=eq.${today}&status=in.(waiting,seated)&select=*`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        signal: controller.signal
+                    }
+                );
+
+                if (!checkResponse.ok) {
+                    const errorText = await checkResponse.text();
+                    console.error('[performCheckInDirectFetch] 기존 등원 확인 실패:', errorText);
+                    return { success: false, error: `기존 등원 확인 실패: ${errorText}` };
+                }
+
+                const existingData = await checkResponse.json();
+                console.log('[performCheckInDirectFetch] 기존 등원 확인 응답:', existingData);
+                if (existingData && existingData.length > 0) {
+                    const statusText = existingData[0].status === 'seated' ? '이미 좌석에 배정되었습니다' : '이미 등원 처리되었습니다';
+                    console.log('[performCheckInDirectFetch] 기존 기록 발견:', existingData[0]);
+                    return { success: false, error: statusText, alreadyCheckedIn: true };
+                }
+
+                // 2. 등원 기록 추가
+                const now = new Date();
+                const alarmTime = new Date(now.getTime() + 60 * 60 * 1000);
+
+                const insertResponse = await fetch(`${SUPABASE_URL}/rest/v1/attendance`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    signal: controller.signal,
+                    body: JSON.stringify({
+                        student_id: selectedStudent.id,
+                        student_name: selectedStudent.name,
+                        type: 'check_in',
+                        check_in_time: now.toISOString(),
+                        check_in: now.toISOString(),
+                        date: today,
+                        alarm_time: alarmTime.toISOString(),
+                        status: 'waiting'
+                    })
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!insertResponse.ok) {
+                    const errorText = await insertResponse.text();
+                    console.error('[performCheckInDirectFetch] 등원 기록 추가 실패:', errorText);
+                    return { success: false, error: `등원 기록 추가 실패: ${errorText}` };
+                }
+
+                // 3. localStorage에도 저장 (좌석 모니터링 호환)
+                const attendanceId = `attendance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                const newAttendance = {
+                    id: attendanceId,
+                    student_id: selectedStudent.id,
+                    student_name: selectedStudent.name,
+                    type: 'check_in',
+                    check_in_time: now.toISOString(),
+                    alarm_time: alarmTime.toISOString(),
+                    status: 'waiting'
+                };
+
+                const existingAttendance = getLocalAttendance();
+                existingAttendance.push(newAttendance);
+                localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
+
+                // storage 이벤트 발생
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'demo_attendance',
+                    newValue: JSON.stringify(existingAttendance)
+                }));
+
+                // 4. Web Push 알림 전송
+                await sendWebPushNotification(selectedStudent, 'check_in');
+
+                return { success: true, now, alarmTime };
+
+            } catch (error) {
+                console.error('[performCheckInDirectFetch] 오류:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // 직접 fetch로 하원 처리 (Supabase SDK 오류 시 폴백)
+        async function performCheckOutDirectFetch() {
+            console.log('[performCheckOutDirectFetch] 직접 fetch로 하원 처리 시도...');
+            try {
+                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+
+                const today = new Date().toISOString().split('T')[0];
+
+                // 타임아웃 컨트롤러 (5초 - 빠른 응답)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+                // 1. 이미 하원했는지 확인 (completed 상태)
+                console.log('[performCheckOutDirectFetch] 하원 확인 요청:', {
+                    student_id: selectedStudent.id,
+                    date: today
+                });
+                const completedResponse = await fetch(
+                    `${SUPABASE_URL}/rest/v1/attendance?student_id=eq.${selectedStudent.id}&date=eq.${today}&status=eq.completed&select=*`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        signal: controller.signal
+                    }
+                );
+
+                if (!completedResponse.ok) {
+                    const errorText = await completedResponse.text();
+                    console.error('[performCheckOutDirectFetch] 하원 확인 실패:', errorText);
+                    return { success: false, error: `하원 확인 실패: ${errorText}` };
+                }
+
+                const completedData = await completedResponse.json();
+                console.log('[performCheckOutDirectFetch] 하원 확인 응답:', completedData);
+                if (completedData && completedData.length > 0) {
+                    return { success: false, error: `${selectedStudent.name}님은 이미 하원 처리되었습니다.`, alreadyCheckedOut: true };
+                }
+
+                // 2. 등원 기록 찾기 (waiting, seated 상태)
+                console.log('[performCheckOutDirectFetch] 등원 기록 찾기 요청:', {
+                    student_id: selectedStudent.id,
+                    date: today
+                });
+                const attendanceResponse = await fetch(
+                    `${SUPABASE_URL}/rest/v1/attendance?student_id=eq.${selectedStudent.id}&date=eq.${today}&status=in.(waiting,seated)&select=*&order=check_in_time.desc&limit=1`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        signal: controller.signal
+                    }
+                );
+
+                if (!attendanceResponse.ok) {
+                    const errorText = await attendanceResponse.text();
+                    console.error('[performCheckOutDirectFetch] 등원 기록 찾기 실패:', errorText);
+                    return { success: false, error: `등원 기록 찾기 실패: ${errorText}` };
+                }
+
+                const attendanceData = await attendanceResponse.json();
+                console.log('[performCheckOutDirectFetch] 등원 기록 응답:', attendanceData);
+                if (!attendanceData || attendanceData.length === 0) {
+                    return { success: false, error: `${selectedStudent.name}님은 등원 기록이 없습니다.`, noCheckIn: true };
+                }
+
+                const attendance = attendanceData[0];
+                console.log('[performCheckOutDirectFetch] 찾은 등원 기록:', attendance);
+
+                // 3. 하원 처리 (상태 업데이트)
+                const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/attendance?id=eq.${attendance.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    signal: controller.signal,
+                    body: JSON.stringify({
+                        type: 'check_out',
+                        status: 'completed',
+                        check_out: new Date().toISOString()
+                    })
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!updateResponse.ok) {
+                    const errorText = await updateResponse.text();
+                    console.error('[performCheckOutDirectFetch] 하원 처리 실패:', errorText);
+                    return { success: false, error: `하원 처리 실패: ${errorText}` };
+                }
+
+                const updateResult = await updateResponse.json();
+                console.log('[performCheckOutDirectFetch] 하원 처리 성공:', updateResult);
+
+                // 4. 좌석이 있었다면 좌석 비우기
+                if (attendance.seat_id) {
+                    console.log('[performCheckOutDirectFetch] 좌석 비우기:', attendance.seat_id);
+                    const seatResponse = await fetch(`${SUPABASE_URL}/rest/v1/seats?id=eq.${attendance.seat_id}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            occupied: false,
+                            student_id: null,
+                            student_name: null,
+                            alarm_time: null,
+                            alarming: false,
+                            alarm_stopped: false
+                        })
+                    });
+
+                    if (seatResponse.ok) {
+                        console.log('[performCheckOutDirectFetch] 좌석 비우기 성공');
+                    } else {
+                        console.error('[performCheckOutDirectFetch] 좌석 비우기 실패:', await seatResponse.text());
+                    }
+                }
+
+                // 5. Web Push 알림 전송
+                await sendWebPushNotification(selectedStudent, 'check_out');
+
+                return { success: true, attendance };
+
+            } catch (error) {
+                console.error('[performCheckOutDirectFetch] 오류:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // 스크립트 로드 후 즉시 초기화 시도
+        (function() {
+            // 약간의 지연 후 실행 (다른 스크립트가 로드될 때까지 대기)
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initKiosk);
+            } else {
+                // 이미 로드된 경우 즉시 실행
+                initKiosk();
+            }
+        })();
+
+        // ESC 키로 모달 닫기
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeAlertModal();
+                closeStudentSelectModal();
+            }
+        });
+    </script>
+</body>
+</html>
