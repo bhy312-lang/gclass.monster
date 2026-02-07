@@ -1,1 +1,6 @@
 node_modules/
+
+# 민감한 정보 파일
+.claude/study-room-push-*.json
+supabase/Supabase_env
+nul
