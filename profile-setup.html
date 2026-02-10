@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프로필 설정 - 스터디룸</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 50%, #e8eaf6 100%);
+            min-height: 100vh;
+        }
+
+        .role-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .role-card:hover {
+            border-color: #a855f7;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.15);
+        }
+
+        .role-card.selected {
+            border-color: #a855f7;
+            background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.2);
+        }
+
+        .role-card.selected .role-icon {
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            color: white;
+        }
+
+        .role-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+        }
+
+        .academy-item {
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .academy-item:hover {
+            border-color: #a855f7;
+            background: #faf5ff;
+        }
+
+        .academy-item.selected {
+            border-color: #a855f7;
+            background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            transition: all 0.3s ease;
+        }
+
+        .step-dot.active {
+            background: #a855f7;
+            width: 24px;
+            border-radius: 5px;
+        }
+
+        .step-dot.completed {
+            background: #a855f7;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
+        <!-- Step 1: 역할 선택 -->
+        <div id="step-role" class="step-content">
+            <div class="step-indicator">
+                <div class="step-dot active"></div>
+                <div class="step-dot"></div>
+            </div>
+
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white text-3xl">person</span>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">프로필 설정</h1>
+                <p class="text-gray-500 mt-2">사용 목적을 선택해주세요</p>
+            </div>
+
+            <div class="space-y-4">
+                <div class="role-card" onclick="selectRole('owner')" id="role-owner">
+                    <div class="role-icon">
+                        <span class="material-symbols-outlined text-2xl text-gray-600">school</span>
+                    </div>
+                    <h3 class="font-bold text-lg text-gray-800">공부방/학원 원장</h3>
+                    <p class="text-gray-500 text-sm mt-1">학생 관리, 출결, 피드백 등을 관리합니다</p>
+                </div>
+
+                <div class="role-card" onclick="selectRole('parent')" id="role-parent">
+                    <div class="role-icon">
+                        <span class="material-symbols-outlined text-2xl text-gray-600">family_restroom</span>
+                    </div>
+                    <h3 class="font-bold text-lg text-gray-800">학부모</h3>
+                    <p class="text-gray-500 text-sm mt-1">자녀의 출결 현황과 피드백을 확인합니다</p>
+                </div>
+            </div>
+
+            <button id="btn-next-role" class="btn-primary w-full mt-8" disabled onclick="goToStep2()">
+                다음으로
+            </button>
+        </div>
+
+        <!-- Step 2: 원장 - 학원명 입력 -->
+        <div id="step-owner" class="step-content hidden">
+            <div class="step-indicator">
+                <div class="step-dot completed"></div>
+                <div class="step-dot active"></div>
+            </div>
+
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white text-3xl">school</span>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">학원 정보 등록</h1>
+                <p class="text-gray-500 mt-2">운영하시는 학원/공부방 정보를 입력해주세요</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">학원/공부방 이름 *</label>
+                    <input type="text" id="academy-name" class="input-field" placeholder="예: 해피스터디 공부방" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">원장님 성함</label>
+                    <input type="text" id="owner-name" class="input-field" placeholder="예: 홍길동">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">연락처</label>
+                    <input type="tel" id="owner-phone" class="input-field" placeholder="예: 010-1234-5678"
+                           oninput="formatPhoneNumber(this)" maxlength="13">
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-8">
+                <button class="flex-1 py-3 px-4 border-2 border-gray-200 rounded-xl font-medium text-gray-600 hover:bg-gray-50 transition-colors" onclick="goBack()">
+                    이전
+                </button>
+                <button id="btn-complete-owner" class="flex-1 btn-primary" onclick="completeOwnerSetup()">
+                    완료
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: 학부모 - 학원 선택 -->
+        <div id="step-parent" class="step-content hidden">
+            <div class="step-indicator">
+                <div class="step-dot completed"></div>
+                <div class="step-dot active"></div>
+            </div>
+
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white text-3xl">search</span>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">학원 선택</h1>
+                <p class="text-gray-500 mt-2">자녀가 다니는 학원을 검색해주세요</p>
+            </div>
+
+            <div class="mb-4">
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                    <input type="text" id="academy-search" class="input-field pl-12" placeholder="학원 이름으로 검색..." oninput="searchAcademies()">
+                </div>
+            </div>
+
+            <div id="academy-list" class="space-y-3 max-h-64 overflow-y-auto">
+                <p class="text-center text-gray-400 py-8">학원 이름을 검색해주세요</p>
+            </div>
+
+            <div class="flex gap-3 mt-6">
+                <button class="flex-1 py-3 px-4 border-2 border-gray-200 rounded-xl font-medium text-gray-600 hover:bg-gray-50 transition-colors" onclick="goBack()">
+                    이전
+                </button>
+                <button id="btn-complete-parent" class="flex-1 btn-primary" disabled onclick="completeParentSetup()">
+                    완료
+                </button>
+            </div>
+
+            <p class="text-center text-sm text-gray-400 mt-4">
+                찾는 학원이 없나요? 원장님께 문의해주세요.
+            </p>
+        </div>
+
+        <!-- 완료 화면 -->
+        <div id="step-complete" class="step-content hidden">
+            <div class="text-center py-8">
+                <div class="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mx-auto mb-6 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white text-4xl">check</span>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">설정 완료!</h1>
+                <p class="text-gray-500 mt-2" id="complete-message">잠시 후 메인 페이지로 이동합니다...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+
+    <script>
+        let selectedRole = null;
+        let selectedAcademy = null;
+        let currentUser = null;
+        let searchTimeout = null;
+
+        // 페이지 로드 시 인증 확인
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (!session?.user) {
+                // 로그인 안됨 → 로그인 페이지로
+                window.location.href = 'login.html';
+                return;
+            }
+
+            currentUser = session.user;
+
+            // 이미 프로필 설정 완료된 경우 리다이렉트
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('role, academy_id')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (profile?.role) {
+                // 이미 역할이 설정됨 → 해당 페이지로 이동
+                redirectByRole(profile.role);
+            }
+        });
+
+        // 역할에 따라 리다이렉트
+        function redirectByRole(role) {
+            if (role === 'owner') {
+                window.location.href = 'franchise.html';
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+
+        // 전화번호 자동 포맷팅 (010-1234-5678)
+        function formatPhoneNumber(input) {
+            // 숫자만 추출
+            let value = input.value.replace(/[^0-9]/g, '');
+
+            // 최대 11자리로 제한
+            if (value.length > 11) {
+                value = value.slice(0, 11);
+            }
+
+            // 포맷 적용
+            let formatted = '';
+            if (value.length <= 3) {
+                formatted = value;
+            } else if (value.length <= 7) {
+                formatted = value.slice(0, 3) + '-' + value.slice(3);
+            } else {
+                formatted = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7);
+            }
+
+            input.value = formatted;
+        }
+
+        // 역할 선택
+        function selectRole(role) {
+            selectedRole = role;
+
+            // UI 업데이트
+            document.getElementById('role-owner').classList.toggle('selected', role === 'owner');
+            document.getElementById('role-parent').classList.toggle('selected', role === 'parent');
+            document.getElementById('btn-next-role').disabled = false;
+        }
+
+        // Step 2로 이동
+        function goToStep2() {
+            document.getElementById('step-role').classList.add('hidden');
+
+            if (selectedRole === 'owner') {
+                document.getElementById('step-owner').classList.remove('hidden');
+            } else {
+                document.getElementById('step-parent').classList.remove('hidden');
+            }
+        }
+
+        // 이전 단계로
+        function goBack() {
+            document.getElementById('step-owner').classList.add('hidden');
+            document.getElementById('step-parent').classList.add('hidden');
+            document.getElementById('step-role').classList.remove('hidden');
+        }
+
+        // 학원 검색
+        async function searchAcademies() {
+            const query = document.getElementById('academy-search').value.trim();
+            const listEl = document.getElementById('academy-list');
+
+            if (query.length < 2) {
+                listEl.innerHTML = '<p class="text-center text-gray-400 py-8">2글자 이상 입력해주세요</p>';
+                return;
+            }
+
+            // 디바운스
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                listEl.innerHTML = '<p class="text-center text-gray-400 py-4">검색 중...</p>';
+
+                try {
+                    const { data, error } = await supabase
+                        .from('academies')
+                        .select('id, name, address')
+                        .ilike('name', `%${query}%`)
+                        .eq('is_active', true)
+                        .limit(10);
+
+                    if (error) throw error;
+
+                    if (!data || data.length === 0) {
+                        listEl.innerHTML = '<p class="text-center text-gray-400 py-8">검색 결과가 없습니다</p>';
+                        return;
+                    }
+
+                    listEl.innerHTML = data.map(academy => `
+                        <div class="academy-item ${selectedAcademy?.id === academy.id ? 'selected' : ''}"
+                             onclick="selectAcademy('${academy.id}', '${academy.name.replace(/'/g, "\\'")}')">
+                            <p class="font-medium text-gray-800">${academy.name}</p>
+                            ${academy.address ? `<p class="text-sm text-gray-500 mt-1">${academy.address}</p>` : ''}
+                        </div>
+                    `).join('');
+
+                } catch (error) {
+                    console.error('검색 실패:', error);
+                    listEl.innerHTML = '<p class="text-center text-red-500 py-4">검색에 실패했습니다</p>';
+                }
+            }, 300);
+        }
+
+        // 학원 선택
+        function selectAcademy(id, name) {
+            selectedAcademy = { id, name };
+
+            // UI 업데이트
+            document.querySelectorAll('.academy-item').forEach(el => {
+                el.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+            document.getElementById('btn-complete-parent').disabled = false;
+        }
+
+        // 원장 설정 완료
+        async function completeOwnerSetup() {
+            const academyName = document.getElementById('academy-name').value.trim();
+            const ownerName = document.getElementById('owner-name').value.trim();
+            const ownerPhone = document.getElementById('owner-phone').value.trim();
+
+            if (!academyName) {
+                alert('학원/공부방 이름을 입력해주세요.');
+                return;
+            }
+
+            const btn = document.getElementById('btn-complete-owner');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner"></span>';
+
+            try {
+                // 1. 학원 생성
+                const { data: academy, error: academyError } = await supabase
+                    .from('academies')
+                    .insert({
+                        owner_id: currentUser.id,
+                        name: academyName
+                    })
+                    .select()
+                    .single();
+
+                if (academyError) throw academyError;
+
+                // 2. 프로필 업데이트
+                const profileData = {
+                    role: 'owner',
+                    academy_id: academy.id
+                };
+                if (ownerName) profileData.name = ownerName;
+                if (ownerPhone) {
+                    profileData.phone = ownerPhone;
+                    profileData.phone_last4 = ownerPhone.replace(/[^0-9]/g, '').slice(-4);
+                }
+
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .update(profileData)
+                    .eq('id', currentUser.id);
+
+                if (profileError) throw profileError;
+
+                // 완료 화면 표시
+                showComplete('owner');
+
+            } catch (error) {
+                console.error('설정 실패:', error);
+                alert('설정에 실패했습니다: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = '완료';
+            }
+        }
+
+        // 학부모 설정 완료
+        async function completeParentSetup() {
+            if (!selectedAcademy) {
+                alert('학원을 선택해주세요.');
+                return;
+            }
+
+            const btn = document.getElementById('btn-complete-parent');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner"></span>';
+
+            try {
+                // 1. 프로필 업데이트
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .update({
+                        role: 'parent',
+                        academy_id: selectedAcademy.id
+                    })
+                    .eq('id', currentUser.id);
+
+                if (profileError) throw profileError;
+
+                // 2. 학원-학부모 연결 생성
+                const { error: linkError } = await supabase
+                    .from('parent_academy_links')
+                    .insert({
+                        parent_id: currentUser.id,
+                        academy_id: selectedAcademy.id,
+                        status: 'approved'  // 자동 승인 (필요시 pending으로 변경)
+                    });
+
+                if (linkError && linkError.code !== '23505') {  // 중복 무시
+                    throw linkError;
+                }
+
+                // 완료 화면 표시
+                showComplete('parent');
+
+            } catch (error) {
+                console.error('설정 실패:', error);
+                alert('설정에 실패했습니다: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = '완료';
+            }
+        }
+
+        // 완료 화면 표시
+        function showComplete(role) {
+            document.getElementById('step-owner').classList.add('hidden');
+            document.getElementById('step-parent').classList.add('hidden');
+            document.getElementById('step-complete').classList.remove('hidden');
+
+            const message = role === 'owner'
+                ? '학원 관리 페이지로 이동합니다...'
+                : '메인 페이지로 이동합니다...';
+            document.getElementById('complete-message').textContent = message;
+
+            // 2초 후 리다이렉트
+            setTimeout(() => {
+                redirectByRole(role);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

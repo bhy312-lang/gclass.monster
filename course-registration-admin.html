@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수강신청 관리 - 퍼스트초등전과목</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Symbols+Outlined" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+            min-height: 100vh;
+        }
+        .nav-tab {
+            padding: 12px 24px;
+            border-radius: 999px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .nav-tab.active {
+            background: linear-gradient(135deg, #58d3d3 0%, #14b8a6 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(88, 211, 211, 0.4);
+        }
+        .nav-tab:not(.active) {
+            background-color: white;
+            color: #6b7280;
+        }
+        .nav-tab:not(.active):hover {
+            background-color: #f0fdfa;
+            color: #58d3d3;
+        }
+        .section-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.2s;
+            background: #fafafa;
+        }
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
+            border-color: #58d3d3;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(88, 211, 211, 0.1);
+        }
+        .btn-primary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #58d3d3 0%, #14b8a6 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(88, 211, 211, 0.4);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(88, 211, 211, 0.5);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 24px;
+            background: #f1f5f9;
+            color: #475569;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+        .btn-danger {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: #fef2f2;
+            color: #dc2626;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+            color: white;
+        }
+        .btn-sm {
+            padding: 8px 14px;
+            font-size: 13px;
+        }
+        .period-card {
+            background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+            border: 2px solid #58d3d3;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.2s;
+        }
+        .period-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(88, 211, 211, 0.2);
+        }
+        .period-card.inactive {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            opacity: 0.7;
+        }
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .status-active {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        .status-inactive {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+        .status-confirmed {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        .status-waiting {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .status-cancelled {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .status-pending {
+            background: #e0e7ff;
+            color: #4f46e5;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table th {
+            background: #f8fafc;
+            padding: 14px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .data-table td {
+            padding: 14px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            color: #334155;
+        }
+        .data-table tr:hover {
+            background: #f8fafc;
+        }
+        .filter-btn {
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f1f5f9;
+            color: #64748b;
+            border: none;
+        }
+        .filter-btn.active {
+            background: #58d3d3;
+            color: white;
+        }
+        .filter-btn:not(.active):hover {
+            background: #e2e8f0;
+        }
+        .time-slot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        .time-slot-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s;
+        }
+        .time-slot-card:hover {
+            border-color: #58d3d3;
+            box-shadow: 0 4px 15px rgba(88, 211, 211, 0.2);
+        }
+        .time-slot-card.full {
+            border-color: #fca5a5;
+            background: #fef2f2;
+        }
+        .day-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .day-option {
+            padding: 10px 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .day-option:hover {
+            border-color: #58d3d3;
+        }
+        .day-option.selected {
+            background: #58d3d3;
+            border-color: #58d3d3;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: all 0.3s;
+        }
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+
+        /* Confirm Modal Styles */
+        #confirm-modal .modal-content {
+            background: linear-gradient(145deg, #ffffff 0%, #fefefe 50%, #f8fafc 100%);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
+        }
+        #confirm-ok {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.4);
+            transition: all 0.3s;
+        }
+        #confirm-ok:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px -5px rgba(239, 68, 68, 0.5);
+        }
+
+        /* Capacity Edit Modal Styles */
+        #capacity-edit-modal .modal-content {
+            background: linear-gradient(145deg, #ffffff 0%, #fefefe 50%, #f8fafc 100%);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            padding-top: 40px;
+        }
+        #capacity-edit-modal .input-group label {
+            text-align: center;
+        }
+        #capacity-edit-modal .capacity-input {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        #capacity-edit-modal .capacity-input input {
+            flex: 0 0 auto;
+            width: 80px;
+            text-align: center;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .checkbox-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .checkbox-option:hover {
+            border-color: #58d3d3;
+        }
+        .checkbox-option.selected {
+            border-color: #58d3d3;
+            background: #f0fdfa;
+        }
+        .checkbox-option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #58d3d3;
+        }
+        .capacity-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .capacity-input input {
+            width: 80px !important;
+            text-align: center;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+        .empty-state span {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+        .copy-link-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: #f0fdfa;
+            color: #58d3d3;
+            border: 2px solid #58d3d3;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .copy-link-btn:hover {
+            background: #58d3d3;
+            color: white;
+        }
+        .time-range {
+            font-family: monospace;
+            font-size: 13px;
+        }
+        /* datetime-local input 스타일 - 시간이 잘리지 않도록 */
+        input[type="datetime-local"],
+        input[type="time"] {
+            padding-right: 50px !important;
+            min-width: 240px;
+        }
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            margin-right: -10px;
+            cursor: pointer;
+        }
+        /* 기간 설정 모달의 grid layout을 전체 너비로 변경 */
+        #period-form .grid {
+            grid-template-columns: 1fr;
+        }
+        #period-form .grid .input-group {
+            width: 100%;
+        }
+
+        /* 세련된 시간표 스타일 */
+        .timetable-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            width: 916px;
+        }
+        .timetable {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .timetable-header {
+            background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+            padding: 16px 12px;
+            text-align: center;
+            font-weight: 700;
+            color: #0f766e;
+            border-bottom: 2px solid #ccfbf1;
+            font-size: 14px;
+        }
+        .timetable-header:first-child {
+            border-top-left-radius: 16px;
+        }
+        .timetable-header:last-child {
+            border-top-right-radius: 16px;
+        }
+        .timetable-row {
+            transition: background 0.2s;
+        }
+        .timetable-row:hover {
+            background: #fafafa;
+        }
+        .timetable-time {
+            padding: 14px 20px;
+            text-align: center;
+            font-weight: 600;
+            color: #475569;
+            font-size: 13px;
+            background: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+            min-width: 100px;
+        }
+        .timetable-cell {
+            padding: 0;
+            border: 1px solid #e2e8f0;
+            min-width: 140px;
+        }
+        .timetable-cell.cell-empty {
+            background: #fafafa;
+        }
+        .add-slot-btn {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            color: #94a3b8;
+            transition: all 0.2s;
+        }
+        .add-slot-btn:hover {
+            color: #58d3d3;
+            background: #f0fdfa;
+        }
+        .add-slot-btn .material-symbols-outlined {
+            font-size: 28px;
+        }
+        .cell-content {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            min-height: 80px;
+        }
+        .cell-available {
+            background: linear-gradient(145deg, #f0fdfa 0%, #ccfbf1 100%);
+        }
+        .cell-available .cell-content {
+            background: linear-gradient(145deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 100%);
+            border-radius: 8px;
+        }
+        .cell-full {
+            background: linear-gradient(145deg, #fef2f2 0%, #fee2e2 100%);
+        }
+        .cell-full .cell-content {
+            background: linear-gradient(145deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 100%);
+            border-radius: 8px;
+        }
+        .cell-status {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+        .status-available {
+            background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+            color: white;
+        }
+        .status-full {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        .cell-capacity {
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+        }
+        .cell-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .cell-edit, .cell-delete {
+            padding: 4px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .cell-edit:hover {
+            background: #ccfbf1;
+        }
+        .cell-delete:hover {
+            background: #fee2e2;
+        }
+        /* 학생 목록 스타일 */
+        .student-list {
+            width: 100%;
+            margin-top: 4px;
+        }
+        .student-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 8px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 4px;
+            font-size: 11px;
+            margin-bottom: 2px;
+        }
+        .student-name {
+            font-weight: 600;
+            color: #334155;
+        }
+        .student-info {
+            color: #64748b;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-lg fixed top-0 left-0 right-0 z-50 border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <a href="franchise.html" class="flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
+                        <span class="material-symbols-outlined text-gray-600">arrow_back</span>
+                    </a>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-800">수강신청 관리</h1>
+                        <p class="text-xs text-gray-500">선착순 수강신청 시스템</p>
+                    </div>
+                </div>
+                <button onclick="openPeriodModal()" class="btn-primary btn-sm">
+                    <span class="material-symbols-outlined">add</span>
+                    새 기간 생성
+                </button>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex gap-2 bg-gray-100 p-1.5 rounded-full overflow-x-auto">
+                <button class="nav-tab active" data-tab="periods" onclick="switchTab('periods')">기간 설정</button>
+                <button class="nav-tab" data-tab="slots" onclick="switchTab('slots')">시간 관리</button>
+                <button class="nav-tab" data-tab="applications" onclick="switchTab('applications')">신청 현황</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-6" style="margin-top: 160px;">
+
+        <!-- Tab 1: 기간 설정 -->
+        <div id="tab-periods" class="tab-content active">
+            <section class="section-card">
+                <h2 class="section-title">
+                    <span class="material-symbols-outlined text-teal-500">calendar_month</span>
+                    신청 기간 목록
+                </h2>
+                <div id="periods-list">
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">event_busy</span>
+                        <p>등록된 신청 기간이 없습니다.</p>
+                        <p class="text-sm mt-2">우측 상단의 '새 기간 생성' 버튼으로 새로운 기간을 만드세요.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Tab 2: 시간 관리 -->
+        <div id="tab-slots" class="tab-content">
+            <section class="section-card">
+                <h2 class="section-title">
+                    <span class="material-symbols-outlined text-blue-500">schedule</span>
+                    기간 선택
+                </h2>
+                <div id="period-selector" class="mb-6">
+                    <select id="period-select" onchange="loadTimeSlots()">
+                        <option value="">기간을 선택하세요</option>
+                    </select>
+                </div>
+
+                <div id="slot-management-content" class="hidden">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-700">
+                            시간대 슬롯
+                            <span id="slot-count" class="text-sm font-normal text-gray-500 ml-2">(0개)</span>
+                        </h3>
+                        <div class="flex gap-2">
+                            <button onclick="deleteAllSlots()" class="btn-secondary btn-sm" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none;">
+                                <span class="material-symbols-outlined">delete</span>
+                                전체 삭제
+                            </button>
+                            <button onclick="openSlotModal()" class="btn-primary btn-sm">
+                                <span class="material-symbols-outlined">add"></span>
+                                슬롯 추가
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="time-slots-grid" class="time-slot-grid">
+                        <!-- Time slots will be loaded here -->
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Tab 3: 신청 현황 -->
+        <div id="tab-applications" class="tab-content">
+            <section class="section-card">
+                <h2 class="section-title">
+                    <span class="material-symbols-outlined text-purple-500">list_alt</span>
+                    신청 현황
+                </h2>
+
+                <div class="flex flex-wrap gap-3 mb-6">
+                    <button class="filter-btn active" data-filter="all" onclick="filterApplications('all')">전체</button>
+                    <button class="filter-btn" data-filter="confirmed" onclick="filterApplications('confirmed')">확정</button>
+                    <button class="filter-btn" data-filter="waiting" onclick="filterApplications('waiting')">대기</button>
+                    <button class="filter-btn" data-filter="pending" onclick="filterApplications('pending')">처리중</button>
+                    <button class="filter-btn" data-filter="cancelled" onclick="filterApplications('cancelled')">취소</button>
+                </div>
+
+                <div class="mb-6">
+                    <select id="applications-period-select" onchange="loadApplications()" class="max-w-xs">
+                        <option value="">기간 선택</option>
+                    </select>
+                </div>
+
+                <div id="applications-table-container" class="overflow-x-auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>신청 시간</th>
+                                <th>순서</th>
+                                <th>학생명</th>
+                                <th>학교</th>
+                                <th>학년</th>
+                                <th>연락처</th>
+                                <th>선택 시간</th>
+                                <th>상태</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="applications-tbody">
+                            <tr>
+                                <td colspan="9" class="text-center py-8 text-gray-400">
+                                    기간을 선택해주세요.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex justify-end mt-4">
+                    <button onclick="exportCSV()" class="btn-secondary btn-sm">
+                        <span class="material-symbols-outlined">download</span>
+                        CSV 내보내기
+                    </button>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <!-- Period Modal -->
+    <div id="period-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-800">새 신청 기간 생성</h3>
+                <button onclick="closePeriodModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <form id="period-form" onsubmit="savePeriod(event)">
+                <input type="hidden" id="period-id">
+
+                <div class="input-group">
+                    <label>기간명 *</label>
+                    <input type="text" id="period-name" placeholder="예: 2026년 2월 정규수강" required>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="input-group">
+                        <label>오픈 일시 *</label>
+                        <input type="datetime-local" id="period-open" required>
+                    </div>
+                    <div class="input-group">
+                        <label>마감 일시</label>
+                        <input type="datetime-local" id="period-close">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>기본 정원 *</label>
+                    <input type="number" id="period-capacity" min="1" max="100" value="5" required>
+                    <p class="text-xs text-gray-500 mt-1">각 시간대별 기본 정원 인원 (개별 수정 가능)</p>
+                </div>
+
+                <div class="input-group">
+                    <label>설명 (선택)</label>
+                    <textarea id="period-description" rows="2" placeholder="기간에 대한 추가 정보"></textarea>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closePeriodModal()" class="btn-secondary flex-1">취소</button>
+                    <button type="submit" class="btn-primary flex-1">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Slot Modal -->
+    <div id="slot-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-800">시간 슬롯 추가</h3>
+                <button onclick="closeSlotModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <form id="slot-form" onsubmit="saveSlot(event)">
+                <div class="input-group">
+                    <label>요일 *</label>
+                    <div class="day-selector" id="day-selector">
+                        <div class="day-option" data-day="mon" onclick="toggleDay('mon')">월</div>
+                        <div class="day-option" data-day="tue" onclick="toggleDay('tue')">화</div>
+                        <div class="day-option" data-day="wed" onclick="toggleDay('wed')">수</div>
+                        <div class="day-option" data-day="thu" onclick="toggleDay('thu')">목</div>
+                        <div class="day-option" data-day="fri" onclick="toggleDay('fri')">금</div>
+                    </div>
+                    <input type="hidden" id="selected-days" value="">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="input-group">
+                        <label>시작 시간 *</label>
+                        <input type="time" id="slot-start" required>
+                    </div>
+                    <div class="input-group">
+                        <label>종료 시간 *</label>
+                        <input type="time" id="slot-end" required>
+                        <p class="text-xs text-gray-500 mt-1">30분 단위, 1시간 자동 예약</p>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>정원 *</label>
+                    <div class="capacity-input">
+                        <input type="number" id="slot-capacity" min="1" max="50" value="5" required>
+                        <span class="text-gray-500">명</span>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closeSlotModal()" class="btn-secondary flex-1">취소</button>
+                    <button type="submit" class="btn-primary flex-1">추가</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Registration Detail Modal -->
+    <div id="registration-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-800">신청 상세</h3>
+                <button onclick="closeRegistrationModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <div id="registration-detail-content">
+                <!-- Detail content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Capacity Edit Modal -->
+    <div id="capacity-edit-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <button onclick="closeCapacityEditModal()" class="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <div class="w-16 h-16 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-teal-600" style="font-size: 32px;">edit</span>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">정원 수정</h3>
+
+            <div class="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg p-4 mb-4 mx-auto" style="max-width: 280px;">
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <span class="material-symbols-outlined text-teal-600">schedule</span>
+                    <span class="font-semibold text-teal-700">시간대</span>
+                </div>
+                <p id="edit-slot-time-display" class="text-gray-700 font-medium"></p>
+            </div>
+
+            <form id="capacity-edit-form" onsubmit="updateSlotCapacity(event)">
+                <input type="hidden" id="edit-slot-id">
+                <input type="hidden" id="edit-slot-day">
+                <input type="hidden" id="edit-slot-time">
+
+                <div class="input-group text-left" style="max-width: 280px; margin: 0 auto 16px;">
+                    <label>새 정원 *</label>
+                    <div class="capacity-input">
+                        <input type="number" id="edit-slot-capacity" min="1" max="50" required>
+                        <span class="text-gray-500">명</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">1명 ~ 50명까지 설정 가능</p>
+                </div>
+
+                <div class="flex gap-3 justify-center">
+                    <button type="submit" class="btn-primary" style="flex: 1; max-width: 130px;">저장</button>
+                    <button type="button" onclick="closeCapacityEditModal()" class="btn-secondary" style="flex: 1; max-width: 130px;">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="material-symbols-outlined text-red-600" style="font-size: 32px;">warning</span>
+                </div>
+                <h3 id="confirm-title" class="text-xl font-bold text-gray-800 mb-2">확인</h3>
+                <p id="confirm-message" class="text-gray-600 mb-6"></p>
+
+                <div class="flex gap-3">
+                    <button id="confirm-ok" class="btn-primary flex-1" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">확인</button>
+                    <button id="confirm-cancel" class="btn-secondary flex-1">취소</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg transition-all duration-300 opacity-0 translate-y-4 pointer-events-none z-50">
+        <span id="toast-message"></span>
+    </div>
+
+    <script src="course-registration-admin.js"></script>
+</body>
+</html>

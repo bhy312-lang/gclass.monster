@@ -27,8 +27,13 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-const SEAT_WIDTH = 96;
-const SEAT_HEIGHT = 112;
+// 이미 선언되어 있지 않을 때만 선언
+if (typeof SEAT_WIDTH === 'undefined') {
+    var SEAT_WIDTH = 96;
+}
+if (typeof SEAT_HEIGHT === 'undefined') {
+    var SEAT_HEIGHT = 112;
+}
 
 // ========== Supabase 초기화 ==========
 async function initSupabase() {
