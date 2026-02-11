@@ -852,7 +852,7 @@
         }
         .student-item {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             padding: 4px 8px;
             background: rgba(255,255,255,0.6);
@@ -863,6 +863,7 @@
         .student-name {
             font-weight: 600;
             color: #334155;
+            text-align: center;
         }
         .student-info {
             color: #64748b;
@@ -1163,7 +1164,7 @@
             <nav class="flex gap-2 bg-gray-100 p-1.5 rounded-full overflow-x-auto">
                 <button class="nav-tab" data-tab="info" onclick="switchTab('info')">정보 설정</button>
                 <button class="nav-tab active" data-tab="periods" onclick="switchTab('periods')">기간 설정</button>
-                <button class="nav-tab" data-tab="slots" onclick="switchTab('slots')">시간 관리</button>
+                <button class="nav-tab" data-tab="slots" onclick="switchTab('slots')">시간&정원 관리</button>
                 <button class="nav-tab" data-tab="applications" onclick="switchTab('applications')">신청 현황</button>
             </nav>
         </div>

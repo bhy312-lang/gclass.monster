@@ -1552,8 +1552,7 @@ async function loadApplicationsTimetable() {
                                     <div class="student-list">
                                         ${students.map(s => `
                                             <div class="student-item">
-                                                <span class="student-name">${s.name}</span>
-                                                <span class="student-info">${s.school} ${s.grade}</span>
+                                                <span class="student-name">${s.name}(${s.grade})</span>
                                             </div>
                                         `).join('')}
                                     </div>

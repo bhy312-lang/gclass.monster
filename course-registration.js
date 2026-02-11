@@ -1,5 +1,4 @@
-// Supabase 설정 (supabase-config.js에서 전역 설정 사용)
-const supabase = window.supabaseClient || window.supabase;
+// Supabase 설정 (supabase-config.js에서 전역 window.supabase 사용)
 
 let currentPeriod = null;
 let currentTimeSlots = [];
@@ -140,8 +139,16 @@ async function loadExistingSelection() {
 }
 
 function showState(state) {
-    document.querySelectorAll('.state').forEach(s => s.classList.remove('active'));
-    document.getElementById(`${state}-state`).classList.add('active');
+    // 모든 state 숨기기
+    const allStates = ['loading', 'error', 'countdown', 'open', 'closed', 'success'];
+    allStates.forEach(s => {
+        const el = document.getElementById(`${s}-state`);
+        if (el) el.classList.add('hidden');
+    });
+
+    // 해당 state 보이기
+    const targetEl = document.getElementById(`${state}-state`);
+    if (targetEl) targetEl.classList.remove('hidden');
 }
 
 function startCountdown(openTime) {
@@ -187,7 +194,7 @@ function setupGradeSelection() {
 
 // Auto Refresh
 let refreshInterval = null;
-const REFRESH_INTERVAL = 30000; // 30초
+const REFRESH_INTERVAL = 3000; // 3초 (실시간 마감 반영)
 
 function setupAutoRefresh() {
     const refreshIcon = document.getElementById('refresh-icon');
@@ -214,8 +221,13 @@ function startAutoRefresh() {
             refreshIcon.style.color = currentColor === 'rgb(59, 130, 246)' ? '#ef4444' : '#3b82f6';
         }
 
-        // 슬롯 정보 새로고침
-        if (document.getElementById('open-state').classList.contains('active')) {
+        // 슬롯 정보 새로고침 (open-state가 보이거나 slot-modal이 열려있을 때)
+        const openState = document.getElementById('open-state');
+        const slotModal = document.getElementById('slot-modal');
+        const isOpenStateVisible = openState && !openState.classList.contains('hidden');
+        const isSlotModalOpen = slotModal && slotModal.classList.contains('show');
+
+        if (isOpenStateVisible || isSlotModalOpen) {
             loadTimeSlots();
         }
     }, REFRESH_INTERVAL);
@@ -248,7 +260,7 @@ async function openSlotModal() {
     await checkExistingRegistration();
 
     document.getElementById('slot-modal').classList.add('show');
-    await loadTimeSlots();
+    await loadTimeSlots(true);  // 최초 로드시 로딩 메시지 표시
     setupRealtimeSubscription();
 }
 
@@ -258,6 +270,8 @@ function closeSlotModal() {
         supabase.removeChannel(slotsSubscription);
         slotsSubscription = null;
     }
+    // 다음 번에 모달 열 때 로딩 메시지 표시를 위해 초기화
+    currentTimeSlots = [];
 }
 
 function setupRealtimeSubscription() {
@@ -283,11 +297,14 @@ function setupRealtimeSubscription() {
         .subscribe();
 }
 
-async function loadTimeSlots() {
+async function loadTimeSlots(showLoading = false) {
     const grid = document.getElementById('slot-grid');
     if (!grid) return;
 
-    grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #64748b;">로딩 중...</p>';
+    // 최초 로드 시에만 로딩 메시지 표시
+    if (showLoading && currentTimeSlots.length === 0) {
+        grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #64748b;">로딩 중...</p>';
+    }
 
     try {
         const { data: slots, error } = await supabase
@@ -298,7 +315,9 @@ async function loadTimeSlots() {
             .order('start_time');
 
         if (error || !slots) {
-            grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #64748b;">등록된 시간이 없습니다.</p>';
+            if (currentTimeSlots.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #64748b;">등록된 시간이 없습니다.</p>';
+            }
             return;
         }
 
@@ -317,6 +336,32 @@ function renderSlotGrid() {
 
     const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
     const dayHeaders = ['월', '화', '수', '목', '금'];
+
+    // 선택된 슬롯 중 마감된 것 자동 해제 (단, 본인이 기존에 신청한 슬롯은 제외)
+    const closedSlots = [];
+    days.forEach(day => {
+        if (selectedSlots[day] && selectedSlots[day].length > 0) {
+            const toRemove = [];
+            selectedSlots[day].forEach(slotId => {
+                // 본인이 기존에 신청한 슬롯은 마감 체크에서 제외
+                if (editingSlotIds.includes(slotId)) return;
+
+                const slot = currentTimeSlots.find(s => s.id === slotId);
+                if (slot && slot.current_count >= slot.capacity) {
+                    toRemove.push(slotId);
+                    closedSlots.push(`${dayNames[day]} ${slot.start_time}-${slot.end_time}`);
+                }
+            });
+            if (toRemove.length > 0) {
+                selectedSlots[day] = selectedSlots[day].filter(id => !toRemove.includes(id));
+            }
+        }
+    });
+
+    // 마감된 슬롯이 있었으면 알림
+    if (closedSlots.length > 0) {
+        showAlertModal('마감 알림', `선택하신 시간이 마감되어 해제되었습니다.\n\n${closedSlots.join('\n')}\n\n다른 시간을 선택해주세요.`);
+    }
 
     // 요일별 슬롯 매핑
     const slotsByDay = { mon: [], tue: [], wed: [], thu: [], fri: [] };
@@ -342,7 +387,9 @@ function renderSlotGrid() {
             const slot = slotsByDay[day][i];
             if (slot) {
                 const isSelected = selectedSlots[day].includes(slot.id);
-                const isFull = slot.current_count >= slot.capacity;
+                const isMySlot = editingSlotIds.includes(slot.id);  // 본인이 기존에 신청한 슬롯
+                // 본인이 신청한 슬롯은 마감이 아닌 것으로 처리
+                const isFull = !isMySlot && slot.current_count >= slot.capacity;
 
                 let itemClass = 'slot-item';
                 if (isSelected) {
@@ -353,22 +400,22 @@ function renderSlotGrid() {
                     itemClass += ' available';
                 }
 
-                // 수정 모드에서는 기존 선택 슬롯 해제 가능
-                const isPreviouslySelected = editingSlotIds.includes(slot.id);
-                const canDeselect = isPreviouslySelected;
-
+                // 선택된 슬롯은 해제 가능, 마감된 슬롯만 클릭 불가
                 let onClick = '';
-                if (isSelected || isFull) {
-                    if (canDeselect) {
-                        onClick = `onclick="selectSlot('${slot.id}', '${day}')"`;
-                    }
+                if (isSelected) {
+                    // 선택된 슬롯은 클릭하면 해제
+                    onClick = `onclick="selectSlot('${slot.id}', '${day}')"`;
+                } else if (isFull) {
+                    // 마감된 슬롯은 클릭 불가
+                    onClick = '';
                 } else {
+                    // 가능한 슬롯은 클릭하면 선택
                     onClick = `onclick="selectSlot('${slot.id}', '${day}')"`;
                 }
 
                 html += `
                     <div class="${itemClass}" ${onClick}>
-                        <div class="slot-time">${slot.start_time}</div>
+                        <div class="slot-time">${slot.start_time}-${slot.end_time}</div>
                         <div class="slot-status">${isFull ? '마감' : '가능'}</div>
                     </div>
                 `;
@@ -385,17 +432,17 @@ function renderSlotGrid() {
 function selectSlot(slotId, day) {
     const currentSelection = selectedSlots[day] || [];
     const slot = currentTimeSlots.find(s => s.id === slotId);
-    const isPreviouslySelected = editingSlotIds.includes(slotId);
+    const isMySlot = editingSlotIds.includes(slotId);  // 본인이 기존에 신청한 슬롯
 
-    // 해제 체크 (수정 모드에서 기존 선택 해제 가능)
+    // 해제 체크
     if (currentSelection.includes(slotId)) {
         selectedSlots[day] = currentSelection.filter(id => id !== slotId);
         renderSlotGrid();
         return;
     }
 
-    // 마감 체크
-    if (slot && slot.current_count >= slot.capacity) {
+    // 마감 체크 (본인이 기존에 신청한 슬롯은 제외)
+    if (slot && !isMySlot && slot.current_count >= slot.capacity) {
         showAlertModal('알림', '이미 마감된 시간대입니다.');
         return;
     }
@@ -460,6 +507,13 @@ function updateSelectedSummary() {
     if (totalHoursEl) {
         totalHoursEl.textContent = totalHours.toFixed(1);
     }
+
+    // 신청 버튼 활성화/비활성화
+    const submitBtn = document.getElementById('submit-btn');
+    if (submitBtn) {
+        const hasSelection = selectedList.length > 0;
+        submitBtn.disabled = !hasSelection;
+    }
 }
 
 // Exceed Modal
@@ -484,12 +538,15 @@ async function verifySlotsAvailability(slotIds) {
     try {
         const { data: slots, error } = await supabase
             .from('course_time_slots')
-            .select('id, current_count, capacity')
+            .select('id, current_count, capacity, day_of_week, start_time, end_time')
             .in('id', slotIds);
 
         if (error) throw error;
 
-        const fullSlots = slots.filter(s => s.current_count >= s.capacity);
+        // 본인이 기존에 신청한 슬롯은 마감 체크에서 제외
+        const fullSlots = slots.filter(s =>
+            !editingSlotIds.includes(s.id) && s.current_count >= s.capacity
+        );
         return { valid: fullSlots.length === 0, fullSlots };
     } catch (error) {
         console.error('[Registration] 슬롯 확인 오류:', error);
@@ -517,6 +574,12 @@ async function submitRegistration() {
     const { valid, fullSlots } = await verifySlotsAvailability(allSlotIds);
 
     if (!valid || fullSlots.length > 0) {
+        // 마감된 시간 목록 생성
+        const closedTimeList = fullSlots.map(slot => {
+            const dayName = dayNames[slot.day_of_week] || slot.day_of_week;
+            return `${dayName} ${slot.start_time}-${slot.end_time}`;
+        });
+
         // 꽉 찬 슬롯만 해제
         fullSlots.forEach(fullSlot => {
             days.forEach(day => {
@@ -527,7 +590,7 @@ async function submitRegistration() {
         });
 
         renderSlotGrid();
-        showAlertModal('마감 안내', '해당 시간이 이미 마감되어 신청이 어렵습니다.\n시간을 다시 선택한 후 신청해주세요.');
+        showAlertModal('마감 안내', `다음 시간이 이미 마감되어 신청이 어렵습니다.\n\n${closedTimeList.join('\n')}\n\n다른 시간을 선택한 후 다시 신청해주세요.`);
         return;
     }
 
@@ -594,8 +657,72 @@ function showSuccessState(data) {
     document.getElementById('result-grade').textContent = selectedGrade + '학년';
     document.getElementById('result-time').textContent = new Date().toLocaleString('ko-KR');
 
+    // 연락처도 표시
+    const resultPhone = document.getElementById('result-phone');
+    if (resultPhone) {
+        resultPhone.textContent = document.getElementById('phone-number').value;
+    }
+
     showState('success');
     stopAutoRefresh();
+}
+
+async function editMyRegistration() {
+    const phoneNumber = document.getElementById('phone-number').value;
+
+    if (!phoneNumber || !currentPeriod) {
+        showAlertModal('오류', '신청 정보를 찾을 수 없습니다.');
+        return;
+    }
+
+    try {
+        // 기존 신청 정보 조회
+        const { data: existingReg, error } = await supabase
+            .from('course_registrations')
+            .select('*, selected_slot_ids')
+            .eq('period_id', currentPeriod.id)
+            .eq('guardian_phone', phoneNumber)
+            .in('status', ['pending', 'confirmed'])
+            .maybeSingle();
+
+        if (error || !existingReg) {
+            showAlertModal('오류', '기존 신청 정보를 찾을 수 없습니다.');
+            return;
+        }
+
+        // 기존 선택했던 슬롯 ID 저장 (수정 모드)
+        editingSlotIds = existingReg.selected_slot_ids || [];
+
+        // 선택 상태 초기화 후 기존 선택 복원
+        selectedSlots = { mon: [], tue: [], wed: [], thu: [], fri: [] };
+
+        // 기존 선택 슬롯 정보 조회
+        if (editingSlotIds.length > 0) {
+            const { data: slots } = await supabase
+                .from('course_time_slots')
+                .select('*')
+                .in('id', editingSlotIds);
+
+            if (slots) {
+                slots.forEach(slot => {
+                    if (selectedSlots[slot.day_of_week]) {
+                        selectedSlots[slot.day_of_week].push(slot.id);
+                    }
+                });
+            }
+        }
+
+        // open 상태로 전환하고 슬롯 모달 열기
+        showState('open');
+        setupAutoRefresh();
+        document.getElementById('slot-modal').classList.add('show');
+        await loadTimeSlots(true);
+        setupRealtimeSubscription();
+
+    } catch (e) {
+        console.error('수정 모드 진입 오류:', e);
+        showAlertModal('오류', '수정 모드 진입 중 오류가 발생했습니다.');
+    }
 }
 
 function showAlertModal(title, message) {
@@ -606,6 +733,117 @@ function showAlertModal(title, message) {
 
 function closeAlertModal() {
     document.getElementById('alert-modal').classList.remove('show');
+}
+
+// Info Modal 함수들
+function openInfoModal() {
+    document.getElementById('info-modal').classList.add('show');
+    loadSchools();
+}
+
+function closeInfoModal() {
+    document.getElementById('info-modal').classList.remove('show');
+}
+
+function selectGrade(grade) {
+    selectedGrade = grade;
+    document.querySelectorAll('.grade-option').forEach(opt => {
+        opt.classList.remove('selected');
+        if (parseInt(opt.dataset.grade) === grade) {
+            opt.classList.add('selected');
+        }
+    });
+    document.getElementById('selected-grade').value = grade;
+}
+
+async function loadSchools() {
+    const schoolSelect = document.getElementById('school-name');
+    if (!schoolSelect || schoolSelect.options.length > 1) return;
+
+    try {
+        const { data: schools, error } = await supabase
+            .from('schools')
+            .select('name')
+            .order('name');
+
+        if (error || !schools || schools.length === 0) {
+            // 학교 테이블이 없거나 비어있으면 텍스트 입력으로 변경
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'form-input';
+            input.id = 'school-name';
+            input.placeholder = '학교명을 입력하세요';
+            input.required = true;
+            schoolSelect.parentNode.replaceChild(input, schoolSelect);
+            return;
+        }
+
+        schools.forEach(school => {
+            const option = document.createElement('option');
+            option.value = school.name;
+            option.textContent = school.name;
+            schoolSelect.appendChild(option);
+        });
+    } catch (e) {
+        console.error('학교 목록 로드 오류:', e);
+        // 에러 시 텍스트 입력으로 변경
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'form-input';
+        input.id = 'school-name';
+        input.placeholder = '학교명을 입력하세요';
+        input.required = true;
+        schoolSelect.parentNode.replaceChild(input, schoolSelect);
+    }
+}
+
+function submitInfo(event) {
+    event.preventDefault();
+
+    const studentName = document.getElementById('student-name').value.trim();
+    const schoolName = document.getElementById('school-name').value.trim();
+    const phoneNumber = document.getElementById('phone-number').value.trim();
+
+    // 유효성 검사
+    let isValid = true;
+
+    if (!studentName) {
+        document.getElementById('name-error').classList.add('show');
+        document.getElementById('student-name').classList.add('error');
+        isValid = false;
+    } else {
+        document.getElementById('name-error').classList.remove('show');
+        document.getElementById('student-name').classList.remove('error');
+    }
+
+    if (!schoolName) {
+        document.getElementById('school-error').classList.add('show');
+        isValid = false;
+    } else {
+        document.getElementById('school-error').classList.remove('show');
+    }
+
+    if (!selectedGrade) {
+        document.getElementById('grade-error').classList.add('show');
+        isValid = false;
+    } else {
+        document.getElementById('grade-error').classList.remove('show');
+    }
+
+    if (!phoneNumber || !/^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$/.test(phoneNumber.replace(/-/g, ''))) {
+        document.getElementById('phone-error').classList.add('show');
+        document.getElementById('phone-number').classList.add('error');
+        isValid = false;
+    } else {
+        document.getElementById('phone-error').classList.remove('show');
+        document.getElementById('phone-number').classList.remove('error');
+    }
+
+    if (!isValid) return;
+
+    // 정보 입력 완료, 시간 선택 모달 열기
+    closeInfoModal();
+    openSlotModal();
 }
 
 // CSS for spin-slow animation
