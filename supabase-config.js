@@ -6,7 +6,13 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // Supabase 클라이언트 생성 및 전역 노출 (즉시 실행)
 (function() {
-    // 완전히 기본 설정으로 복원 - 커스텀 fetch 제거
+    // AbortController 없이 fetch 수행 (타임아웃 문제 방지)
+    const customFetch = (url, options = {}) => {
+        // signal 제거하여 AbortError 방지
+        const { signal, ...fetchOptions } = options;
+        return fetch(url, fetchOptions);
+    };
+
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         db: {
             schema: 'public'
@@ -14,12 +20,15 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
         auth: {
             persistSession: true,
             autoRefreshToken: true
+        },
+        global: {
+            fetch: customFetch
         }
     });
     window.supabaseClient = supabaseClient;
     window.supabase = supabaseClient;
 
-    console.log('[Supabase Config] 클라이언트 초기화 완료 (기본 설정)');
+    console.log('[Supabase Config] 클라이언트 초기화 완료 (커스텀 fetch)');
 })();
 
 // 설정이 완료되었는지 확인
