@@ -848,6 +848,10 @@
                     <span class="material-symbols-outlined">edit_note</span>
                     수강신청하기
                 </button>
+                <button class="btn-secondary" style="margin-top: 16px;" onclick="openCheckModal()">
+                    <span class="material-symbols-outlined">search</span>
+                    신청내역 확인&수정
+                </button>
             </div>
         </div>
 
@@ -889,8 +893,14 @@
                     <span class="success-info-value" id="result-phone">-</span>
                 </div>
                 <div class="success-info-row">
-                    <span class="success-info-label">신청 일시</span>
+                    <span class="success-info-label" style="white-space: nowrap;">신청 일시</span>
                     <span class="success-info-value" id="result-time">-</span>
+                </div>
+            </div>
+            <div class="success-info" style="margin-top: 16px;">
+                <h3 class="font-semibold text-gray-700 mb-3">신청 결과</h3>
+                <div id="result-schedule" style="font-size: 14px; line-height: 1.8; color: #1e293b;">
+                    <!-- 요일별 시간이 여기에 표시됩니다 -->
                 </div>
             </div>
             <div class="flex gap-3 mt-6 modal-buttons">
@@ -1005,6 +1015,38 @@
             <div class="loading-spinner mx-auto mb-4" style="width: 48px; height: 48px;"></div>
             <h3 class="text-xl font-bold text-gray-800">신청 처리 중</h3>
             <p class="text-gray-500 mt-2">잠시만 기다려주세요...</p>
+        </div>
+    </div>
+
+    <!-- Check Registration Modal (신청내역 확인) -->
+    <div id="check-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button onclick="closeCheckModal()" class="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full">
+                <span class="material-symbols-outlined text-gray-500">close</span>
+            </button>
+            <h3 class="modal-title">신청내역 확인</h3>
+            <p style="text-align: center; color: #64748b; margin-bottom: 20px; font-size: 14px;">
+                기존에 신청한 내역을 확인하고 수정합니다
+            </p>
+
+            <form id="check-form" onsubmit="submitCheckForm(event)">
+                <div class="form-group">
+                    <label class="form-label">학생 이름 *</label>
+                    <input type="text" class="form-input" id="check-student-name" placeholder="홍길동">
+                    <p class="error-message" id="check-name-error">학생 이름을 입력해주세요.</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">보호자 휴대폰 번호 *</label>
+                    <input type="tel" class="form-input" id="check-phone-number" placeholder="010-1234-5678" maxlength="13" oninput="formatPhoneNumber(this)">
+                    <p class="error-message" id="check-phone-error">올바른 연락처를 입력해주세요.</p>
+                </div>
+
+                <div class="flex gap-3 mt-6 modal-buttons">
+                    <button type="button" class="btn-secondary flex-1" onclick="closeCheckModal()">취소</button>
+                    <button type="submit" class="btn-primary flex-1">확인 <span class="material-symbols-outlined">search</span></button>
+                </div>
+            </form>
         </div>
     </div>
 

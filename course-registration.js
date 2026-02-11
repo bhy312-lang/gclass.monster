@@ -790,8 +790,84 @@ function showSuccessState(data) {
         resultPhone.textContent = document.getElementById('phone-number').value;
     }
 
+    // 신청 결과 (요일별 시간) 표시
+    displayScheduleResult();
+
     showState('success');
     stopAutoRefresh();
+}
+
+function displayScheduleResult() {
+    const resultSchedule = document.getElementById('result-schedule');
+    if (!resultSchedule) return;
+
+    const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
+    const dayFullNames = {
+        'mon': '월',
+        'tue': '화',
+        'wed': '수',
+        'thu': '목',
+        'fri': '금'
+    };
+
+    let scheduleHtml = '';
+    const slotIntervalMinutes = currentPeriod?.slot_interval_minutes || 30;
+
+    days.forEach(day => {
+        if (selectedSlots[day] && selectedSlots[day].length > 0) {
+            // 해당 요일의 슬롯들을 시간 순으로 정렬
+            const daySlots = selectedSlots[day]
+                .map(slotId => currentTimeSlots.find(s => s.id === slotId))
+                .filter(slot => slot)
+                .sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+            if (daySlots.length > 0) {
+                // 연속된 슬롯들을 그룹화
+                const timeGroups = groupConsecutiveSlots(daySlots);
+
+                timeGroups.forEach(group => {
+                    const startTime = group[0].start_time;
+                    const endTime = group[group.length - 1].end_time;
+                    const totalMinutes = group.length * slotIntervalMinutes;
+                    const hours = Math.floor(totalMinutes / 60);
+                    const minutes = totalMinutes % 60;
+                    const durationStr = minutes > 0 ? `${hours}시간 ${minutes}분` : `${hours}시간`;
+
+                    scheduleHtml += `<div style="margin-bottom: 4px;"><strong>${dayFullNames[day]}</strong> : ${startTime}-${endTime} (${durationStr})</div>`;
+                });
+            }
+        }
+    });
+
+    if (!scheduleHtml) {
+        scheduleHtml = '<div style="color: #94a3b8;">선택된 시간이 없습니다.</div>';
+    }
+
+    resultSchedule.innerHTML = scheduleHtml;
+}
+
+// 연속된 슬롯들을 그룹화하는 함수
+function groupConsecutiveSlots(slots) {
+    if (slots.length === 0) return [];
+
+    const groups = [];
+    let currentGroup = [slots[0]];
+
+    for (let i = 1; i < slots.length; i++) {
+        const prevSlot = slots[i - 1];
+        const currSlot = slots[i];
+
+        // 이전 슬롯의 end_time이 현재 슬롯의 start_time과 같으면 연속
+        if (prevSlot.end_time === currSlot.start_time) {
+            currentGroup.push(currSlot);
+        } else {
+            groups.push(currentGroup);
+            currentGroup = [currSlot];
+        }
+    }
+    groups.push(currentGroup);
+
+    return groups;
 }
 
 async function editMyRegistration() {
@@ -947,7 +1023,7 @@ async function loadSchools() {
     }
 }
 
-function submitInfo(event) {
+async function submitInfo(event) {
     event.preventDefault();
 
     const studentName = document.getElementById('student-name').value.trim();
@@ -991,9 +1067,139 @@ function submitInfo(event) {
 
     if (!isValid) return;
 
+    // 이미 신청한 학생인지 확인
+    try {
+        const { data: existingReg, error } = await supabase
+            .from('course_registrations')
+            .select('id')
+            .eq('period_id', currentPeriod.id)
+            .eq('student_name', studentName)
+            .eq('guardian_phone', phoneNumber)
+            .in('status', ['pending', 'confirmed'])
+            .maybeSingle();
+
+        if (existingReg && !error) {
+            // 이미 신청된 학생
+            closeInfoModal();
+            showAlertModal('알림', '이미 수강신청 완료된 학생입니다.\n\n신청내역을 수정하려면\n"신청내역 확인&수정" 버튼을 이용해주세요.');
+            return;
+        }
+    } catch (e) {
+        console.error('기존 신청 확인 오류:', e);
+    }
+
     // 정보 입력 완료, 시간 선택 모달 열기
     closeInfoModal();
     openSlotModal();
+}
+
+// 신청내역 확인 모달 함수들
+function openCheckModal() {
+    document.getElementById('check-modal').classList.add('show');
+    // 입력 필드 초기화
+    document.getElementById('check-student-name').value = '';
+    document.getElementById('check-phone-number').value = '';
+    document.getElementById('check-name-error').classList.remove('show');
+    document.getElementById('check-phone-error').classList.remove('show');
+}
+
+function closeCheckModal() {
+    document.getElementById('check-modal').classList.remove('show');
+}
+
+async function submitCheckForm(event) {
+    event.preventDefault();
+
+    const studentName = document.getElementById('check-student-name').value.trim();
+    const phoneNumber = document.getElementById('check-phone-number').value.trim();
+
+    // 유효성 검사
+    let isValid = true;
+
+    if (!studentName) {
+        document.getElementById('check-name-error').classList.add('show');
+        document.getElementById('check-student-name').classList.add('error');
+        isValid = false;
+    } else {
+        document.getElementById('check-name-error').classList.remove('show');
+        document.getElementById('check-student-name').classList.remove('error');
+    }
+
+    if (!phoneNumber || !/^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$/.test(phoneNumber.replace(/-/g, ''))) {
+        document.getElementById('check-phone-error').classList.add('show');
+        document.getElementById('check-phone-number').classList.add('error');
+        isValid = false;
+    } else {
+        document.getElementById('check-phone-error').classList.remove('show');
+        document.getElementById('check-phone-number').classList.remove('error');
+    }
+
+    if (!isValid) return;
+
+    try {
+        // 기존 신청 정보 조회
+        const { data: existingReg, error } = await supabase
+            .from('course_registrations')
+            .select('*, selected_slot_ids')
+            .eq('period_id', currentPeriod.id)
+            .eq('student_name', studentName)
+            .eq('guardian_phone', phoneNumber)
+            .in('status', ['pending', 'confirmed'])
+            .maybeSingle();
+
+        if (error || !existingReg) {
+            showAlertModal('알림', '해당 정보로 등록된 신청 내역이 없습니다.\n\n이름과 연락처를 다시 확인해주세요.');
+            return;
+        }
+
+        // 기존 신청 정보를 입력 필드에 채우기
+        document.getElementById('student-name').value = existingReg.student_name;
+        document.getElementById('phone-number').value = existingReg.guardian_phone;
+
+        // 학교 선택
+        const schoolSelect = document.getElementById('school-name');
+        if (schoolSelect.tagName === 'SELECT') {
+            schoolSelect.value = existingReg.school_name;
+        } else {
+            schoolSelect.value = existingReg.school_name;
+        }
+
+        // 학년 선택
+        selectGrade(parseInt(existingReg.grade));
+
+        // 기존 선택했던 슬롯 ID 저장 (수정 모드)
+        editingSlotIds = existingReg.selected_slot_ids || [];
+
+        // 선택 상태 초기화 후 기존 선택 복원
+        selectedSlots = { mon: [], tue: [], wed: [], thu: [], fri: [] };
+
+        // 기존 선택 슬롯 정보 조회
+        if (editingSlotIds.length > 0) {
+            const { data: slots } = await supabase
+                .from('course_time_slots')
+                .select('*')
+                .in('id', editingSlotIds);
+
+            if (slots) {
+                slots.forEach(slot => {
+                    if (selectedSlots[slot.day_of_week]) {
+                        selectedSlots[slot.day_of_week].push(slot.id);
+                    }
+                });
+            }
+        }
+
+        closeCheckModal();
+
+        // 슬롯 모달 열기 (시간 선택 화면으로 바로 이동)
+        document.getElementById('slot-modal').classList.add('show');
+        await loadTimeSlots(true);
+        setupRealtimeSubscription();
+
+    } catch (e) {
+        console.error('신청내역 확인 오류:', e);
+        showAlertModal('오류', '신청내역 확인 중 오류가 발생했습니다.');
+    }
 }
 
 // CSS for spin-slow animation
