@@ -12,6 +12,7 @@ let currentUser = null;
 let currentAcademyId = null;
 let slotsRealtimeChannel = null; // 슬롯 실시간 구독 채널
 let confirmCallback = null; // 커스텀 확인 모달 콜백
+let applicationsRefreshInterval = null; // 신청 현황 자동 새로고침 인터벌
 
 // 요일 한글명 매핑
 const dayNames = {
@@ -506,6 +507,11 @@ function switchTab(tabName) {
         content.classList.toggle('active', content.id === `tab-${tabName}`);
     });
 
+    // 신청 현황 자동 새로고침 중지 (다른 탭으로 이동 시)
+    if (tabName !== 'applications') {
+        stopApplicationsAutoRefresh();
+    }
+
     // 탭별 데이터 로드
     if (tabName === 'info') {
         loadSchools();
@@ -520,6 +526,32 @@ function switchTab(tabName) {
             // 기본적으로 시간표 형태로 로드
             loadApplicationsTimetable();
         }
+        // 신청 현황 자동 새로고침 시작
+        startApplicationsAutoRefresh();
+    }
+}
+
+// 신청 현황 자동 새로고침 시작
+function startApplicationsAutoRefresh() {
+    stopApplicationsAutoRefresh(); // 기존 인터벌 제거
+
+    applicationsRefreshInterval = setInterval(() => {
+        const periodSelect = document.getElementById('applications-period-select');
+        if (periodSelect && periodSelect.value) {
+            if (currentViewMode === 'timetable') {
+                loadApplicationsTimetable(true); // silent refresh
+            } else {
+                loadApplications(true); // silent refresh
+            }
+        }
+    }, 3000);
+}
+
+// 신청 현황 자동 새로고침 중지
+function stopApplicationsAutoRefresh() {
+    if (applicationsRefreshInterval) {
+        clearInterval(applicationsRefreshInterval);
+        applicationsRefreshInterval = null;
     }
 }
 
@@ -1309,18 +1341,20 @@ async function loadTimeSlots() {
 }
 
 // 신청 현황 로드
-async function loadApplications() {
+async function loadApplications(silent = false) {
     const periodId = document.getElementById('applications-period-select').value;
     const tbody = document.getElementById('applications-tbody');
 
     if (!periodId) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="9" class="text-center py-8 text-gray-400">
-                    기간을 선택해주세요.
-                </td>
-            </tr>
-        `;
+        if (!silent) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center py-8 text-gray-400">
+                        기간을 선택해주세요.
+                    </td>
+                </tr>
+            `;
+        }
         return;
     }
 
@@ -1428,17 +1462,19 @@ function filterApplications(filter) {
 }
 
 // 신청 현황 시간표 로드
-async function loadApplicationsTimetable() {
+async function loadApplicationsTimetable(silent = false) {
     const periodId = document.getElementById('applications-period-select').value;
     const container = document.getElementById('applications-timetable-container');
 
     if (!periodId) {
-        container.innerHTML = `
-            <div class="empty-state text-center py-12">
-                <span class="material-symbols-outlined text-6xl text-gray-300">table_chart</span>
-                <p class="text-gray-500 mt-4">기간을 선택하세요</p>
-            </div>
-        `;
+        if (!silent) {
+            container.innerHTML = `
+                <div class="empty-state text-center py-12">
+                    <span class="material-symbols-outlined text-6xl text-gray-300">table_chart</span>
+                    <p class="text-gray-500 mt-4">기간을 선택하세요</p>
+                </div>
+            `;
+        }
         return;
     }
 

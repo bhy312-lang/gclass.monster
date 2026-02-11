@@ -665,6 +665,15 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        /* 신청현황 새로고침 아이콘 */
+        .refresh-icon-spin {
+            animation: spin 2s linear infinite, colorChange 2s ease-in-out infinite;
+            vertical-align: middle;
+        }
+        @keyframes colorChange {
+            0%, 100% { color: #3b82f6; }
+            50% { color: #ef4444; }
+        }
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -1297,6 +1306,7 @@
                     <h2 class="section-title mb-0">
                         <span class="material-symbols-outlined text-purple-500">list_alt</span>
                         신청 현황
+                        <span id="applications-refresh-icon" class="material-symbols-outlined refresh-icon-spin" style="font-size: 20px; margin-left: 8px;">sync</span>
                     </h2>
                     <!-- View Toggle Buttons -->
                     <div class="flex gap-2">
