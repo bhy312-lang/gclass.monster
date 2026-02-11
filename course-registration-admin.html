@@ -1184,7 +1184,7 @@
 
                 <!-- 학교 추가 폼 -->
                 <div class="flex gap-3 mb-6">
-                    <input type="text" id="school-name-input" placeholder="학교명 입력 (예: 초등학교)" class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:outline-none">
+                    <input type="text" id="school-name-input" placeholder="학교명 입력 (예: 초등학교)" class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:outline-none" onkeydown="if(event.key==='Enter'){event.preventDefault();addSchool(event);}">
                     <button onclick="addSchool(event)" class="btn-primary">
                         <span class="material-symbols-outlined">add</span>
                         학교 추가
