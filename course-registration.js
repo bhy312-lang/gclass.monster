@@ -289,7 +289,7 @@ function setupRealtimeSubscription() {
     }
 
     slotsSubscription = supabase
-        .channel('course_time_slots_changes')
+        .channel('course_changes_' + Date.now())
         .on(
             'postgres_changes',
             {
@@ -299,11 +299,26 @@ function setupRealtimeSubscription() {
                 filter: `period_id=eq.${currentPeriod.id}`
             },
             (payload) => {
-                console.log('슬롯 변경 감지:', payload);
+                console.log('[Realtime] 슬롯 변경 감지:', payload);
                 loadTimeSlots();
             }
         )
-        .subscribe();
+        .on(
+            'postgres_changes',
+            {
+                event: '*',
+                schema: 'public',
+                table: 'course_registrations',
+                filter: `period_id=eq.${currentPeriod.id}`
+            },
+            (payload) => {
+                console.log('[Realtime] 신청 변경 감지:', payload);
+                loadTimeSlots();
+            }
+        )
+        .subscribe((status) => {
+            console.log('[Realtime] 구독 상태:', status);
+        });
 }
 
 async function loadTimeSlots(showLoading = false) {
@@ -316,12 +331,14 @@ async function loadTimeSlots(showLoading = false) {
     }
 
     try {
+        // 캐시 방지를 위해 타임스탬프 추가
         const { data: slots, error } = await supabase
             .from('course_time_slots')
             .select('*')
             .eq('period_id', currentPeriod.id)
             .order('day_of_week')
-            .order('start_time');
+            .order('start_time')
+            .throwOnError();
 
         if (error || !slots) {
             if (currentTimeSlots.length === 0) {
