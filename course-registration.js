@@ -632,48 +632,147 @@ async function submitRegistration() {
     closeSlotModal();
 
     try {
-        const { data, error } = await supabase.rpc('submit_course_registration', {
-            p_period_id: currentPeriod.id,
-            p_academy_id: currentPeriod.academy_id,
-            p_student_name: studentInfo.studentName,
-            p_school_name: studentInfo.schoolName,
-            p_grade: studentInfo.grade,
-            p_guardian_phone: studentInfo.phoneNumber,
-            p_selected_slot_ids: allSlotIds
-        });
+        // 수정 모드인지 확인 (editingSlotIds가 있으면 수정 모드)
+        const isEditMode = editingSlotIds.length > 0;
 
-        if (error) throw error;
-
-        if (data && data.success === false) {
-            document.getElementById('submitting-modal').classList.remove('show');
-
-            if (data.error === 'DUPLICATE_PHONE') {
-                showAlertModal('중복 신청', '이미 신청된 연락처입니다.');
-            } else if (data.full_slots && data.full_slots.length > 0) {
-                // 서버에서 반환된 꽉 찬 슬롯 해제
-                data.full_slots.forEach(fullSlotId => {
-                    const slot = currentTimeSlots.find(s => s.id === fullSlotId);
-                    if (slot) {
-                        const day = slot.day_of_week;
-                        if (selectedSlots[day] && selectedSlots[day].includes(fullSlotId)) {
-                            selectedSlots[day] = selectedSlots[day].filter(id => id !== fullSlotId);
-                        }
-                    }
-                });
-
-                showAlertModal('마감 안내', '해당 시간이 이미 마감되어 신청이 어렵습니다.\n시간을 다시 선택한 후 신청해주세요.');
-            } else {
-                showAlertModal('오류', data.message || '신청에 실패했습니다.');
+        if (isEditMode) {
+            // 수정 모드: 기존 신청 업데이트
+            const updateResult = await updateExistingRegistration(studentInfo, allSlotIds);
+            if (!updateResult.success) {
+                document.getElementById('submitting-modal').classList.remove('show');
+                showAlertModal('오류', updateResult.message || '수정에 실패했습니다.');
+                return;
             }
-            return;
-        }
+            showSuccessState({ success: true });
+        } else {
+            // 신규 등록
+            const { data, error } = await supabase.rpc('submit_course_registration', {
+                p_period_id: currentPeriod.id,
+                p_academy_id: currentPeriod.academy_id,
+                p_student_name: studentInfo.studentName,
+                p_school_name: studentInfo.schoolName,
+                p_grade: studentInfo.grade,
+                p_guardian_phone: studentInfo.phoneNumber,
+                p_selected_slot_ids: allSlotIds
+            });
 
-        showSuccessState(data);
+            if (error) throw error;
+
+            if (data && data.success === false) {
+                document.getElementById('submitting-modal').classList.remove('show');
+
+                if (data.error === 'DUPLICATE_PHONE') {
+                    showAlertModal('중복 신청', '이미 신청된 연락처입니다.\n\n수정을 원하시면 신청완료 화면에서 "수정하기"를 눌러주세요.');
+                } else if (data.full_slots && data.full_slots.length > 0) {
+                    // 서버에서 반환된 꽉 찬 슬롯 해제
+                    data.full_slots.forEach(fullSlotId => {
+                        const slot = currentTimeSlots.find(s => s.id === fullSlotId);
+                        if (slot) {
+                            const day = slot.day_of_week;
+                            if (selectedSlots[day] && selectedSlots[day].includes(fullSlotId)) {
+                                selectedSlots[day] = selectedSlots[day].filter(id => id !== fullSlotId);
+                            }
+                        }
+                    });
+
+                    showAlertModal('마감 안내', '해당 시간이 이미 마감되어 신청이 어렵습니다.\n시간을 다시 선택한 후 신청해주세요.');
+                } else {
+                    showAlertModal('오류', data.message || '신청에 실패했습니다.');
+                }
+                return;
+            }
+
+            showSuccessState(data);
+        }
 
     } catch (error) {
         console.error('[Registration] 신청 오류:', error);
         document.getElementById('submitting-modal').classList.remove('show');
         showAlertModal('오류', '신청 처리 중 오류가 발생했습니다.');
+    }
+}
+
+async function updateExistingRegistration(studentInfo, newSlotIds) {
+    try {
+        const phoneNumber = studentInfo.phoneNumber;
+
+        // 1. 기존 신청 조회
+        const { data: existingReg, error: fetchError } = await supabase
+            .from('course_registrations')
+            .select('id, selected_slot_ids')
+            .eq('period_id', currentPeriod.id)
+            .eq('guardian_phone', phoneNumber)
+            .in('status', ['pending', 'confirmed'])
+            .maybeSingle();
+
+        if (fetchError || !existingReg) {
+            return { success: false, message: '기존 신청 정보를 찾을 수 없습니다.' };
+        }
+
+        const oldSlotIds = existingReg.selected_slot_ids || [];
+
+        // 2. 제거된 슬롯 (이전에 있었지만 새 목록에 없는 것)
+        const removedSlots = oldSlotIds.filter(id => !newSlotIds.includes(id));
+
+        // 3. 추가된 슬롯 (새 목록에 있지만 이전에 없던 것)
+        const addedSlots = newSlotIds.filter(id => !oldSlotIds.includes(id));
+
+        // 4. 제거된 슬롯의 current_count 감소
+        for (const slotId of removedSlots) {
+            const { data: slot } = await supabase
+                .from('course_time_slots')
+                .select('current_count')
+                .eq('id', slotId)
+                .single();
+
+            if (slot) {
+                await supabase
+                    .from('course_time_slots')
+                    .update({ current_count: Math.max(0, slot.current_count - 1) })
+                    .eq('id', slotId);
+            }
+        }
+
+        // 5. 추가된 슬롯의 current_count 증가
+        for (const slotId of addedSlots) {
+            const { data: slot } = await supabase
+                .from('course_time_slots')
+                .select('current_count')
+                .eq('id', slotId)
+                .single();
+
+            if (slot) {
+                await supabase
+                    .from('course_time_slots')
+                    .update({ current_count: slot.current_count + 1 })
+                    .eq('id', slotId);
+            }
+        }
+
+        // 6. 신청 정보 업데이트
+        const { error: updateError } = await supabase
+            .from('course_registrations')
+            .update({
+                student_name: studentInfo.studentName,
+                school_name: studentInfo.schoolName,
+                grade: studentInfo.grade,
+                selected_slot_ids: newSlotIds,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', existingReg.id);
+
+        if (updateError) {
+            return { success: false, message: '신청 수정에 실패했습니다.' };
+        }
+
+        // 수정 모드 초기화
+        editingSlotIds = [];
+
+        return { success: true };
+
+    } catch (error) {
+        console.error('[Registration] 수정 오류:', error);
+        return { success: false, message: '수정 처리 중 오류가 발생했습니다.' };
     }
 }
 
