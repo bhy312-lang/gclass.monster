@@ -344,18 +344,33 @@ async function initializePage() {
         }
 
         // 실시간 구독 설정
-        setupRealtimeSubscriptions();
+        await setupRealtimeSubscriptions();
 
     } catch (error) {
         console.error('[Admin] 초기화 오류:', error);
+        // AbortError는 페이지 새로고침 시 발생할 수 있으므로 무시
+        if (error.name === 'AbortError') {
+            console.log('[Admin] AbortError 발생 - 페이지 새로고침 중일 수 있음');
+            return;
+        }
         showError('페이지 로드 중 오류가 발생했습니다.');
     }
 }
 
 // 실시간 구독 설정
-function setupRealtimeSubscriptions() {
+async function setupRealtimeSubscriptions() {
+    // 기존 채널이 있으면 제거
+    if (slotsRealtimeChannel) {
+        try {
+            await supabase.removeChannel(slotsRealtimeChannel);
+        } catch (e) {
+            console.log('[Admin] 기존 채널 제거 중 오류 (무시):', e);
+        }
+        slotsRealtimeChannel = null;
+    }
+
     slotsRealtimeChannel = supabase
-        .channel('course_registration_changes')
+        .channel('course_registration_changes_' + Date.now())
         .on(
             'postgres_changes',
             {
@@ -624,11 +639,16 @@ async function loadSchools() {
 
     } catch (error) {
         console.error('[Admin] 학교 목록 로드 오류:', error);
+        // AbortError는 무시
+        if (error.name === 'AbortError') {
+            console.log('[Admin] 학교 로드 AbortError - 재시도');
+            return;
+        }
         schoolsList.innerHTML = `
             <div class="error-state col-span-full text-center">
                 <span class="material-symbols-outlined text-4xl text-red-300">error</span>
                 <p class="text-red-500 mt-2">학교 목록을 불러오는데 실패했습니다</p>
-                <p class="text-sm text-gray-400 mt-1">에러: ${error.message}</p>
+                <p class="text-sm text-gray-400 mt-1">에러: ${error.message || error}</p>
             </div>
         `;
     }
@@ -769,6 +789,8 @@ async function loadMaxWeeklyHours() {
             select.value = academy.max_weekly_hours || 5;
         }
     } catch (error) {
+        // AbortError는 무시
+        if (error.name === 'AbortError') return;
         console.error('[Admin] 주간 최대 시간 로드 오류:', error);
     }
 }
