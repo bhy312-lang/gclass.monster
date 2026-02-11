@@ -37,8 +37,45 @@
         .header h1 {
             font-size: 28px;
             font-weight: 700;
-            color: #1e293b;
             margin-bottom: 8px;
+        }
+        /* 무지개 네온사인 3D 효과 */
+        .neon-title {
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg,
+                #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000);
+            background-size: 400% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: rainbow 3s linear infinite, glow 2s ease-in-out infinite alternate;
+            text-shadow:
+                0 0 5px rgba(255, 0, 255, 0.5),
+                0 0 10px rgba(255, 0, 255, 0.4),
+                0 0 20px rgba(255, 0, 255, 0.3),
+                0 0 40px rgba(255, 0, 255, 0.2);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))
+                    drop-shadow(0 4px 8px rgba(255, 0, 255, 0.2));
+            transform: perspective(500px) rotateX(5deg);
+            transform-style: preserve-3d;
+        }
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 400% 50%; }
+        }
+        @keyframes glow {
+            0% {
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))
+                        drop-shadow(0 4px 8px rgba(255, 0, 255, 0.3))
+                        drop-shadow(0 0 20px rgba(255, 100, 255, 0.4));
+            }
+            100% {
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))
+                        drop-shadow(0 4px 12px rgba(0, 255, 255, 0.4))
+                        drop-shadow(0 0 30px rgba(100, 255, 255, 0.5));
+            }
         }
         .header p {
             color: #64748b;
@@ -761,7 +798,7 @@
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <h1>수강신청 시스템</h1>
+            <h1 class="neon-title">퍼스트 초등전과목<br>수강신청 시스템</h1>
             <p id="period-name">퍼스트초등전과목</p>
         </header>
 
