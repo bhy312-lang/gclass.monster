@@ -749,7 +749,7 @@ async function updateExistingRegistration(studentInfo, newSlotIds) {
             }
         }
 
-        // 6. 신청 정보 업데이트
+        // 6. 신청 정보 업데이트 (selected_slot_ids와 confirmed_slot_ids 모두 업데이트)
         const { error: updateError } = await supabase
             .from('course_registrations')
             .update({
@@ -757,6 +757,7 @@ async function updateExistingRegistration(studentInfo, newSlotIds) {
                 school_name: studentInfo.schoolName,
                 grade: studentInfo.grade,
                 selected_slot_ids: newSlotIds,
+                confirmed_slot_ids: newSlotIds,
                 updated_at: new Date().toISOString()
             })
             .eq('id', existingReg.id);
