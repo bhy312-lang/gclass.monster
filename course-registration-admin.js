@@ -245,6 +245,7 @@ function switchTab(tabName) {
     // 탭별 데이터 로드
     if (tabName === 'info') {
         loadSchools();
+        loadMaxWeeklyHours();
     } else if (tabName === 'slots') {
         populatePeriodSelect();
     } else if (tabName === 'applications') {
@@ -252,8 +253,67 @@ function switchTab(tabName) {
         // 시간표 형태로 자동 로드
         const periodSelect = document.getElementById('applications-period-select');
         if (periodSelect && periodSelect.value) {
+            // 기본적으로 시간표 형태로 로드
             loadApplicationsTimetable();
         }
+    }
+}
+
+// 현재 뷰 모드 (timetable 또는 list)
+let currentViewMode = 'timetable';
+
+// 뷰 전환 (시간표 / 목록)
+function switchView(view) {
+    currentViewMode = view;
+
+    const timetableContainer = document.getElementById('applications-timetable-container');
+    const tableContainer = document.getElementById('applications-table-container');
+    const timetableBtn = document.getElementById('view-timetable-btn');
+    const listBtn = document.getElementById('view-list-btn');
+
+    if (view === 'timetable') {
+        timetableContainer.classList.remove('hidden');
+        tableContainer.classList.add('hidden');
+        timetableBtn.classList.add('active');
+        listBtn.classList.remove('active');
+        loadApplicationsTimetable();
+    } else {
+        timetableContainer.classList.add('hidden');
+        tableContainer.classList.remove('hidden');
+        timetableBtn.classList.remove('active');
+        listBtn.classList.add('active');
+        loadApplications();
+    }
+}
+
+// 기간 선택 변경 시 (뷰 모드에 따라 다른 함수 호출)
+function onApplicationsPeriodChange() {
+    const periodSelect = document.getElementById('applications-period-select');
+    if (!periodSelect.value) {
+        // 기간이 선택되지 않으면 초기 상태로
+        if (currentViewMode === 'timetable') {
+            document.getElementById('applications-timetable-container').innerHTML = `
+                <div class="empty-state text-center py-12">
+                    <span class="material-symbols-outlined text-6xl text-gray-300">table_chart</span>
+                    <p class="text-gray-500 mt-4">기간을 선택하세요</p>
+                </div>
+            `;
+        } else {
+            document.getElementById('applications-tbody').innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center py-8 text-gray-400">
+                        기간을 선택해주세요.
+                    </td>
+                </tr>
+            `;
+        }
+        return;
+    }
+
+    if (currentViewMode === 'timetable') {
+        loadApplicationsTimetable();
+    } else {
+        loadApplications();
     }
 }
 
@@ -467,7 +527,19 @@ async function loadMaxWeeklyHours() {
 // 주간 최대 신청 가능시간 저장
 async function saveMaxWeeklyHours() {
     try {
-        const maxHours = parseInt(document.getElementById('max-weekly-hours').value);
+        const select = document.getElementById('max-weekly-hours');
+        const customInput = document.getElementById('custom-hours-input');
+        let maxHours;
+
+        if (select.value === 'custom') {
+            maxHours = parseInt(customInput.value);
+            if (isNaN(maxHours) || maxHours < 1 || maxHours > 50) {
+                showError('시간은 1~50 사이로 입력해주세요.');
+                return;
+            }
+        } else {
+            maxHours = parseInt(select.value);
+        }
 
         const { error } = await supabase
             .from('academies')
@@ -481,6 +553,50 @@ async function saveMaxWeeklyHours() {
         console.error('[Admin] 주간 최대 시간 저장 오류:', error);
         showError('저장에 실패했습니다.');
     }
+}
+
+// 직접 입력 토글
+function toggleCustomHoursInput() {
+    const select = document.getElementById('max-weekly-hours');
+    const customInput = document.getElementById('custom-hours-input');
+    const customLabel = document.getElementById('custom-hours-label');
+
+    if (select.value === 'custom') {
+        customInput.classList.remove('hidden');
+        customLabel.classList.remove('hidden');
+        customInput.focus();
+    } else {
+        customInput.classList.add('hidden');
+        customLabel.classList.add('hidden');
+    }
+}
+
+// 인터벌 선택 (단위 시간) - 기간 생성용
+function selectPeriodInterval(minutes) {
+    // 인터벌 값 설정
+    document.getElementById('period-slot-interval').value = minutes;
+
+    // 버튼 색상 설정
+    const colors = {
+        15: { border: '#3b82f6', bg: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' },
+        30: { border: '#22c55e', bg: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' },
+        45: { border: '#f59e0b', bg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' },
+        60: { border: '#8b5cf6', bg: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' }
+    };
+
+    // 버튼 활성화 상태 업데이트 (기간 모달 내의 버튼만)
+    const periodModal = document.getElementById('period-modal');
+    periodModal.querySelectorAll('.interval-btn').forEach(btn => {
+        const interval = parseInt(btn.dataset.interval);
+        const isActive = interval === minutes;
+        const color = colors[interval];
+
+        btn.classList.toggle('active', isActive);
+        btn.style.borderColor = color.border;
+        btn.style.background = color.bg;
+        btn.style.color = 'white';
+        btn.style.boxShadow = isActive ? '0 4px 15px rgba(0, 0, 0, 0.3)' : 'none';
+    });
 }
 
 // 인터벌 선택 (단위 시간) - 슬롯 모달용
@@ -1163,6 +1279,9 @@ function openPeriodModal(periodId = null) {
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(10, 0, 0, 0);
         document.getElementById('period-open').value = formatDateTimeLocal(tomorrow);
+        // 기본 슬롯 인터벌 30분 설정
+        document.getElementById('period-slot-interval').value = 30;
+        selectPeriodInterval(30);
     }
 
     modal.classList.add('show');
@@ -1191,6 +1310,11 @@ async function loadPeriodForEdit(periodId) {
                 : '';
             document.getElementById('period-capacity').value = period.default_capacity;
             document.getElementById('period-description').value = period.description || '';
+
+            // 슬롯 인터벌 설정 (기존 기간의 인터벌 유지)
+            const slotInterval = period.slot_interval_minutes || 30;
+            document.getElementById('period-slot-interval').value = slotInterval;
+            selectPeriodInterval(slotInterval);
         }
     } catch (error) {
         console.error('[Admin] 기간 정보 로드 오류:', error);
@@ -1230,7 +1354,8 @@ async function savePeriod(event) {
 
         // 새 기간 생성 시에만 기본 단위 시간 설정 (기존 기간은 유지)
         if (!id) {
-            data.slot_interval_minutes = 30; // 기본값 30분
+            const slotInterval = parseInt(document.getElementById('period-slot-interval').value);
+            data.slot_interval_minutes = slotInterval || 30; // 기본값 30분
         }
 
         let result;
@@ -1550,6 +1675,19 @@ async function addSingleSlot(day, time) {
     }
 }
 
+// 정원 조절 (증가/감소)
+function adjustCapacity(delta) {
+    const input = document.getElementById('edit-slot-capacity');
+    let currentValue = parseInt(input.value) || 0;
+    let newValue = currentValue + delta;
+
+    // 1~50 범위 체크
+    if (newValue < 1) newValue = 1;
+    if (newValue > 50) newValue = 50;
+
+    input.value = newValue;
+}
+
 // 정원 수정 모달 열기
 function openCapacityEditModal(slotId, currentCapacity, day, time) {
     const modal = document.getElementById('capacity-edit-modal');
@@ -1678,7 +1816,70 @@ async function deleteDaySlots(day) {
     }
 }
 
-// 전체 슬롯 초기화 (current_count를 0으로 리셋)
+// 전체 초기화 확인 모달 열기
+function openResetAllConfirmModal() {
+    const periodId = document.getElementById('applications-period-select').value;
+
+    if (!periodId) {
+        showError('먼저 기간을 선택해주세요.');
+        return;
+    }
+
+    const modal = document.getElementById('reset-all-modal');
+    modal.classList.add('show');
+}
+
+// 전체 초기화 확인 모달 닫기
+function closeResetAllConfirmModal() {
+    const modal = document.getElementById('reset-all-modal');
+    modal.classList.remove('show');
+}
+
+// 전체 신청 초기화 실행
+async function confirmResetAllApplications() {
+    const periodId = document.getElementById('applications-period-select').value;
+
+    if (!periodId) {
+        showError('기간을 선택해주세요.');
+        closeResetAllConfirmModal();
+        return;
+    }
+
+    try {
+        // 모든 신청 삭제
+        const { error: deleteError } = await supabase
+            .from('course_registrations')
+            .delete()
+            .eq('period_id', periodId);
+
+        if (deleteError) throw deleteError;
+
+        // 모든 슬롯의 current_count를 0으로 초기화
+        const { error: updateError } = await supabase
+            .from('course_time_slots')
+            .update({ current_count: 0 })
+            .eq('period_id', periodId);
+
+        if (updateError) throw updateError;
+
+        closeResetAllConfirmModal();
+        showToast('모든 신청 내역이 초기화되었습니다.');
+
+        // 현재 뷰 새로고침
+        if (currentViewMode === 'timetable') {
+            loadApplicationsTimetable();
+        } else {
+            loadApplications();
+        }
+
+    } catch (error) {
+        console.error('[Admin] 전체 초기화 오류:', error);
+        showError('초기화에 실패했습니다: ' + error.message);
+        closeResetAllConfirmModal();
+    }
+}
+
+// 전체 슬롯 초기화 (current_count를 0으로 리셋) - 기존 함수 유지
 async function resetAllSlots() {
     const periodId = document.getElementById('applications-period-select').value;
 

@@ -144,6 +144,34 @@
             background: #dc2626;
             color: white;
         }
+
+        /* Interval Button Styles */
+        .interval-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            color: #64748b;
+        }
+        .interval-btn:hover {
+            border-color: #58d3d3;
+            background: #f0fdfa;
+            color: #14b8a6;
+        }
+        .interval-btn.active {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        .interval-btn .material-symbols-outlined {
+            font-size: 18px;
+        }
+
         .btn-sm {
             padding: 8px 14px;
             font-size: 13px;
@@ -349,6 +377,55 @@
             flex: 0 0 auto;
             width: 80px;
             text-align: center;
+        }
+        #capacity-edit-modal .capacity-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #475569;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #capacity-edit-modal .capacity-btn:hover {
+            border-color: #58d3d3;
+            background: #f0fdfa;
+            color: #14b8a6;
+        }
+        #capacity-edit-modal .capacity-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Capacity Arrow Buttons (Up/Down) */
+        .capacity-arrow {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .capacity-arrow:hover {
+            border-color: #58d3d3;
+            background: #f0fdfa;
+            color: #14b8a6;
+        }
+        .capacity-arrow:active {
+            transform: scale(0.95);
+        }
+        .capacity-arrow .material-symbols-outlined {
+            font-size: 24px;
         }
 
         .checkbox-group {
@@ -602,6 +679,99 @@
             color: #64748b;
             font-size: 10px;
         }
+        /* 학교 관리 스타일 */
+        .schools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        .school-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s;
+        }
+        .school-card:hover {
+            border-color: #58d3d3;
+            box-shadow: 0 4px 15px rgba(88, 211, 211, 0.2);
+        }
+        .school-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-edit, .btn-delete {
+            padding: 8px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-edit:hover {
+            background: #f0fdfa;
+            color: #14b8a6;
+        }
+        .btn-delete:hover {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        /* View Toggle Buttons */
+        .view-toggle-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .view-toggle-btn:hover {
+            border-color: #58d3d3;
+            background: #f0fdfa;
+            color: #14b8a6;
+        }
+        .view-toggle-btn.active {
+            border-color: #58d3d3;
+            background: linear-gradient(135deg, #58d3d3 0%, #14b8a6 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(88, 211, 211, 0.4);
+        }
+        .view-toggle-btn .material-symbols-outlined {
+            font-size: 20px;
+        }
+
+        /* Reset Modal Animation */
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        #reset-all-modal .modal-content {
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        #reset-all-modal:not(.show) .modal-content {
+            animation: modalSlideOut 0.2s ease-in forwards;
+        }
+        @keyframes modalSlideOut {
+            from {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: scale(0.8) translateY(-50px);
+            }
+        }
     </style>
 </head>
 <body>
@@ -626,6 +796,7 @@
 
             <!-- Navigation Tabs -->
             <nav class="flex gap-2 bg-gray-100 p-1.5 rounded-full overflow-x-auto">
+                <button class="nav-tab" data-tab="info" onclick="switchTab('info')">정보 설정</button>
                 <button class="nav-tab active" data-tab="periods" onclick="switchTab('periods')">기간 설정</button>
                 <button class="nav-tab" data-tab="slots" onclick="switchTab('slots')">시간 관리</button>
                 <button class="nav-tab" data-tab="applications" onclick="switchTab('applications')">신청 현황</button>
@@ -635,6 +806,68 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 py-6" style="margin-top: 160px;">
+
+        <!-- Tab 0: 정보 설정 -->
+        <div id="tab-info" class="tab-content">
+            <!-- 학교 관리 -->
+            <section class="section-card">
+                <h2 class="section-title">
+                    <span class="material-symbols-outlined text-teal-500">school</span>
+                    학교 관리
+                </h2>
+
+                <!-- 학교 추가 폼 -->
+                <div class="flex gap-3 mb-6">
+                    <input type="text" id="school-name-input" placeholder="학교명 입력 (예: 초등학교)" class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:outline-none">
+                    <button onclick="addSchool(event)" class="btn-primary">
+                        <span class="material-symbols-outlined">add</span>
+                        학교 추가
+                    </button>
+                </div>
+
+                <!-- 학교 목록 -->
+                <div id="schools-list" class="schools-grid">
+                    <div class="empty-state col-span-full">
+                        <span class="material-symbols-outlined text-4xl text-gray-300">school</span>
+                        <p class="text-gray-500 mt-2">등록된 학교가 없습니다</p>
+                        <p class="text-sm text-gray-400 mt-1">위 폼에서 학교를 등록하세요</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 주간 최대 신청 가능시간 설정 -->
+            <section class="section-card">
+                <h2 class="section-title">
+                    <span class="material-symbols-outlined text-blue-500">schedule</span>
+                    주간 최대 신청 가능시간
+                </h2>
+
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 flex-1">
+                        <select id="max-weekly-hours" class="px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:outline-none" onchange="toggleCustomHoursInput()">
+                            <option value="1">1시간</option>
+                            <option value="2">2시간</option>
+                            <option value="3">3시간</option>
+                            <option value="4">4시간</option>
+                            <option value="5" selected>5시간</option>
+                            <option value="6">6시간</option>
+                            <option value="7">7시간</option>
+                            <option value="8">8시간</option>
+                            <option value="9">9시간</option>
+                            <option value="10">10시간</option>
+                            <option value="custom">직접 입력</option>
+                        </select>
+                        <input type="number" id="custom-hours-input" class="hidden px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:outline-none w-24" min="1" max="50" placeholder="시간">
+                        <span id="custom-hours-label" class="hidden text-gray-500">시간</span>
+                    </div>
+                    <button onclick="saveMaxWeeklyHours()" class="btn-primary">
+                        <span class="material-symbols-outlined">save</span>
+                        저장
+                    </button>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">학생이 주간에 신청할 수 있는 최대 시간을 설정합니다.</p>
+            </section>
+        </div>
 
         <!-- Tab 1: 기간 설정 -->
         <div id="tab-periods" class="tab-content active">
@@ -694,26 +927,42 @@
         <!-- Tab 3: 신청 현황 -->
         <div id="tab-applications" class="tab-content">
             <section class="section-card">
-                <h2 class="section-title">
-                    <span class="material-symbols-outlined text-purple-500">list_alt</span>
-                    신청 현황
-                </h2>
-
-                <div class="flex flex-wrap gap-3 mb-6">
-                    <button class="filter-btn active" data-filter="all" onclick="filterApplications('all')">전체</button>
-                    <button class="filter-btn" data-filter="confirmed" onclick="filterApplications('confirmed')">확정</button>
-                    <button class="filter-btn" data-filter="waiting" onclick="filterApplications('waiting')">대기</button>
-                    <button class="filter-btn" data-filter="pending" onclick="filterApplications('pending')">처리중</button>
-                    <button class="filter-btn" data-filter="cancelled" onclick="filterApplications('cancelled')">취소</button>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="section-title mb-0">
+                        <span class="material-symbols-outlined text-purple-500">list_alt</span>
+                        신청 현황
+                    </h2>
+                    <!-- View Toggle Buttons -->
+                    <div class="flex gap-2">
+                        <button onclick="openResetAllConfirmModal()" class="view-toggle-btn" title="전체 초기화" style="border-color: #ef4444; color: white; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 10px 16px;">
+                            <span class="material-symbols-outlined">restart_alt</span>
+                            전체 초기화
+                        </button>
+                        <button id="view-timetable-btn" onclick="switchView('timetable')" class="view-toggle-btn active" title="시간표 보">
+                            <span class="material-symbols-outlined">calendar_view_month</span>
+                        </button>
+                        <button id="view-list-btn" onclick="switchView('list')" class="view-toggle-btn" title="목록 보">
+                            <span class="material-symbols-outlined">list</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="mb-6">
-                    <select id="applications-period-select" onchange="loadApplications()" class="max-w-xs">
+                    <select id="applications-period-select" onchange="onApplicationsPeriodChange()" class="max-w-xs">
                         <option value="">기간 선택</option>
                     </select>
                 </div>
 
-                <div id="applications-table-container" class="overflow-x-auto">
+                <!-- Timetable View (Default) -->
+                <div id="applications-timetable-container">
+                    <div class="empty-state text-center py-12">
+                        <span class="material-symbols-outlined text-6xl text-gray-300">table_chart</span>
+                        <p class="text-gray-500 mt-4">기간을 선택하세요</p>
+                    </div>
+                </div>
+
+                <!-- List View -->
+                <div id="applications-table-container" class="overflow-x-auto hidden">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -738,7 +987,7 @@
                     </table>
                 </div>
 
-                <div class="flex justify-end mt-4">
+                <div class="flex justify-end mt-4 gap-2">
                     <button onclick="exportCSV()" class="btn-secondary btn-sm">
                         <span class="material-symbols-outlined">download</span>
                         CSV 내보내기
@@ -782,6 +1031,27 @@
                     <label>기본 정원 *</label>
                     <input type="number" id="period-capacity" min="1" max="100" value="5" required>
                     <p class="text-xs text-gray-500 mt-1">각 시간대별 기본 정원 인원 (개별 수정 가능)</p>
+                </div>
+
+                <div class="input-group">
+                    <label>슬롯 단위 시간 *</label>
+                    <p class="text-xs text-gray-500 mb-3">시간표의 각 슬롯 구간 길이를 설정합니다.</p>
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <button type="button" class="interval-btn" data-interval="15" onclick="selectPeriodInterval(15)" style="border-color: #3b82f6; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;">
+                            15분
+                        </button>
+                        <button type="button" class="interval-btn active" data-interval="30" onclick="selectPeriodInterval(30)" style="border-color: #22c55e; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white;">
+                            30분
+                        </button>
+                        <button type="button" class="interval-btn" data-interval="45" onclick="selectPeriodInterval(45)" style="border-color: #f59e0b; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;">
+                            45분
+                        </button>
+                        <button type="button" class="interval-btn" data-interval="60" onclick="selectPeriodInterval(60)" style="border-color: #8b5cf6; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white;">
+                            60분
+                        </button>
+                    </div>
+                    <input type="hidden" id="period-slot-interval" value="30">
+                    <p class="text-xs text-gray-500 mt-1">선택한 단위로 시간 슬롯이 자동 생성됩니다 (기본: 30분)</p>
                 </div>
 
                 <div class="input-group">
@@ -892,7 +1162,13 @@
                 <div class="input-group text-left" style="max-width: 280px; margin: 0 auto 16px;">
                     <label>새 정원 *</label>
                     <div class="capacity-input">
-                        <input type="number" id="edit-slot-capacity" min="1" max="50" required>
+                        <button type="button" onclick="adjustCapacity(-1)" class="capacity-arrow up" title="감소">
+                            <span class="material-symbols-outlined">keyboard_arrow_down</span>
+                        </button>
+                        <button type="button" onclick="adjustCapacity(1)" class="capacity-arrow down" title="증가">
+                            <span class="material-symbols-outlined">keyboard_arrow_up</span>
+                        </button>
+                        <input type="number" id="edit-slot-capacity" min="1" max="50" required readonly style="pointer-events: none; background: #f8fafc; color: #64748b;" tabindex="-1">
                         <span class="text-gray-500">명</span>
                     </div>
                     <p class="text-xs text-gray-500 mt-1">1명 ~ 50명까지 설정 가능</p>
@@ -903,6 +1179,65 @@
                     <button type="button" onclick="closeCapacityEditModal()" class="btn-secondary" style="flex: 1; max-width: 130px;">취소</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Edit School Modal -->
+    <div id="edit-school-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-800">학교명 수정</h3>
+                <button onclick="closeEditSchoolModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <form id="edit-school-form" onsubmit="updateSchool(event)">
+                <input type="hidden" id="edit-school-id">
+
+                <div class="input-group">
+                    <label>학교명 *</label>
+                    <input type="text" id="edit-school-name" placeholder="수정할 학교명 입력" required>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closeEditSchoolModal()" class="btn-secondary flex-1">취소</button>
+                    <button type="submit" class="btn-primary flex-1">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reset All Applications Confirm Modal -->
+    <div id="reset-all-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 480px; background: linear-gradient(145deg, #fff5f5 0%, #fef2f2 50%, #fee2e2 100%); border: 2px solid #fca5a5;">
+            <div class="text-center py-6">
+                <div class="w-24 h-24 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+                    <span class="material-symbols-outlined text-red-600" style="font-size: 48px;">warning</span>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-3">⚠️ 전체 초기화</h3>
+                <p class="text-gray-700 mb-4 leading-relaxed">
+                    선택한 기간의 <span class="font-bold text-red-600">모든 신청 내역</span>을 삭제하시겠습니까?
+                </p>
+                <div class="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 mb-6 text-left">
+                    <p class="text-red-700 text-sm font-medium mb-2">⚠️ 주의사항</p>
+                    <ul class="text-red-600 text-sm space-y-1">
+                        <li>• 모든 신청 데이터가 영구적으로 삭제됩니다</li>
+                        <li>• 삭제된 데이터는 복구할 수 없습니다</li>
+                        <li>• 모든 슬롯의 신청 인원이 0으로 초기화됩니다</li>
+                    </ul>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeResetAllConfirmModal()" class="btn-secondary flex-1 py-4">
+                        <span class="material-symbols-outlined text-sm">cancel</span>
+                        취소
+                    </button>
+                    <button onclick="confirmResetAllApplications()" class="flex-1 py-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 active:scale-95" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.5);">
+                        <span class="material-symbols-outlined text-sm">delete_forever</span>
+                        전체 삭제
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
