@@ -176,6 +176,26 @@
         .btn-secondary:hover {
             background: #e2e8f0;
         }
+        .btn-check {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 18px 48px;
+            background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+            color: #be185d;
+            border: none;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 25px rgba(251, 207, 232, 0.4);
+        }
+        .btn-check:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(251, 207, 232, 0.5);
+        }
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -848,7 +868,7 @@
                     <span class="material-symbols-outlined">edit_note</span>
                     수강신청하기
                 </button>
-                <button class="btn-secondary" style="margin-top: 16px;" onclick="openCheckModal()">
+                <button class="btn-check" style="margin-top: 16px;" onclick="openCheckModal()">
                     <span class="material-symbols-outlined">search</span>
                     신청내역 확인&수정
                 </button>
@@ -894,7 +914,7 @@
                 </div>
                 <div class="success-info-row">
                     <span class="success-info-label" style="white-space: nowrap;">신청 일시</span>
-                    <span class="success-info-value" id="result-time">-</span>
+                    <span class="success-info-value" id="result-time" style="text-align: center;">-</span>
                 </div>
             </div>
             <div class="success-info" style="margin-top: 16px;">

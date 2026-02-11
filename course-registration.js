@@ -797,28 +797,51 @@ function showSuccessState(data) {
     stopAutoRefresh();
 }
 
-function displayScheduleResult() {
+async function displayScheduleResult() {
     const resultSchedule = document.getElementById('result-schedule');
     if (!resultSchedule) return;
 
+    // 선택된 모든 슬롯 ID 수집
     const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
-    const dayFullNames = {
-        'mon': '월',
-        'tue': '화',
-        'wed': '수',
-        'thu': '목',
-        'fri': '금'
-    };
-
-    let scheduleHtml = '';
-    const slotIntervalMinutes = currentPeriod?.slot_interval_minutes || 30;
-
+    const allSlotIds = [];
     days.forEach(day => {
         if (selectedSlots[day] && selectedSlots[day].length > 0) {
+            allSlotIds.push(...selectedSlots[day]);
+        }
+    });
+
+    if (allSlotIds.length === 0) {
+        resultSchedule.innerHTML = '<div style="color: #94a3b8;">선택된 시간이 없습니다.</div>';
+        return;
+    }
+
+    // DB에서 슬롯 정보 조회
+    try {
+        const { data: slots, error } = await supabase
+            .from('course_time_slots')
+            .select('*')
+            .in('id', allSlotIds);
+
+        if (error || !slots || slots.length === 0) {
+            resultSchedule.innerHTML = '<div style="color: #94a3b8;">선택된 시간이 없습니다.</div>';
+            return;
+        }
+
+        const dayFullNames = {
+            'mon': '월',
+            'tue': '화',
+            'wed': '수',
+            'thu': '목',
+            'fri': '금'
+        };
+
+        let scheduleHtml = '';
+        const slotIntervalMinutes = currentPeriod?.slot_interval_minutes || 30;
+
+        days.forEach(day => {
             // 해당 요일의 슬롯들을 시간 순으로 정렬
-            const daySlots = selectedSlots[day]
-                .map(slotId => currentTimeSlots.find(s => s.id === slotId))
-                .filter(slot => slot)
+            const daySlots = slots
+                .filter(s => s.day_of_week === day)
                 .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
             if (daySlots.length > 0) {
@@ -836,14 +859,18 @@ function displayScheduleResult() {
                     scheduleHtml += `<div style="margin-bottom: 4px;"><strong>${dayFullNames[day]}</strong> : ${startTime}-${endTime} (${durationStr})</div>`;
                 });
             }
+        });
+
+        if (!scheduleHtml) {
+            scheduleHtml = '<div style="color: #94a3b8;">선택된 시간이 없습니다.</div>';
         }
-    });
 
-    if (!scheduleHtml) {
-        scheduleHtml = '<div style="color: #94a3b8;">선택된 시간이 없습니다.</div>';
+        resultSchedule.innerHTML = scheduleHtml;
+
+    } catch (e) {
+        console.error('신청 결과 표시 오류:', e);
+        resultSchedule.innerHTML = '<div style="color: #94a3b8;">시간 정보를 불러오는데 실패했습니다.</div>';
     }
-
-    resultSchedule.innerHTML = scheduleHtml;
 }
 
 // 연속된 슬롯들을 그룹화하는 함수
