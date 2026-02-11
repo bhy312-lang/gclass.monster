@@ -782,7 +782,15 @@ function showSuccessState(data) {
     document.getElementById('result-name').textContent = document.getElementById('student-name').value;
     document.getElementById('result-school').textContent = document.getElementById('school-name').value;
     document.getElementById('result-grade').textContent = selectedGrade + '학년';
-    document.getElementById('result-time').textContent = new Date().toLocaleString('ko-KR');
+
+    // 신청 일시 두 줄로 표시
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
+    const hours = now.getHours();
+    const ampm = hours < 12 ? '오전' : '오후';
+    const hour12 = hours % 12 || 12;
+    const timeStr = `${ampm} ${hour12}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    document.getElementById('result-time').innerHTML = `${dateStr}<br>${timeStr}`;
 
     // 연락처도 표시
     const resultPhone = document.getElementById('result-phone');
@@ -1108,7 +1116,7 @@ async function submitInfo(event) {
         if (existingReg && !error) {
             // 이미 신청된 학생
             closeInfoModal();
-            showAlertModal('알림', '이미 수강신청 완료된 학생입니다.\n\n신청내역을 수정하려면\n"신청내역 확인&수정" 버튼을 이용해주세요.');
+            showAlertModal('알림', '이미 수강신청 완료된 학생입니다.\n\n"신청내역 확인" 버튼을\n이용해주세요.');
             return;
         }
     } catch (e) {

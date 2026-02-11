@@ -864,14 +864,16 @@
                     아래 버튼을 클릭하여<br>신청 정보를 입력해주세요.<br>
                     수강신청은 선착순으로 마감되니<br>신중하고 빠르게 진행해주세요😊
                 </p>
-                <button class="btn-primary" onclick="openInfoModal()">
-                    <span class="material-symbols-outlined">edit_note</span>
-                    수강신청하기
-                </button>
-                <button class="btn-check" style="margin-top: 16px;" onclick="openCheckModal()">
-                    <span class="material-symbols-outlined">search</span>
-                    신청내역 확인&수정
-                </button>
+                <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 280px; margin: 0 auto;">
+                    <button class="btn-primary" style="width: 100%;" onclick="openInfoModal()">
+                        <span class="material-symbols-outlined">edit_note</span>
+                        수강신청하기
+                    </button>
+                    <button class="btn-check" style="width: 100%;" onclick="openCheckModal()">
+                        <span class="material-symbols-outlined">search</span>
+                        신청내역 확인
+                    </button>
+                </div>
             </div>
         </div>
 
