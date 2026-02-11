@@ -152,6 +152,13 @@ function showState(state) {
 }
 
 function startCountdown(openTime) {
+    // 오픈 일시 표시
+    const subEl = document.getElementById('countdown-sub');
+    if (subEl) {
+        const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        subEl.textContent = `오픈 일시: ${openTime.toLocaleDateString('ko-KR', options)}`;
+    }
+
     function update() {
         const now = new Date();
         const diff = openTime - now;
@@ -164,10 +171,12 @@ function startCountdown(openTime) {
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % 1000 * 60) / 1000);
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-        document.getElementById('countdown-text').textContent =
-            `${days}일 ${hours}시간 ${minutes}분 ${seconds}초 남았습니다`;
+        const timerEl = document.getElementById('countdown-timer');
+        if (timerEl) {
+            timerEl.textContent = `${String(days).padStart(2, '0')}:${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
 
         setTimeout(update, 1000);
     }
