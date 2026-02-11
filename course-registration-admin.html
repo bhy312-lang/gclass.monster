@@ -172,6 +172,57 @@
             font-size: 18px;
         }
 
+        /* Interval Select Button Styles */
+        .interval-select-btn {
+            padding: 10px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+            color: #64748b;
+            flex: 1;
+            text-align: center;
+        }
+        .interval-select-btn:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
+        /* 15분 선택 시 */
+        .interval-select-btn[data-interval="15"].active {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border-color: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            transform: translateY(-1px);
+        }
+        /* 30분 선택 시 */
+        .interval-select-btn[data-interval="30"].active {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            border-color: #22c55e;
+            color: white;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+            transform: translateY(-1px);
+        }
+        /* 45분 선택 시 */
+        .interval-select-btn[data-interval="45"].active {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border-color: #f59e0b;
+            color: white;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+            transform: translateY(-1px);
+        }
+        /* 60분 선택 시 */
+        .interval-select-btn[data-interval="60"].active {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            border-color: #8b5cf6;
+            color: white;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+            transform: translateY(-1px);
+        }
+
         .btn-sm {
             padding: 8px 14px;
             font-size: 13px;
@@ -772,6 +823,74 @@
                 transform: scale(0.8) translateY(-50px);
             }
         }
+
+        /* DateTime Picker Styles */
+        .datetime-field {
+            position: relative;
+        }
+        .datetime-select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding: 10px 28px 10px 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            background: #fafafa;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            /* Hide default arrow */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 28px;
+        }
+        .datetime-select:hover {
+            border-color: #cbd5e1;
+        }
+        .datetime-select:focus {
+            outline: none;
+            border-color: #58d3d3;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(88, 211, 211, 0.1);
+        }
+        .datetime-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 10px 8px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            font-size: 15px;
+            text-align: center;
+            background: transparent;
+            color: #334155;
+            outline: none;
+            transition: all 0.2s;
+            /* Allow clicks to pass through to select when not focused */
+            pointer-events: none;
+        }
+        .datetime-input:hover,
+        .datetime-input:focus {
+            pointer-events: auto;
+            border-color: #58d3d3;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0 0 3px rgba(88, 211, 211, 0.1);
+            z-index: 1;
+        }
+        /* Hide select spinner buttons */
+        .datetime-input::-webkit-outer-spin-button,
+        .datetime-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .datetime-input[type=number] {
+            -moz-appearance: textfield;
+        }
     </style>
 </head>
 <body>
@@ -911,7 +1030,7 @@
                                 전체 삭제
                             </button>
                             <button onclick="openSlotModal()" class="btn-primary btn-sm">
-                                <span class="material-symbols-outlined">add"></span>
+                                <span class="material-symbols-outlined">add</span>
                                 슬롯 추가
                             </button>
                         </div>
@@ -1019,39 +1138,108 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div class="input-group">
                         <label>오픈 일시 *</label>
-                        <input type="datetime-local" id="period-open" required>
+                        <div class="datetime-picker" id="open-datetime-picker">
+                            <!-- 날짜 줄 (년 월 일) -->
+                            <div class="date-row" style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+                                <!-- 연도 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-open-year-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-open-year-input" class="datetime-input text-center text-sm" min="2024" max="2100">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">년</span>
+
+                                <!-- 월 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-open-month-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-open-month-input" class="datetime-input text-center text-sm" min="1" max="12">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">월</span>
+
+                                <!-- 일 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-open-day-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-open-day-input" class="datetime-input text-center text-sm" min="1" max="31">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">일</span>
+                            </div>
+
+                            <!-- 시간 줄 (오전/오후 시 분) -->
+                            <div class="time-row" style="display: flex; gap: 6px; align-items: center;">
+                                <!-- 오전/오후 -->
+                                <select id="period-open-ampm" class="datetime-select text-center text-sm" style="width: 98px;">
+                                    <option value="AM">오전</option>
+                                    <option value="PM">오후</option>
+                                </select>
+
+                                <!-- 시 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-open-hour-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-open-hour-input" class="datetime-input text-center text-sm" min="1" max="12">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">시</span>
+
+                                <!-- 분 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-open-minute-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-open-minute-input" class="datetime-input text-center text-sm" min="0" max="59">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">분</span>
+                            </div>
+                            <input type="hidden" id="period-open" required>
+                        </div>
                     </div>
                     <div class="input-group">
                         <label>마감 일시</label>
-                        <input type="datetime-local" id="period-close">
-                    </div>
-                </div>
+                        <div class="datetime-picker" id="close-datetime-picker">
+                            <!-- 날짜 줄 (년 월 일) -->
+                            <div class="date-row" style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+                                <!-- 연도 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-close-year-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-close-year-input" class="datetime-input text-center text-sm" min="2024" max="2100">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">년</span>
 
-                <div class="input-group">
-                    <label>기본 정원 *</label>
-                    <input type="number" id="period-capacity" min="1" max="100" value="5" required>
-                    <p class="text-xs text-gray-500 mt-1">각 시간대별 기본 정원 인원 (개별 수정 가능)</p>
-                </div>
+                                <!-- 월 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-close-month-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-close-month-input" class="datetime-input text-center text-sm" min="1" max="12">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">월</span>
 
-                <div class="input-group">
-                    <label>슬롯 단위 시간 *</label>
-                    <p class="text-xs text-gray-500 mb-3">시간표의 각 슬롯 구간 길이를 설정합니다.</p>
-                    <div class="flex flex-wrap gap-2 mb-3">
-                        <button type="button" class="interval-btn" data-interval="15" onclick="selectPeriodInterval(15)" style="border-color: #3b82f6; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;">
-                            15분
-                        </button>
-                        <button type="button" class="interval-btn active" data-interval="30" onclick="selectPeriodInterval(30)" style="border-color: #22c55e; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white;">
-                            30분
-                        </button>
-                        <button type="button" class="interval-btn" data-interval="45" onclick="selectPeriodInterval(45)" style="border-color: #f59e0b; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;">
-                            45분
-                        </button>
-                        <button type="button" class="interval-btn" data-interval="60" onclick="selectPeriodInterval(60)" style="border-color: #8b5cf6; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white;">
-                            60분
-                        </button>
+                                <!-- 일 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-close-day-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-close-day-input" class="datetime-input text-center text-sm" min="1" max="31">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">일</span>
+                            </div>
+
+                            <!-- 시간 줄 (오전/오후 시 분) -->
+                            <div class="time-row" style="display: flex; gap: 6px; align-items: center;">
+                                <!-- 오전/오후 -->
+                                <select id="period-close-ampm" class="datetime-select text-center text-sm" style="width: 98px;">
+                                    <option value="AM">오전</option>
+                                    <option value="PM">오후</option>
+                                </select>
+
+                                <!-- 시 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-close-hour-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-close-hour-input" class="datetime-input text-center text-sm" min="1" max="12">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">시</span>
+
+                                <!-- 분 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-close-minute-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-close-minute-input" class="datetime-input text-center text-sm" min="0" max="59">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">분</span>
+                            </div>
+                            <input type="hidden" id="period-close">
+                        </div>
                     </div>
-                    <input type="hidden" id="period-slot-interval" value="30">
-                    <p class="text-xs text-gray-500 mt-1">선택한 단위로 시간 슬롯이 자동 생성됩니다 (기본: 30분)</p>
                 </div>
 
                 <div class="input-group">
@@ -1090,15 +1278,15 @@
                     <input type="hidden" id="selected-days" value="">
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="input-group">
+                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                    <div class="input-group" style="flex: 1; min-width: 140px;">
                         <label>시작 시간 *</label>
-                        <input type="time" id="slot-start" required>
+                        <input type="time" id="slot-start" required style="min-width: 140px;">
                     </div>
-                    <div class="input-group">
+                    <div class="input-group" style="flex: 1; min-width: 140px;">
                         <label>종료 시간 *</label>
-                        <input type="time" id="slot-end" required>
-                        <p class="text-xs text-gray-500 mt-1">30분 단위, 1시간 자동 예약</p>
+                        <input type="time" id="slot-end" required style="min-width: 140px;">
+                        <p class="text-xs text-gray-500 mt-1">선택한 단위 시간으로 자동 생성</p>
                     </div>
                 </div>
 
@@ -1108,6 +1296,36 @@
                         <input type="number" id="slot-capacity" min="1" max="50" value="5" required>
                         <span class="text-gray-500">명</span>
                     </div>
+                    <p class="text-xs text-gray-500 mt-1">각 시간대별 기본 정원 (개별 수정 가능)</p>
+                </div>
+
+                <div class="input-group">
+                    <label>슬롯 단위 시간 *</label>
+                    <p class="text-xs text-gray-500 mb-2">시간표의 각 슬롯 구간 길이를 설정합니다.</p>
+
+                    <!-- 버튼 선택 -->
+                    <div class="flex gap-2 mb-3">
+                        <button type="button" class="interval-select-btn" data-interval="15" onclick="selectSlotInterval(15)">
+                            15분
+                        </button>
+                        <button type="button" class="interval-select-btn active" data-interval="30" onclick="selectSlotInterval(30)">
+                            30분
+                        </button>
+                        <button type="button" class="interval-select-btn" data-interval="45" onclick="selectSlotInterval(45)">
+                            45분
+                        </button>
+                        <button type="button" class="interval-select-btn" data-interval="60" onclick="selectSlotInterval(60)">
+                            60분
+                        </button>
+                    </div>
+
+                    <!-- 직접 입력 필드 -->
+                    <div class="flex items-center gap-2 mt-3">
+                        <input type="number" id="slot-custom-interval-input" min="5" max="120" value="30" class="px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-teal-400 focus:outline-none w-16 text-center text-sm">
+                        <span class="text-sm text-gray-500">분</span>
+                    </div>
+                    <input type="hidden" id="slot-interval" value="30">
+                    <p class="text-xs text-gray-500 mt-1">선택한 단위로 시간 슬롯이 자동 생성됩니다 (기본: 30분)</p>
                 </div>
 
                 <div class="flex gap-3 mt-6">

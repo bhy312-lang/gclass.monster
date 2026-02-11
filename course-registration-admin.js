@@ -25,7 +25,255 @@ const dayNames = {
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', async () => {
     await initializePage();
+    initDateTimePickers();
+
+    // 슬롯 모달용 커스텀 인터벌 입력 이벤트 리스너
+    const slotCustomIntervalInput = document.getElementById('slot-custom-interval-input');
+    if (slotCustomIntervalInput) {
+        slotCustomIntervalInput.addEventListener('input', function() {
+            let value = parseInt(this.value);
+            if (isNaN(value) || value < 5) value = 5;
+            if (value > 120) value = 120;
+            this.value = value;
+
+            // 버튼 선택 상태 업데이트
+            document.getElementById('slot-interval').value = value;
+            const slotModal = document.getElementById('slot-modal');
+            if (slotModal) {
+                slotModal.querySelectorAll('.interval-select-btn').forEach(btn => {
+                    const interval = parseInt(btn.dataset.interval);
+                    if (interval === value) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
+        });
+    }
 });
+
+// 날짜시간 picker 초기화
+function initDateTimePickers() {
+    initDatePicker('open');
+    initDatePicker('close');
+
+    // 이벤트 리스너 등록
+    ['open', 'close'].forEach(type => {
+        // 연도, 월, 일, 오전/오후, 시간, 분 변경 시 hidden input 업데이트
+        ['year', 'month', 'day', 'ampm', 'hour', 'minute'].forEach(field => {
+            const selectElement = document.getElementById(`period-${type}-${field}-select`);
+            const inputElement = document.getElementById(`period-${type}-${field}-input`);
+
+            // Select 변경 시 input 업데이트 및 hidden input 업데이트
+            if (selectElement) {
+                selectElement.addEventListener('change', () => {
+                    if (inputElement) {
+                        inputElement.value = selectElement.value;
+                    }
+                    updateDateTimeHidden(type);
+                });
+            }
+
+            // Input 변경 시 select 업데이트 및 hidden input 업데이트
+            if (inputElement) {
+                inputElement.addEventListener('input', () => {
+                    // 값 유효성 검사 및 범위 제한
+                    validateAndLimitInput(inputElement, field);
+                    if (selectElement) {
+                        selectElement.value = inputElement.value;
+                    }
+                    updateDateTimeHidden(type);
+                });
+                inputElement.addEventListener('change', () => {
+                    updateDateTimeHidden(type);
+                });
+            }
+
+            // ampm은 select만 있음
+            if (field === 'ampm') {
+                const ampmElement = document.getElementById(`period-${type}-ampm`);
+                if (ampmElement) {
+                    ampmElement.addEventListener('change', () => updateDateTimeHidden(type));
+                }
+            }
+        });
+    });
+}
+
+// 입력값 유효성 검사 및 범위 제한
+function validateAndLimitInput(input, field) {
+    let value = parseInt(input.value);
+    if (isNaN(value)) return;
+
+    switch (field) {
+        case 'year':
+            value = Math.max(2024, Math.min(2100, value));
+            break;
+        case 'month':
+            value = Math.max(1, Math.min(12, value));
+            break;
+        case 'day':
+            value = Math.max(1, Math.min(31, value));
+            break;
+        case 'hour':
+            value = Math.max(1, Math.min(12, value));
+            break;
+        case 'minute':
+            value = Math.max(0, Math.min(59, value));
+            break;
+    }
+    input.value = value;
+}
+
+// 날짜 picker 초기화
+function initDatePicker(type) {
+    const currentYear = new Date().getFullYear();
+
+    // 연도 옵션 (현재 연도부터 +10년)
+    const yearSelect = document.getElementById(`period-${type}-year-select`);
+    const yearInput = document.getElementById(`period-${type}-year-input`);
+    if (yearSelect) {
+        yearSelect.innerHTML = '';
+        for (let y = currentYear; y <= currentYear + 10; y++) {
+            const option = document.createElement('option');
+            option.value = y;
+            option.textContent = y;
+            yearSelect.appendChild(option);
+        }
+        yearSelect.value = currentYear;
+        if (yearInput) yearInput.value = currentYear;
+    }
+
+    // 월 옵션
+    const monthSelect = document.getElementById(`period-${type}-month-select`);
+    const monthInput = document.getElementById(`period-${type}-month-input`);
+    if (monthSelect) {
+        monthSelect.innerHTML = '';
+        for (let m = 1; m <= 12; m++) {
+            const option = document.createElement('option');
+            option.value = m;
+            option.textContent = m;
+            monthSelect.appendChild(option);
+        }
+        monthSelect.value = 1;
+        if (monthInput) monthInput.value = 1;
+    }
+
+    // 일 옵션 (1-31일)
+    const daySelect = document.getElementById(`period-${type}-day-select`);
+    const dayInput = document.getElementById(`period-${type}-day-input`);
+    if (daySelect) {
+        daySelect.innerHTML = '';
+        for (let d = 1; d <= 31; d++) {
+            const option = document.createElement('option');
+            option.value = d;
+            option.textContent = d;
+            daySelect.appendChild(option);
+        }
+        daySelect.value = 1;
+        if (dayInput) dayInput.value = 1;
+    }
+
+    // 시간 옵션 (1-12)
+    const hourSelect = document.getElementById(`period-${type}-hour-select`);
+    const hourInput = document.getElementById(`period-${type}-hour-input`);
+    if (hourSelect) {
+        hourSelect.innerHTML = '';
+        for (let h = 1; h <= 12; h++) {
+            const option = document.createElement('option');
+            option.value = h;
+            option.textContent = h;
+            hourSelect.appendChild(option);
+        }
+        hourSelect.value = 10;
+        if (hourInput) hourInput.value = 10;
+    }
+
+    // 분 옵션 (0-59, 5분 단위)
+    const minuteSelect = document.getElementById(`period-${type}-minute-select`);
+    const minuteInput = document.getElementById(`period-${type}-minute-input`);
+    if (minuteSelect) {
+        minuteSelect.innerHTML = '';
+        for (let m = 0; m < 60; m += 5) {
+            const option = document.createElement('option');
+            option.value = m;
+            option.textContent = m.toString().padStart(2, '0');
+            minuteSelect.appendChild(option);
+        }
+        minuteSelect.value = 0;
+        if (minuteInput) {
+            minuteInput.value = 0;
+            minuteInput.maxLength = 2;
+        }
+    }
+
+    // 기본 시간 설정 (오전 10시)
+    document.getElementById(`period-${type}-ampm`).value = 'AM';
+}
+
+// 날짜시간 hidden input 업데이트
+function updateDateTimeHidden(type) {
+    const year = parseInt(document.getElementById(`period-${type}-year-input`).value);
+    const month = parseInt(document.getElementById(`period-${type}-month-input`).value);
+    const day = parseInt(document.getElementById(`period-${type}-day-input`).value);
+    const ampm = document.getElementById(`period-${type}-ampm`).value;
+    let hour = parseInt(document.getElementById(`period-${type}-hour-input`).value);
+    const minute = parseInt(document.getElementById(`period-${type}-minute-input`).value);
+
+    // 12시간제를 24시간제로 변환
+    if (ampm === 'PM' && hour !== 12) {
+        hour += 12;
+    } else if (ampm === 'AM' && hour === 12) {
+        hour = 0;
+    }
+
+    // 월은 0-11로 변환
+    const date = new Date(year, month - 1, day, hour, minute);
+
+    // datetime-local 형식 (YYYY-MM-DDTHH:mm)
+    const formattedDate = formatDateTimeLocal(date);
+
+    // hidden input에 값 설정
+    const hiddenInput = document.getElementById(`period-${type}`);
+    if (hiddenInput) {
+        hiddenInput.value = formattedDate;
+    }
+}
+
+// 날짜시간 picker에 값 설정 (수정 모드용)
+function setDateTimePicker(type, date) {
+    if (!date) return;
+
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1; // 1-12
+    const day = date.getDate();
+    let hour = date.getHours();
+    const minute = date.getMinutes();
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+
+    // 24시간제를 12시간제로 변환
+    hour = hour % 12;
+    if (hour === 0) hour = 12;
+
+    // Select와 Input 모두 업데이트
+    const setFieldValue = (field, value) => {
+        const select = document.getElementById(`period-${type}-${field}-select`);
+        const input = document.getElementById(`period-${type}-${field}-input`);
+        if (select) select.value = value;
+        if (input) input.value = value;
+    };
+
+    setFieldValue('year', year);
+    setFieldValue('month', month);
+    setFieldValue('day', day);
+    document.getElementById(`period-${type}-ampm`).value = ampm;
+    setFieldValue('hour', hour);
+    setFieldValue('minute', minute);
+
+    // hidden input 업데이트
+    updateDateTimeHidden(type);
+}
 
 // 페이지 초기화
 async function initializePage() {
@@ -534,7 +782,7 @@ async function saveMaxWeeklyHours() {
         if (select.value === 'custom') {
             maxHours = parseInt(customInput.value);
             if (isNaN(maxHours) || maxHours < 1 || maxHours > 50) {
-                showError('시간은 1~50 사이로 입력해주세요.');
+                showError('시간은 1-50 사이로 입력해주세요.');
                 return;
             }
         } else {
@@ -571,43 +819,30 @@ function toggleCustomHoursInput() {
     }
 }
 
-// 인터벌 선택 (단위 시간) - 기간 생성용
-function selectPeriodInterval(minutes) {
-    // 인터벌 값 설정
-    document.getElementById('period-slot-interval').value = minutes;
-
-    // 버튼 색상 설정
-    const colors = {
-        15: { border: '#3b82f6', bg: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' },
-        30: { border: '#22c55e', bg: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' },
-        45: { border: '#f59e0b', bg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' },
-        60: { border: '#8b5cf6', bg: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' }
-    };
-
-    // 버튼 활성화 상태 업데이트 (기간 모달 내의 버튼만)
-    const periodModal = document.getElementById('period-modal');
-    periodModal.querySelectorAll('.interval-btn').forEach(btn => {
-        const interval = parseInt(btn.dataset.interval);
-        const isActive = interval === minutes;
-        const color = colors[interval];
-
-        btn.classList.toggle('active', isActive);
-        btn.style.borderColor = color.border;
-        btn.style.background = color.bg;
-        btn.style.color = 'white';
-        btn.style.boxShadow = isActive ? '0 4px 15px rgba(0, 0, 0, 0.3)' : 'none';
-    });
-}
-
 // 인터벌 선택 (단위 시간) - 슬롯 모달용
 function selectSlotInterval(minutes) {
-    // 인터벌 값 설정
-    document.getElementById('slot-interval').value = minutes;
+    const customInput = document.getElementById('slot-custom-interval-input');
+
+    // 버튼 선택 시 입력 필드 값 업데이트
+    if (typeof minutes === 'number') {
+        customInput.value = minutes;
+    }
+
+    // 인터벌 값 설정 (입력 필드의 값 사용)
+    document.getElementById('slot-interval').value = customInput.value;
 
     // 버튼 활성화 상태 업데이트 (슬롯 모달 내의 버튼만)
     const slotModal = document.getElementById('slot-modal');
-    slotModal.querySelectorAll('.interval-btn').forEach(btn => {
-        btn.classList.toggle('active', parseInt(btn.dataset.interval) === minutes);
+    slotModal.querySelectorAll('.interval-select-btn').forEach(btn => {
+        const interval = parseInt(btn.dataset.interval);
+        const isActive = interval === parseInt(customInput.value);
+
+        // 활성화 클래스 토글
+        if (isActive) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
     });
 }
 
@@ -880,7 +1115,7 @@ async function loadTimeSlots() {
             })();
 
             timetableHtml += `<tr class="timetable-row">`;
-            timetableHtml += `<td class="timetable-time">${time}~${endTime}</td>`;
+            timetableHtml += `<td class="timetable-time">${time}-${endTime}</td>`;
 
             days.forEach(day => {
                 const slot = slotsByDay[day].find(s => s.start_time === time);
@@ -1184,7 +1419,7 @@ async function loadApplicationsTimetable() {
             })();
 
             timetableHtml += `<tr class="timetable-row">`;
-            timetableHtml += `<td class="timetable-time">${time}~${endTime}</td>`;
+            timetableHtml += `<td class="timetable-time">${time}-${endTime}</td>`;
 
             days.forEach(day => {
                 const slot = slotsByDay[day].find(s => s.start_time === time);
@@ -1278,10 +1513,10 @@ function openPeriodModal(periodId = null) {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(10, 0, 0, 0);
-        document.getElementById('period-open').value = formatDateTimeLocal(tomorrow);
-        // 기본 슬롯 인터벌 30분 설정
-        document.getElementById('period-slot-interval').value = 30;
-        selectPeriodInterval(30);
+        setDateTimePicker('open', tomorrow);
+
+        // 마감 시간 picker 초기화
+        initDatePicker('close');
     }
 
     modal.classList.add('show');
@@ -1304,17 +1539,16 @@ async function loadPeriodForEdit(periodId) {
         if (period) {
             document.getElementById('period-id').value = period.id;
             document.getElementById('period-name').value = period.name;
-            document.getElementById('period-open').value = formatDateTimeLocal(new Date(period.open_datetime));
-            document.getElementById('period-close').value = period.close_datetime
-                ? formatDateTimeLocal(new Date(period.close_datetime))
-                : '';
-            document.getElementById('period-capacity').value = period.default_capacity;
-            document.getElementById('period-description').value = period.description || '';
 
-            // 슬롯 인터벌 설정 (기존 기간의 인터벌 유지)
-            const slotInterval = period.slot_interval_minutes || 30;
-            document.getElementById('period-slot-interval').value = slotInterval;
-            selectPeriodInterval(slotInterval);
+            // 오픈 일시 설정
+            setDateTimePicker('open', new Date(period.open_datetime));
+
+            // 마감 일시 설정
+            if (period.close_datetime) {
+                setDateTimePicker('close', new Date(period.close_datetime));
+            }
+
+            document.getElementById('period-description').value = period.description || '';
         }
     } catch (error) {
         console.error('[Admin] 기간 정보 로드 오류:', error);
@@ -1335,10 +1569,9 @@ async function savePeriod(event) {
     const name = document.getElementById('period-name').value.trim();
     const openDatetime = document.getElementById('period-open').value;
     const closeDatetime = document.getElementById('period-close').value;
-    const capacity = parseInt(document.getElementById('period-capacity').value);
     const description = document.getElementById('period-description').value.trim();
 
-    if (!name || !openDatetime || !capacity) {
+    if (!name || !openDatetime) {
         showError('필수 항목을 모두 입력해주세요.');
         return;
     }
@@ -1348,15 +1581,10 @@ async function savePeriod(event) {
             name,
             open_datetime: new Date(openDatetime).toISOString(),
             close_datetime: closeDatetime ? new Date(closeDatetime).toISOString() : null,
-            default_capacity: capacity,
+            default_capacity: 5, // 기본 정원 5명 고정
+            slot_interval_minutes: 30, // 기본 슬롯 단위 30분 고정
             description: description || null
         };
-
-        // 새 기간 생성 시에만 기본 단위 시간 설정 (기존 기간은 유지)
-        if (!id) {
-            const slotInterval = parseInt(document.getElementById('period-slot-interval').value);
-            data.slot_interval_minutes = slotInterval || 30; // 기본값 30분
-        }
 
         let result;
         if (id) {
@@ -1447,7 +1675,23 @@ function openSlotModal() {
     // 기본 정원 설정
     document.getElementById('slot-capacity').value = currentPeriod.default_capacity || 5;
 
-    // 기본 시간 설정 (오후 1시 ~ 오후 5시)
+    // 기본 슬롯 인터벌 설정 (기간의 인터벌 사용)
+    const slotInterval = currentPeriod.slot_interval_minutes || 30;
+    document.getElementById('slot-custom-interval-input').value = slotInterval;
+    document.getElementById('slot-interval').value = slotInterval;
+
+    // 버튼 선택 상태 업데이트
+    const slotModal = document.getElementById('slot-modal');
+    slotModal.querySelectorAll('.interval-select-btn').forEach(btn => {
+        const interval = parseInt(btn.dataset.interval);
+        if (interval === slotInterval) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    // 기본 시간 설정 (오후 1시 - 오후 5시)
     document.getElementById('slot-start').value = '13:00';
     document.getElementById('slot-end').value = '17:00';
 
@@ -1491,8 +1735,15 @@ async function saveSlot(event) {
 
     const capacity = parseInt(document.getElementById('slot-capacity').value);
 
-    // 슬롯 단위 시간 (30분 단위, 1시간 수업 = 60분)
-    const interval = 60;
+    // 커스텀 입력 필드 값 사용
+    const customInput = document.getElementById('slot-custom-interval-input');
+    let interval = parseInt(customInput.value) || 30;
+
+    // 유효성 검사
+    if (interval < 5 || interval > 120) {
+        showError('슬롯 단위 시간은 5분 ~ 120분 사이로 입력해주세요.');
+        return;
+    }
 
     // 시작 시간과 종료 시간을 분 단위로 변환
     const [startHour, startMin] = startTime.split(':').map(Number);
@@ -1638,9 +1889,12 @@ async function addSingleSlot(day, time) {
         return;
     }
 
-    // 종료 시간 계산 (시작 시간 + 60분)
+    // 기간의 슬롯 단위 시간 사용
+    const interval = currentPeriod.slot_interval_minutes || 30;
+
+    // 종료 시간 계산 (시작 시간 + 단위 시간)
     const [hour, min] = time.split(':').map(Number);
-    const endMin = hour * 60 + min + 60;
+    const endMin = hour * 60 + min + interval;
     const endHour = Math.floor(endMin / 60);
     const endMinStr = endMin % 60;
     const endTime = `${String(endHour).padStart(2, '0')}:${String(endMinStr).padStart(2, '0')}`;
@@ -1681,7 +1935,7 @@ function adjustCapacity(delta) {
     let currentValue = parseInt(input.value) || 0;
     let newValue = currentValue + delta;
 
-    // 1~50 범위 체크
+    // 1-50 범위 체크
     if (newValue < 1) newValue = 1;
     if (newValue > 50) newValue = 50;
 
@@ -1703,7 +1957,7 @@ function openCapacityEditModal(slotId, currentCapacity, day, time) {
     // 슬롯 정보를 찾아서 시간대 표시
     const slot = currentTimeSlots.find(s => s.id === slotId);
     if (slot) {
-        timeDisplay.textContent = `${dayKorean}요일 ${slot.start_time}~${slot.end_time}`;
+        timeDisplay.textContent = `${dayKorean}요일 ${slot.start_time}-${slot.end_time}`;
     } else {
         timeDisplay.textContent = `${dayKorean}요일 ${time}`;
     }
@@ -1744,7 +1998,7 @@ async function updateSlotCapacity(event) {
     }
 
     if (isNaN(newCapacity) || newCapacity < 1 || newCapacity > 50) {
-        showError('정원은 1~50명 사이로 설정해주세요.');
+        showError('정원은 1-50명 사이로 설정해주세요.');
         return;
     }
 
@@ -1947,7 +2201,7 @@ async function viewRegistration(registrationId) {
         if (registration.selected_slot_ids && Array.isArray(registration.selected_slot_ids)) {
             selectedSlotsHtml = registration.selected_slot_ids.map(slotId => {
                 const slot = slotMap[slotId];
-                return slot ? `${dayNames[slot.day_of_week]} ${slot.start_time}~${slot.end_time}` : '-';
+                return slot ? `${dayNames[slot.day_of_week]} ${slot.start_time}-${slot.end_time}` : '-';
             }).join(' / ');
         }
 
@@ -1956,7 +2210,7 @@ async function viewRegistration(registrationId) {
         if (registration.confirmed_slot_ids && Array.isArray(registration.confirmed_slot_ids)) {
             confirmedSlotsHtml = registration.confirmed_slot_ids.map(slotId => {
                 const slot = slotMap[slotId];
-                return slot ? `${dayNames[slot.day_of_week]} ${slot.start_time}~${slot.end_time}` : '-';
+                return slot ? `${dayNames[slot.day_of_week]} ${slot.start_time}-${slot.end_time}` : '-';
             }).join(' / ') || '-';
         }
 
