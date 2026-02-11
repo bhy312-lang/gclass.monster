@@ -174,53 +174,153 @@
 
         /* Interval Select Button Styles */
         .interval-select-btn {
-            padding: 10px 16px;
+            padding: 12px 18px;
             border: 2px solid #e2e8f0;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
-            background: white;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
             color: #64748b;
             flex: 1;
             text-align: center;
+            box-shadow:
+                0 1px 3px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+        .interval-select-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 0.25s;
+            border-radius: 10px;
         }
         .interval-select-btn:hover {
             border-color: #cbd5e1;
-            background: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow:
+                0 4px 12px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
         }
+
         /* 15분 선택 시 */
+        .interval-select-btn[data-interval="15"]::before {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%);
+        }
+        .interval-select-btn[data-interval="15"]:hover::before {
+            opacity: 1;
+        }
         .interval-select-btn[data-interval="15"].active {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            border-color: #3b82f6;
+            background: linear-gradient(145deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+            border-color: #1d4ed8;
             color: white;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-            transform: translateY(-1px);
+            box-shadow:
+                0 6px 20px rgba(59, 130, 246, 0.4),
+                0 2px 8px rgba(37, 99, 235, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
         }
+        .interval-select-btn[data-interval="15"].active::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 2px;
+        }
+
         /* 30분 선택 시 */
+        .interval-select-btn[data-interval="30"]::before {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.05) 100%);
+        }
+        .interval-select-btn[data-interval="30"]:hover::before {
+            opacity: 1;
+        }
         .interval-select-btn[data-interval="30"].active {
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            border-color: #22c55e;
+            background: linear-gradient(145deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
+            border-color: #15803d;
             color: white;
-            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
-            transform: translateY(-1px);
+            box-shadow:
+                0 6px 20px rgba(34, 197, 94, 0.4),
+                0 2px 8px rgba(22, 163, 74, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
         }
+        .interval-select-btn[data-interval="30"].active::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 2px;
+        }
+
         /* 45분 선택 시 */
-        .interval-select-btn[data-interval="45"].active {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            border-color: #f59e0b;
-            color: white;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
-            transform: translateY(-1px);
+        .interval-select-btn[data-interval="45"]::before {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%);
         }
-        /* 60분 선택 시 */
-        .interval-select-btn[data-interval="60"].active {
-            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-            border-color: #8b5cf6;
+        .interval-select-btn[data-interval="45"]:hover::before {
+            opacity: 1;
+        }
+        .interval-select-btn[data-interval="45"].active {
+            background: linear-gradient(145deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+            border-color: #b45309;
             color: white;
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
-            transform: translateY(-1px);
+            box-shadow:
+                0 6px 20px rgba(245, 158, 11, 0.4),
+                0 2px 8px rgba(217, 119, 6, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .interval-select-btn[data-interval="45"].active::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 2px;
+        }
+
+        /* 60분 선택 시 */
+        .interval-select-btn[data-interval="60"]::before {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.05) 100%);
+        }
+        .interval-select-btn[data-interval="60"]:hover::before {
+            opacity: 1;
+        }
+        .interval-select-btn[data-interval="60"].active {
+            background: linear-gradient(145deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+            border-color: #6d28d9;
+            color: white;
+            box-shadow:
+                0 6px 20px rgba(139, 92, 246, 0.4),
+                0 2px 8px rgba(124, 58, 237, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .interval-select-btn[data-interval="60"].active::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 2px;
         }
 
         .btn-sm {
@@ -336,25 +436,63 @@
         }
         .day-selector {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             flex-wrap: wrap;
         }
         .day-option {
-            padding: 10px 18px;
+            padding: 12px 20px;
             border: 2px solid #e2e8f0;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            color: #64748b;
+            box-shadow:
+                0 1px 3px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+        .day-option::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(88, 211, 211, 0.1) 0%, rgba(20, 184, 166, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.25s;
         }
         .day-option:hover {
             border-color: #58d3d3;
+            transform: translateY(-2px);
+            box-shadow:
+                0 6px 20px rgba(88, 211, 211, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+        .day-option:hover::before {
+            opacity: 1;
         }
         .day-option.selected {
-            background: #58d3d3;
-            border-color: #58d3d3;
+            background: linear-gradient(135deg, #58d3d3 0%, #14b8a6 100%);
+            border-color: #14b8a6;
             color: white;
+            box-shadow:
+                0 6px 20px rgba(88, 211, 211, 0.4),
+                0 2px 8px rgba(20, 184, 166, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        .day-option.selected::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 2px;
         }
         .tab-content {
             display: none;
@@ -827,11 +965,13 @@
         /* DateTime Picker Styles */
         .datetime-field {
             position: relative;
+            z-index: 1;
+        }
+        /* 드롭다운이 열릴 때는 가장 위에 표시 */
+        .datetime-select:focus {
+            z-index: 100;
         }
         .datetime-select {
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
             padding: 10px 28px 10px 10px;
             border: 2px solid #e2e8f0;
             border-radius: 8px;
@@ -841,7 +981,10 @@
             cursor: pointer;
             transition: all 0.2s;
             text-align: center;
-            /* Hide default arrow */
+            /* Custom dropdown arrow */
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 8px center;
@@ -855,6 +998,15 @@
             border-color: #58d3d3;
             background: white;
             box-shadow: 0 0 0 3px rgba(88, 211, 211, 0.1);
+        }
+        /* 드롭다운 옵션 스타일 - 브라우저 호환성 */
+        .datetime-select option {
+            background: white !important;
+            color: #334155 !important;
+            padding: 10px;
+            font-size: 15px;
+            /* 일부 브라우저에서 text-shadow로 텍스트 가시성 확보 */
+            text-shadow: 0 0 0 #334155;
         }
         .datetime-input {
             position: absolute;
@@ -871,16 +1023,15 @@
             color: #334155;
             outline: none;
             transition: all 0.2s;
-            /* Allow clicks to pass through to select when not focused */
-            pointer-events: none;
+            /* Always allow clicks to pass through to select for dropdown to work properly */
+            pointer-events: none !important;
         }
         .datetime-input:hover,
         .datetime-input:focus {
-            pointer-events: auto;
             border-color: #58d3d3;
             background: rgba(255, 255, 255, 0.9);
             box-shadow: 0 0 0 3px rgba(88, 211, 211, 0.1);
-            z-index: 1;
+            /* Don't change pointer-events or z-index to avoid blocking select dropdown */
         }
         /* Hide select spinner buttons */
         .datetime-input::-webkit-outer-spin-button,
@@ -890,6 +1041,92 @@
         }
         .datetime-input[type=number] {
             -moz-appearance: textfield;
+        }
+
+        /* 모든 select 옵션에 대해 기본 색상 강제 적용 */
+        select option {
+            background-color: white;
+            color: #1e293b !important;
+        }
+
+        /* 슬롯 모달 내의 select 요소는 기본 브라우저 스타일 사용 */
+        #slot-modal .datetime-select {
+            appearance: auto !important;
+            -webkit-appearance: auto !important;
+            -moz-appearance: auto !important;
+            background-image: none !important;
+            padding-right: 10px !important;
+        }
+        #slot-modal .datetime-select option {
+            background-color: white !important;
+            color: #1e293b !important;
+        }
+
+        /* 슬롯 모달 내의 datetime-field 처리 */
+        #slot-modal .datetime-field {
+            position: relative;
+        }
+        #slot-modal .datetime-select {
+            appearance: auto !important;
+            -webkit-appearance: auto !important;
+            -moz-appearance: auto !important;
+            background-image: none !important;
+            padding-right: 10px !important;
+            /* 선택한 값이 보이도록 보장 */
+            color: #1e293b !important;
+            background-color: #fafafa !important;
+        }
+        #slot-modal .datetime-select option {
+            background-color: white !important;
+            color: #1e293b !important;
+        }
+        /* input은 완전히 제거 - select만 사용 */
+        #slot-modal .datetime-input {
+            display: none !important;
+            position: absolute !important;
+            left: -9999px !important;
+            visibility: hidden !important;
+        }
+
+        /* 슬롯 모달용 네이티브 시간 select 스타일 */
+        .native-time-select {
+            padding: 8px 22px 8px 8px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            min-width: 70px;
+            /* 네이티브 브라우저 드롭다운 화살표 표시 */
+            appearance: auto;
+            -webkit-appearance: auto;
+            -moz-appearance: auto;
+        }
+        .native-time-select:hover {
+            border-color: #cbd5e1;
+        }
+        .native-time-select:focus {
+            outline: none;
+            border-color: #58d3d3;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(88, 211, 211, 0.1);
+            /* 드롭다운이 열릴 때 가장 위에 표시되도록 z-index 설정 */
+            z-index: 1000;
+            position: relative;
+        }
+        .native-time-select option {
+            background: white;
+            color: #1e293b;
+            padding: 8px;
+            font-size: 14px;
+        }
+        /* AM/PM select는 좀 더 넓게 */
+        #slot-start-ampm,
+        #slot-end-ampm {
+            min-width: 70px;
         }
     </style>
 </head>
@@ -1278,22 +1515,121 @@
                     <input type="hidden" id="selected-days" value="">
                 </div>
 
-                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                    <div class="input-group" style="flex: 1; min-width: 140px;">
+                <div>
+                    <div class="input-group">
                         <label>시작 시간 *</label>
-                        <input type="time" id="slot-start" required style="min-width: 140px;">
+                        <div class="time-picker" style="display: flex; gap: 12px; align-items: center;">
+                            <!-- 오전/오후 -->
+                            <select id="slot-start-ampm" class="native-time-select">
+                                <option value="AM">오전</option>
+                                <option value="PM">오후</option>
+                            </select>
+                            <!-- 시 -->
+                            <select id="slot-start-hour-select" class="native-time-select">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                            </select>
+                            <span style="color: #4b5563; font-size: 13px; font-weight: 500;">시</span>
+                            <!-- 분 -->
+                            <select id="slot-start-minute-select" class="native-time-select">
+                                <option value="0">00</option>
+                                <option value="5">05</option>
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                                <option value="20">20</option>
+                                <option value="25">25</option>
+                                <option value="30">30</option>
+                                <option value="35">35</option>
+                                <option value="40">40</option>
+                                <option value="45">45</option>
+                                <option value="50">50</option>
+                                <option value="55">55</option>
+                            </select>
+                            <span style="color: #4b5563; font-size: 13px; font-weight: 500;">분</span>
+                        </div>
+                        <input type="hidden" id="slot-start" required>
+                        <!-- Input elements for JavaScript compatibility (hidden) -->
+                        <input type="hidden" id="slot-start-hour-input">
+                        <input type="hidden" id="slot-start-minute-input">
                     </div>
-                    <div class="input-group" style="flex: 1; min-width: 140px;">
+                    <div class="input-group">
                         <label>종료 시간 *</label>
-                        <input type="time" id="slot-end" required style="min-width: 140px;">
+                        <div class="time-picker" style="display: flex; gap: 12px; align-items: center;">
+                            <!-- 오전/오후 -->
+                            <select id="slot-end-ampm" class="native-time-select">
+                                <option value="AM">오전</option>
+                                <option value="PM">오후</option>
+                            </select>
+                            <!-- 시 -->
+                            <select id="slot-end-hour-select" class="native-time-select">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                            </select>
+                            <span style="color: #4b5563; font-size: 13px; font-weight: 500;">시</span>
+                            <!-- 분 -->
+                            <select id="slot-end-minute-select" class="native-time-select">
+                                <option value="0">00</option>
+                                <option value="5">05</option>
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                                <option value="20">20</option>
+                                <option value="25">25</option>
+                                <option value="30">30</option>
+                                <option value="35">35</option>
+                                <option value="40">40</option>
+                                <option value="45">45</option>
+                                <option value="50">50</option>
+                                <option value="55">55</option>
+                            </select>
+                            <span style="color: #4b5563; font-size: 13px; font-weight: 500;">분</span>
+                        </div>
+                        <input type="hidden" id="slot-end" required>
+                        <!-- Input elements for JavaScript compatibility (hidden) -->
+                        <input type="hidden" id="slot-end-hour-input">
+                        <input type="hidden" id="slot-end-minute-input">
                         <p class="text-xs text-gray-500 mt-1">선택한 단위 시간으로 자동 생성</p>
                     </div>
                 </div>
 
                 <div class="input-group">
                     <label>정원 *</label>
-                    <div class="capacity-input">
-                        <input type="number" id="slot-capacity" min="1" max="50" value="5" required>
+                    <div class="capacity-input" style="position: relative; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <!-- 감소 버튼 -->
+                        <button type="button" onclick="adjustSlotCapacity(-1)" class="capacity-arrow" style="width: 40px; height: 40px;" title="감소">
+                            <span class="material-symbols-outlined">remove</span>
+                        </button>
+
+                        <!-- 정원 입력 필드 -->
+                        <div style="position: relative; width: 80px;">
+                            <select id="slot-capacity-select" class="datetime-select text-center text-sm" style="width: 100%;"></select>
+                            <input type="number" id="slot-capacity" min="1" max="50" value="5" required class="datetime-input text-center text-sm" style="padding-left: 0; padding-right: 0;">
+                        </div>
+
+                        <!-- 증가 버튼 -->
+                        <button type="button" onclick="adjustSlotCapacity(1)" class="capacity-arrow" style="width: 40px; height: 40px;" title="증가">
+                            <span class="material-symbols-outlined">add</span>
+                        </button>
+
                         <span class="text-gray-500">명</span>
                     </div>
                     <p class="text-xs text-gray-500 mt-1">각 시간대별 기본 정원 (개별 수정 가능)</p>
