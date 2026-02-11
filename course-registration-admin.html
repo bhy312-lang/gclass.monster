@@ -1042,6 +1042,15 @@
         .datetime-input[type=number] {
             -moz-appearance: textfield;
         }
+        /* Hide spinner buttons on capacity edit input */
+        #edit-slot-capacity::-webkit-outer-spin-button,
+        #edit-slot-capacity::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        #edit-slot-capacity {
+            -moz-appearance: textfield;
+        }
 
         /* 모든 select 옵션에 대해 기본 색상 강제 적용 */
         select option {
@@ -1294,10 +1303,10 @@
                             <span class="material-symbols-outlined">restart_alt</span>
                             전체 초기화
                         </button>
-                        <button id="view-timetable-btn" onclick="switchView('timetable')" class="view-toggle-btn active" title="시간표 보">
+                        <button id="view-timetable-btn" onclick="switchView('timetable')" class="view-toggle-btn active" title="시간표 보기">
                             <span class="material-symbols-outlined">calendar_view_month</span>
                         </button>
-                        <button id="view-list-btn" onclick="switchView('list')" class="view-toggle-btn" title="목록 보">
+                        <button id="view-list-btn" onclick="switchView('list')" class="view-toggle-btn" title="목록 보기">
                             <span class="material-symbols-outlined">list</span>
                         </button>
                     </div>
@@ -1714,18 +1723,19 @@
                 <input type="hidden" id="edit-slot-time">
 
                 <div class="input-group text-left" style="max-width: 280px; margin: 0 auto 16px;">
-                    <label>새 정원 *</label>
-                    <div class="capacity-input">
-                        <button type="button" onclick="adjustCapacity(-1)" class="capacity-arrow up" title="감소">
-                            <span class="material-symbols-outlined">keyboard_arrow_down</span>
-                        </button>
-                        <button type="button" onclick="adjustCapacity(1)" class="capacity-arrow down" title="증가">
-                            <span class="material-symbols-outlined">keyboard_arrow_up</span>
-                        </button>
-                        <input type="number" id="edit-slot-capacity" min="1" max="50" required readonly style="pointer-events: none; background: #f8fafc; color: #64748b;" tabindex="-1">
+                        <div class="capacity-input">
+                        <input type="number" id="edit-slot-capacity" min="1" max="50" required style="background: #f8fafc; color: #64748b;">
                         <span class="text-gray-500">명</span>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <button type="button" onclick="adjustCapacity(1)" class="capacity-arrow" style="width: 32px; height: 28px; padding: 0;" title="증가">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">keyboard_arrow_up</span>
+                            </button>
+                            <button type="button" onclick="adjustCapacity(-1)" class="capacity-arrow" style="width: 32px; height: 28px; padding: 0;" title="감소">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">keyboard_arrow_down</span>
+                            </button>
+                        </div>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">1명 ~ 50명까지 설정 가능</p>
+                    <p class="text-xs text-gray-500 mt-1 text-center">1명 ~ 50명까지 설정 가능</p>
                 </div>
 
                 <div class="flex gap-3 justify-center">

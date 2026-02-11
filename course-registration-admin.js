@@ -26,6 +26,7 @@ const dayNames = {
 document.addEventListener('DOMContentLoaded', async () => {
     await initializePage();
     initDateTimePickers();
+    initSlotTimePickers(); // 슬롯 시간 picker 초기화
 
     // 슬롯 모달용 커스텀 인터벌 입력 이벤트 리스너
     const slotCustomIntervalInput = document.getElementById('slot-custom-interval-input');
@@ -846,6 +847,114 @@ function selectSlotInterval(minutes) {
     });
 }
 
+// 슬롯 시간 picker 초기화 (이벤트 리스너만 설정)
+function initSlotTimePickers() {
+    ['start', 'end'].forEach(type => {
+        // 오전/오후, 시간, 분 변경 시 hidden input 업데이트
+        ['ampm', 'hour', 'minute'].forEach(field => {
+            const selectElement = document.getElementById(`slot-${type}-${field}-select`);
+            const inputElement = document.getElementById(`slot-${type}-${field}-input`);
+
+            // Select 변경 시 hidden input 업데이트
+            if (selectElement) {
+                selectElement.addEventListener('change', () => {
+                    // Hidden input 값 업데이트 (JavaScript 호환성 위해 유지)
+                    if (inputElement) {
+                        inputElement.value = selectElement.value;
+                    }
+                    updateSlotTimeHidden(type);
+                });
+            }
+
+            // ampm은 별도 select 요소
+            if (field === 'ampm') {
+                const ampmElement = document.getElementById(`slot-${type}-ampm`);
+                if (ampmElement) {
+                    ampmElement.addEventListener('change', () => updateSlotTimeHidden(type));
+                }
+            }
+        });
+    });
+}
+
+// 슬롯 시간 입력값 유효성 검사
+function validateSlotTimeInput(input, field) {
+    let value = parseInt(input.value);
+    if (isNaN(value)) return;
+
+    switch (field) {
+        case 'hour':
+            value = Math.max(1, Math.min(12, value));
+            break;
+        case 'minute':
+            value = Math.max(0, Math.min(59, value));
+            break;
+    }
+    input.value = value;
+}
+
+// 슬롯 시간 picker 값 설정
+function setSlotTimePicker(type, timeString) {
+    if (!timeString) return;
+
+    // HH:MM 형식 파싱
+    const [hour, minute] = timeString.split(':').map(Number);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    let hour12 = hour % 12;
+    if (hour12 === 0) hour12 = 12;
+
+    // Select와 Input(hidden) 모두 업데이트
+    const setFieldValue = (field, value) => {
+        const select = document.getElementById(`slot-${type}-${field}-select`);
+        const input = document.getElementById(`slot-${type}-${field}-input`);
+
+        // 네이티브 select는 value 설정만으로 선택 값이 표시됨
+        if (select) {
+            select.value = value;
+        }
+        // Hidden input 값도 업데이트
+        if (input) {
+            input.value = value;
+        }
+    };
+
+    // AM/PM 설정
+    const ampmSelect = document.getElementById(`slot-${type}-ampm`);
+    if (ampmSelect) {
+        ampmSelect.value = ampm;
+    }
+
+    setFieldValue('hour', hour12);
+    setFieldValue('minute', minute);
+
+    // hidden input 업데이트
+    updateSlotTimeHidden(type);
+}
+
+// 슬롯 시간 hidden input 업데이트
+function updateSlotTimeHidden(type) {
+    const ampm = document.getElementById(`slot-${type}-ampm`).value;
+    // Select 요소에서 직접 값 읽기 (hidden input 의존 제거)
+    let hour = parseInt(document.getElementById(`slot-${type}-hour-select`).value) || 0;
+    const minute = parseInt(document.getElementById(`slot-${type}-minute-select`).value) || 0;
+
+    // 12시간제를 24시간제로 변환
+    if (ampm === 'PM' && hour !== 12) {
+        hour += 12;
+    } else if (ampm === 'AM' && hour === 12) {
+        hour = 0;
+    }
+
+    // HH:MM 형식
+    const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+
+    // hidden input에 값 설정
+    const hiddenInput = document.getElementById(`slot-${type}`);
+    if (hiddenInput) {
+        hiddenInput.value = formattedTime;
+    }
+}
+
 // 기간 목록 로드
 async function loadPeriods() {
     try {
@@ -1639,7 +1748,7 @@ async function togglePeriodActive(periodId, isActive) {
 async function deletePeriod(periodId) {
     const confirmed = await showConfirm(
         '기간 삭제',
-        '정말 삭제하시겠습니까?\n\n⚠️ 관련 신청 내역도 모두 삭제됩니다.'
+        '정말 삭제하시겠습니까?<br><br>⚠️ 관련 신청 내역도 모두 삭제됩니다.'
     );
 
     if (!confirmed) return;
@@ -1668,12 +1777,14 @@ function openSlotModal() {
         return;
     }
 
-    document.getElementById('slot-form').reset();
+    // form.reset() 대신 필요한 필드만 수동으로 리셋
+    // form.reset()는 select의 selectedIndex를 -1로 만들어 값이 보이지 않게 함
     document.getElementById('selected-days').value = '';
     document.querySelectorAll('.day-option').forEach(d => d.classList.remove('selected'));
 
     // 기본 정원 설정
-    document.getElementById('slot-capacity').value = currentPeriod.default_capacity || 5;
+    const defaultCapacity = currentPeriod.default_capacity || 5;
+    document.getElementById('slot-capacity').value = defaultCapacity;
 
     // 기본 슬롯 인터벌 설정 (기간의 인터벌 사용)
     const slotInterval = currentPeriod.slot_interval_minutes || 30;
@@ -1691,11 +1802,48 @@ function openSlotModal() {
         }
     });
 
-    // 기본 시간 설정 (오후 1시 - 오후 5시)
-    document.getElementById('slot-start').value = '13:00';
-    document.getElementById('slot-end').value = '17:00';
+    // 시간 picker 초기화 및 기본값 설정
+    initSlotTimePickerDropdowns();
+    setSlotTimePicker('start', '13:00'); // 오후 1시
+    setSlotTimePicker('end', '17:00');   // 오후 5시
+
+    // 정원 picker 초기화
+    initSlotCapacityPicker();
 
     document.getElementById('slot-modal').classList.add('show');
+}
+
+// 슬롯 시간 picker 드롭다운 초기화
+function initSlotTimePickerDropdowns() {
+    ['start', 'end'].forEach(type => {
+        // 시간 옵션 (1-12) - 네이티브 select는 이미 HTML에 정의되어 있음
+        const hourSelect = document.getElementById(`slot-${type}-hour-select`);
+        const hourInput = document.getElementById(`slot-${type}-hour-input`);
+        if (hourSelect) {
+            // 기본값 10시로 설정
+            hourSelect.value = 10;
+            if (hourInput) {
+                hourInput.value = 10;
+            }
+        }
+
+        // 분 옵션 (0-59, 5분 단위) - 네이티브 select는 이미 HTML에 정의되어 있음
+        const minuteSelect = document.getElementById(`slot-${type}-minute-select`);
+        const minuteInput = document.getElementById(`slot-${type}-minute-input`);
+        if (minuteSelect) {
+            // 기본값 0분으로 설정
+            minuteSelect.value = 0;
+            if (minuteInput) {
+                minuteInput.value = 0;
+            }
+        }
+
+        // 오전/오후 기본값 설정
+        const ampmSelect = document.getElementById(`slot-${type}-ampm`);
+        if (ampmSelect) {
+            ampmSelect.value = type === 'start' ? 'AM' : 'PM';
+        }
+    });
 }
 
 // 슬롯 모달 닫기
@@ -1712,6 +1860,65 @@ function toggleDay(day) {
         .map(d => d.dataset.day);
 
     document.getElementById('selected-days').value = selectedDays.join(',');
+}
+
+// 슬롯 정원 조절 (증가/감소)
+function adjustSlotCapacity(delta) {
+    const input = document.getElementById('slot-capacity');
+    const select = document.getElementById('slot-capacity-select');
+    let currentValue = parseInt(input?.value) || 0;
+    let newValue = currentValue + delta;
+
+    // 1-50 범위 체크
+    if (newValue < 1) newValue = 1;
+    if (newValue > 50) newValue = 50;
+
+    if (input) input.value = newValue;
+    if (select) select.value = newValue;
+}
+
+// 슬롯 정원 초기화
+function initSlotCapacityPicker() {
+    const select = document.getElementById('slot-capacity-select');
+    const input = document.getElementById('slot-capacity');
+
+    if (select) {
+        // 현재 값 저장
+        const currentValue = parseInt(input?.value) || 5;
+
+        // 옵션 생성 (1-50)
+        select.innerHTML = '';
+        for (let c = 1; c <= 50; c++) {
+            const option = document.createElement('option');
+            option.value = c;
+            option.textContent = c;
+            select.appendChild(option);
+        }
+        select.value = currentValue;
+
+        // Select 변경 시 input 업데이트
+        select.addEventListener('change', () => {
+            if (input) {
+                input.value = parseInt(select.value);
+            }
+        });
+
+        // Input 변경 시 select 업데이트
+        if (input) {
+            input.addEventListener('input', () => {
+                // 값 유효성 검사
+                let value = parseInt(input.value);
+                if (isNaN(value)) value = 1;
+                if (value < 1) value = 1;
+                if (value > 50) value = 50;
+                input.value = value;
+
+                if (select) {
+                    select.value = value;
+                }
+            });
+        }
+    }
 }
 
 // 슬롯 저장 (일괄 생성)
@@ -2433,7 +2640,7 @@ function showConfirm(title, message) {
         const cancelBtn = document.getElementById('confirm-cancel');
 
         titleEl.textContent = title;
-        messageEl.textContent = message;
+        messageEl.innerHTML = message;
 
         confirmCallback = null;
 
