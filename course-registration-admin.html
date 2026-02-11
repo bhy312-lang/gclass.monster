@@ -1052,6 +1052,33 @@
         .datetime-input[type=number] {
             -moz-appearance: textfield;
         }
+        /* 기간 설정의 시/분은 숫자 입력으로 변경 */
+        #period-open-hour-select,
+        #period-open-minute-select,
+        #period-close-hour-select,
+        #period-close-minute-select {
+            display: none !important;
+        }
+        #period-open-hour-input,
+        #period-open-minute-input,
+        #period-close-hour-input,
+        #period-close-minute-input {
+            position: relative !important;
+            pointer-events: auto !important;
+            background: white !important;
+            border: 2px solid #e2e8f0 !important;
+        }
+        #period-open-hour-input:hover,
+        #period-open-minute-input:hover,
+        #period-close-hour-input:hover,
+        #period-close-minute-input:hover,
+        #period-open-hour-input:focus,
+        #period-open-minute-input:focus,
+        #period-close-hour-input:focus,
+        #period-close-minute-input:focus {
+            border-color: #58d3d3 !important;
+            box-shadow: 0 0 0 3px rgba(88, 211, 211, 0.1) !important;
+        }
         /* Hide spinner buttons on capacity edit input */
         #edit-slot-capacity::-webkit-outer-spin-button,
         #edit-slot-capacity::-webkit-inner-spin-button {
