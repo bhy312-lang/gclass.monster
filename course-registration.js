@@ -861,6 +861,29 @@ function closeAlertModal() {
     document.getElementById('alert-modal').classList.remove('show');
 }
 
+// 전화번호 자동 포맷팅 (xxx-xxxx-xxxx)
+function formatPhoneNumber(input) {
+    // 숫자만 추출
+    let value = input.value.replace(/[^0-9]/g, '');
+
+    // 최대 11자리까지만 허용
+    if (value.length > 11) {
+        value = value.slice(0, 11);
+    }
+
+    // 하이픈 자동 삽입
+    let formatted = '';
+    if (value.length <= 3) {
+        formatted = value;
+    } else if (value.length <= 7) {
+        formatted = value.slice(0, 3) + '-' + value.slice(3);
+    } else {
+        formatted = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7);
+    }
+
+    input.value = formatted;
+}
+
 // Info Modal 함수들
 function openInfoModal() {
     document.getElementById('info-modal').classList.add('show');

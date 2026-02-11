@@ -727,6 +727,30 @@
                 padding: 10px 16px !important;
                 font-size: 14px !important;
             }
+            /* 모든 모달 버튼 스타일 */
+            .modal-buttons {
+                margin-top: 16px !important;
+            }
+            .modal-buttons .btn-secondary,
+            .modal-buttons .btn-primary {
+                padding: 10px 16px !important;
+                font-size: 14px !important;
+                white-space: nowrap;
+            }
+            .modal-buttons .btn-primary {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+            }
+            .modal-buttons .material-symbols-outlined {
+                font-size: 18px !important;
+            }
+            /* alert 모달 버튼 */
+            .alert-btn {
+                padding: 10px 24px !important;
+                font-size: 14px !important;
+            }
         }
     </style>
 </head>
@@ -821,14 +845,12 @@
                     <span class="success-info-value" id="result-time">-</span>
                 </div>
             </div>
-            <div class="flex gap-3 mt-6">
+            <div class="flex gap-3 mt-6 modal-buttons">
                 <button class="btn-secondary flex-1" onclick="editMyRegistration()">
-                    <span class="material-symbols-outlined">edit</span>
-                    수정하기
+                    <span class="material-symbols-outlined">edit</span> 수정하기
                 </button>
                 <button class="btn-primary flex-1" onclick="window.location.reload()">
-                    <span class="material-symbols-outlined">refresh</span>
-                    처음으로
+                    <span class="material-symbols-outlined">refresh</span> 처음으로
                 </button>
             </div>
         </div>
@@ -873,16 +895,13 @@
 
                 <div class="form-group">
                     <label class="form-label">보호자 휴대폰 번호 *</label>
-                    <input type="tel" class="form-input" id="phone-number" placeholder="010-1234-5678" maxlength="13">
+                    <input type="tel" class="form-input" id="phone-number" placeholder="010-1234-5678" maxlength="13" oninput="formatPhoneNumber(this)">
                     <p class="error-message" id="phone-error">올바른 연락처를 입력해주세요.</p>
                 </div>
 
-                <div class="flex gap-3 mt-6">
+                <div class="flex gap-3 mt-6 modal-buttons">
                     <button type="button" class="btn-secondary flex-1" onclick="closeInfoModal()">취소</button>
-                    <button type="submit" class="btn-primary flex-1">
-                        다음
-                        <span class="material-symbols-outlined">arrow_forward</span>
-                    </button>
+                    <button type="submit" class="btn-primary flex-1">다음 <span class="material-symbols-outlined">arrow_forward</span></button>
                 </div>
             </form>
         </div>
