@@ -479,36 +479,42 @@
             align-items: center;
             justify-content: center;
             background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
-            border-radius: 16px;
-            padding: 12px 16px;
+            border-radius: 12px;
+            padding: 8px 14px;
             min-width: 100px;
-            box-shadow: 0 8px 25px rgba(20, 184, 166, 0.3);
+            box-shadow: 0 4px 15px rgba(20, 184, 166, 0.3);
             flex-shrink: 0;
         }
         .total-hours-label {
-            font-size: 13px;
+            font-size: 12px;
             color: rgba(255, 255, 255, 0.9);
             font-weight: 500;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
         .total-hours-value {
-            font-size: 36px;
-            font-weight: 900;
+            font-size: 22px;
+            font-weight: 800;
             color: white;
             line-height: 1;
-            letter-spacing: -1px;
+            letter-spacing: -0.5px;
         }
         .total-hours-unit {
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 600;
             color: rgba(255, 255, 255, 0.9);
-            margin-left: 4px;
+            margin-left: 2px;
         }
         .total-hours-max {
             font-size: 12px;
             color: rgba(255, 255, 255, 0.75);
             margin-top: 8px;
             font-weight: 500;
+        }
+        .total-hours-separator {
+            font-size: 20px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0 4px;
         }
         .total-hours-exceeded {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
@@ -687,17 +693,39 @@
                 grid-template-columns: repeat(3, 1fr);
             }
             .selected-summary {
-                flex-direction: column;
-                align-items: stretch;
-                padding: 8px;
-                margin-top: 8px;
+                padding: 6px;
+                margin-top: 6px;
+            }
+            .selected-summary-left {
+                display: none;
             }
             .selected-summary-right {
+                width: 100%;
                 min-width: auto;
-                padding: 10px 12px;
+                padding: 8px 12px;
+                flex-direction: row;
+                justify-content: center;
+                gap: 8px;
+            }
+            .total-hours-label {
+                margin-bottom: 0;
             }
             .total-hours-value {
-                font-size: 28px;
+                font-size: 18px;
+            }
+            .total-hours-unit {
+                display: none;
+            }
+            .total-hours-max {
+                display: none;
+            }
+            .slot-modal-buttons {
+                padding: 8px 0 !important;
+            }
+            .slot-modal-buttons .btn-secondary,
+            .slot-modal-buttons .btn-primary {
+                padding: 10px 16px !important;
+                font-size: 14px !important;
             }
         }
     </style>
@@ -889,13 +917,12 @@
                 <div class="selected-summary-right" id="total-hours-display">
                     <div class="total-hours-label">합계 시간</div>
                     <div class="total-hours-value">
-                        <span id="total-hours">0</span><span class="total-hours-unit">시간</span>
+                        <span id="total-hours">0</span><span class="total-hours-unit">시간</span> <span class="total-hours-separator">/</span> <span id="max-hours-display">5</span><span class="total-hours-unit">시간</span>
                     </div>
-                    <div class="total-hours-max" id="max-hours-label">최대 5시간</div>
                 </div>
             </div>
 
-            <div class="flex gap-3 mt-4" style="flex-shrink: 0;">
+            <div class="flex gap-3 mt-4 slot-modal-buttons" style="flex-shrink: 0;">
                 <button type="button" class="btn-secondary flex-1" onclick="closeSlotModal()">취소</button>
                 <button type="button" id="submit-btn" class="btn-primary flex-1" onclick="submitRegistration()" disabled>
                     <span class="material-symbols-outlined">check</span>

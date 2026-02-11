@@ -38,7 +38,8 @@ async function initializePage() {
 
         if (currentPeriod) {
             maxWeeklyHours = currentPeriod.max_weekly_hours || 5;
-            document.getElementById('max-hours-label').textContent = maxWeeklyHours;
+            const maxHoursDisplay = document.getElementById('max-hours-display');
+            if (maxHoursDisplay) maxHoursDisplay.textContent = maxWeeklyHours;
             updatePageState();
         }
     } catch (error) {
