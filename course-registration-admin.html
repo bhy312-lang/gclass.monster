@@ -653,6 +653,17 @@
             width: 80px !important;
             text-align: center;
         }
+        /* 숫자 입력 필드 내부 스피너 숨기기 */
+        input.no-spinner::-webkit-outer-spin-button,
+        input.no-spinner::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            appearance: none;
+            margin: 0;
+        }
+        input.no-spinner[type=number] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
         .loading-spinner {
             display: inline-block;
             width: 20px;
@@ -2008,8 +2019,16 @@
             <form id="all-capacity-form" onsubmit="submitAllCapacityEdit(event)">
                 <div class="input-group text-left" style="max-width: 280px; margin: 0 auto 16px;">
                     <div class="capacity-input">
-                        <input type="number" id="all-capacity-input" min="1" max="50" value="5" required style="background: #f8fafc; color: #64748b;">
+                        <input type="number" id="all-capacity-input" min="1" max="50" value="5" required class="no-spinner" style="background: #f8fafc; color: #64748b;">
                         <span class="text-gray-500">명</span>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <button type="button" onclick="adjustAllCapacity(1)" class="capacity-arrow" style="width: 32px; height: 28px; padding: 0;" title="증가">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">keyboard_arrow_up</span>
+                            </button>
+                            <button type="button" onclick="adjustAllCapacity(-1)" class="capacity-arrow" style="width: 32px; height: 28px; padding: 0;" title="감소">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">keyboard_arrow_down</span>
+                            </button>
+                        </div>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 text-center">1명 ~ 50명까지 설정 가능</p>
                 </div>
