@@ -2572,6 +2572,103 @@ async function deleteTimeRow(startTime) {
 }
 
 // =====================================================
+// 전체 정원 일괄 수정 기능
+// =====================================================
+
+// 전체 정원 일괄 수정 모달 열기
+function openAllCapacityEditModal() {
+    if (!currentPeriod || !currentPeriod.id) {
+        showError('먼저 기간을 선택해주세요.');
+        return;
+    }
+
+    if (currentTimeSlots.length === 0) {
+        showError('수정할 슬롯이 없습니다. 먼저 슬롯을 추가해주세요.');
+        return;
+    }
+
+    const modal = document.getElementById('all-capacity-modal');
+    const slotCountDisplay = document.getElementById('all-capacity-slot-count');
+
+    // 슬롯 개수 표시
+    slotCountDisplay.textContent = `총 ${currentTimeSlots.length}개의 슬롯`;
+
+    // 기본값 설정 (현재 슬롯들의 평균 정원으로 설정)
+    const avgCapacity = Math.round(currentTimeSlots.reduce((sum, s) => sum + s.capacity, 0) / currentTimeSlots.length);
+    document.getElementById('all-capacity-input').value = avgCapacity || 5;
+
+    modal.classList.add('show');
+}
+
+// 전체 정원 일괄 수정 모달 닫기
+function closeAllCapacityEditModal() {
+    const modal = document.getElementById('all-capacity-modal');
+    modal.classList.remove('show');
+}
+
+// 전체 정원 조절
+function adjustAllCapacity(delta) {
+    const input = document.getElementById('all-capacity-input');
+    let value = parseInt(input.value) || 5;
+    value = Math.max(1, Math.min(50, value + delta));
+    input.value = value;
+}
+
+// 전체 정원 일괄 수정 제출
+async function submitAllCapacityEdit(event) {
+    event.preventDefault();
+
+    const newCapacity = parseInt(document.getElementById('all-capacity-input').value);
+
+    if (isNaN(newCapacity) || newCapacity < 1 || newCapacity > 50) {
+        showError('정원은 1명에서 50명 사이로 입력해주세요.');
+        return;
+    }
+
+    try {
+        if (currentTimeSlots.length === 0) {
+            showError('수정할 슬롯이 없습니다.');
+            closeAllCapacityEditModal();
+            return;
+        }
+
+        // 정원 감소 시 경고
+        const hasOverCapacity = currentTimeSlots.some(s => s.current_count > newCapacity);
+        if (hasOverCapacity) {
+            const confirmed = await showConfirm(
+                '정원 감소 경고',
+                `일부 슬롯의 현재 신청 인원이 새 정원(${newCapacity}명)보다 많습니다.\n정말 변경하시겠습니까?`
+            );
+            if (!confirmed) return;
+        }
+
+        // 최종 확인
+        const confirmChange = await showConfirm(
+            '전체 정원 일괄 수정',
+            `총 ${currentTimeSlots.length}개 슬롯의 정원을 ${newCapacity}명으로 변경하시겠습니까?`
+        );
+        if (!confirmChange) return;
+
+        // 모든 슬롯 ID들로 일괄 업데이트
+        const slotIds = currentTimeSlots.map(s => s.id);
+        const { error } = await supabase
+            .from('course_time_slots')
+            .update({ capacity: newCapacity })
+            .in('id', slotIds);
+
+        if (error) throw error;
+
+        showToast(`전체 ${currentTimeSlots.length}개 슬롯의 정원이 ${newCapacity}명으로 변경되었습니다.`);
+        closeAllCapacityEditModal();
+        await loadTimeSlots();
+
+    } catch (error) {
+        console.error('[Admin] 전체 정원 일괄 수정 오류:', error);
+        showError('정원 수정에 실패했습니다.');
+    }
+}
+
+// =====================================================
 // 슬롯 수정 기능 (시간 범위 변경)
 // =====================================================
 

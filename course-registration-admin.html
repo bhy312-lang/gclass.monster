@@ -1320,6 +1320,10 @@
                                 <span class="material-symbols-outlined">edit_calendar</span>
                                 슬롯 수정
                             </button>
+                            <button onclick="openAllCapacityEditModal()" class="btn-secondary btn-sm" style="border: 2px solid #8b5cf6; color: #8b5cf6;">
+                                <span class="material-symbols-outlined">group</span>
+                                정원 일괄 수정
+                            </button>
                         </div>
                     </div>
 
@@ -1975,6 +1979,52 @@
                 <div class="flex gap-3 justify-center">
                     <button type="submit" class="btn-primary" style="flex: 1; max-width: 130px;">일괄 적용</button>
                     <button type="button" onclick="closeBulkCapacityModal()" class="btn-secondary" style="flex: 1; max-width: 130px;">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- All Capacity Edit Modal -->
+    <div id="all-capacity-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <button onclick="closeAllCapacityEditModal()" class="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <div class="w-16 h-16 bg-gradient-to-br from-purple-100 to-violet-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-purple-600" style="font-size: 32px;">group</span>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">전체 정원 일괄 수정</h3>
+
+            <div class="bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg p-4 mb-4 mx-auto" style="max-width: 280px;">
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <span class="material-symbols-outlined text-purple-600">info</span>
+                    <span class="font-semibold text-purple-700">안내</span>
+                </div>
+                <p class="text-gray-700 text-sm">선택된 기간의 모든 슬롯 정원을 일괄 변경합니다.</p>
+                <p id="all-capacity-slot-count" class="text-purple-600 font-semibold mt-2"></p>
+            </div>
+
+            <form id="all-capacity-form" onsubmit="submitAllCapacityEdit(event)">
+                <div class="input-group text-left" style="max-width: 280px; margin: 0 auto 16px;">
+                    <div class="capacity-input">
+                        <input type="number" id="all-capacity-input" min="1" max="50" value="5" required style="background: #f8fafc; color: #64748b;">
+                        <span class="text-gray-500">명</span>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <button type="button" onclick="adjustAllCapacity(1)" class="capacity-arrow" style="width: 32px; height: 28px; padding: 0;" title="증가">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">keyboard_arrow_up</span>
+                            </button>
+                            <button type="button" onclick="adjustAllCapacity(-1)" class="capacity-arrow" style="width: 32px; height: 28px; padding: 0;" title="감소">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">keyboard_arrow_down</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 text-center">1명 ~ 50명까지 설정 가능</p>
+                </div>
+
+                <div class="flex gap-3 justify-center">
+                    <button type="submit" class="btn-primary" style="flex: 1; max-width: 130px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">일괄 적용</button>
+                    <button type="button" onclick="closeAllCapacityEditModal()" class="btn-secondary" style="flex: 1; max-width: 130px;">취소</button>
                 </div>
             </form>
         </div>
