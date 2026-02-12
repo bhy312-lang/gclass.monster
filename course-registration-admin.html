@@ -1316,6 +1316,10 @@
                                 <span class="material-symbols-outlined">add</span>
                                 슬롯 추가
                             </button>
+                            <button onclick="openSlotEditModal()" class="btn-secondary btn-sm" style="border: 2px solid #3b82f6; color: #3b82f6;">
+                                <span class="material-symbols-outlined">edit_calendar</span>
+                                슬롯 수정
+                            </button>
                         </div>
                     </div>
 
@@ -1719,6 +1723,134 @@
         </div>
     </div>
 
+    <!-- Slot Edit Modal (시간 범위 수정) -->
+    <div id="slot-edit-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-800">시간 슬롯 수정</h3>
+                <button onclick="closeSlotEditModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- 현재 슬롯 정보 표시 -->
+            <div class="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-4 mb-6">
+                <h4 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-gray-500">info</span>
+                    현재 슬롯 정보
+                </h4>
+                <div id="current-slot-info" class="text-sm text-gray-600">
+                    <p>등록된 슬롯이 없습니다.</p>
+                </div>
+            </div>
+
+            <form id="slot-edit-form" onsubmit="submitSlotEdit(event)">
+                <div class="input-group">
+                    <label>수정 방식</label>
+                    <div class="flex gap-2 mb-4">
+                        <button type="button" id="edit-mode-shift" class="interval-select-btn active" data-mode="shift" onclick="selectSlotEditMode('shift')" style="flex: 1;">
+                            시간 이동
+                        </button>
+                        <button type="button" id="edit-mode-range" class="interval-select-btn" data-mode="range" onclick="selectSlotEditMode('range')" style="flex: 1;">
+                            범위 변경
+                        </button>
+                    </div>
+                    <input type="hidden" id="slot-edit-mode" value="shift">
+                </div>
+
+                <!-- 시간 이동 모드 -->
+                <div id="shift-mode-section">
+                    <div class="input-group">
+                        <label>이동 시간 (분)</label>
+                        <p class="text-xs text-gray-500 mb-2">모든 슬롯의 시작/종료 시간을 지정한 시간만큼 앞으로(+) 또는 뒤로(-) 이동</p>
+                        <div class="flex items-center gap-3 justify-center">
+                            <button type="button" onclick="adjustShiftMinutes(-30)" class="capacity-arrow">
+                                <span class="material-symbols-outlined">remove</span>
+                            </button>
+                            <input type="number" id="slot-shift-minutes" value="0" class="text-center" style="width: 100px; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 18px; font-weight: 600;">
+                            <span class="text-gray-500 font-medium">분</span>
+                            <button type="button" onclick="adjustShiftMinutes(30)" class="capacity-arrow">
+                                <span class="material-symbols-outlined">add</span>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2 text-center">예: +30 → 13:00이 13:30으로 변경</p>
+                    </div>
+                </div>
+
+                <!-- 범위 변경 모드 -->
+                <div id="range-mode-section" class="hidden">
+                    <div class="input-group">
+                        <label>새로운 시작 시간</label>
+                        <div class="time-picker" style="display: flex; gap: 12px; align-items: center;">
+                            <select id="edit-start-ampm" class="native-time-select">
+                                <option value="AM">오전</option>
+                                <option value="PM">오후</option>
+                            </select>
+                            <select id="edit-start-hour" class="native-time-select">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                            </select>
+                            <span style="color: #4b5563;">시</span>
+                            <select id="edit-start-minute" class="native-time-select">
+                                <option value="0">00</option>
+                                <option value="30">30</option>
+                            </select>
+                            <span style="color: #4b5563;">분</span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>새로운 종료 시간</label>
+                        <div class="time-picker" style="display: flex; gap: 12px; align-items: center;">
+                            <select id="edit-end-ampm" class="native-time-select">
+                                <option value="AM">오전</option>
+                                <option value="PM">오후</option>
+                            </select>
+                            <select id="edit-end-hour" class="native-time-select">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                            </select>
+                            <span style="color: #4b5563;">시</span>
+                            <select id="edit-end-minute" class="native-time-select">
+                                <option value="0">00</option>
+                                <option value="30">30</option>
+                            </select>
+                            <span style="color: #4b5563;">분</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-amber-600 mt-2">
+                        <span class="material-symbols-outlined text-sm align-middle">warning</span>
+                        범위 변경 시 기존 슬롯이 삭제되고 새로운 슬롯이 생성됩니다. 신청 데이터가 있는 경우 주의하세요.
+                    </p>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closeSlotEditModal()" class="btn-secondary flex-1">취소</button>
+                    <button type="submit" class="btn-primary flex-1">수정 적용</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Registration Detail Modal -->
     <div id="registration-modal" class="modal-overlay">
         <div class="modal-content">
@@ -1779,6 +1911,54 @@
                 <div class="flex gap-3 justify-center">
                     <button type="submit" class="btn-primary" style="flex: 1; max-width: 130px;">저장</button>
                     <button type="button" onclick="closeCapacityEditModal()" class="btn-secondary" style="flex: 1; max-width: 130px;">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk Capacity Edit Modal -->
+    <div id="bulk-capacity-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <button onclick="closeBulkCapacityModal()" class="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <div class="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-blue-600" style="font-size: 32px;">edit_note</span>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">정원 일괄 수정</h3>
+
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-4 mx-auto" style="max-width: 280px;">
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <span class="material-symbols-outlined text-blue-600">calendar_today</span>
+                    <span class="font-semibold text-blue-700">대상</span>
+                </div>
+                <p id="bulk-capacity-target-display" class="text-gray-700 font-medium"></p>
+            </div>
+
+            <form id="bulk-capacity-form" onsubmit="submitBulkCapacity(event)">
+                <input type="hidden" id="bulk-capacity-type">
+                <input type="hidden" id="bulk-capacity-value">
+
+                <div class="input-group text-left" style="max-width: 280px; margin: 0 auto 16px;">
+                    <div class="capacity-input">
+                        <input type="number" id="bulk-capacity-input" min="1" max="50" value="5" required style="background: #f8fafc; color: #64748b;">
+                        <span class="text-gray-500">명</span>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <button type="button" onclick="adjustBulkCapacity(1)" class="capacity-arrow" style="width: 32px; height: 28px; padding: 0;" title="증가">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">keyboard_arrow_up</span>
+                            </button>
+                            <button type="button" onclick="adjustBulkCapacity(-1)" class="capacity-arrow" style="width: 32px; height: 28px; padding: 0;" title="감소">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">keyboard_arrow_down</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 text-center">1명 ~ 50명까지 설정 가능</p>
+                </div>
+
+                <div class="flex gap-3 justify-center">
+                    <button type="submit" class="btn-primary" style="flex: 1; max-width: 130px;">일괄 적용</button>
+                    <button type="button" onclick="closeBulkCapacityModal()" class="btn-secondary" style="flex: 1; max-width: 130px;">취소</button>
                 </div>
             </form>
         </div>

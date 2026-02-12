@@ -1248,6 +1248,11 @@ async function loadTimeSlots() {
                                 <th class="timetable-header">
                                     <div class="flex items-center justify-center gap-2">
                                         <span>${day}</span>
+                                        <button onclick="openBulkCapacityModal('day', '${days[dayHeaders.indexOf(day)]}')"
+                                                class="p-1 hover:bg-blue-100 rounded text-blue-500 hover:text-blue-700 transition-colors"
+                                                title="${day}요일 정원 일괄 수정">
+                                            <span class="material-symbols-outlined text-sm">edit</span>
+                                        </button>
                                         <button onclick="deleteDaySlots('${days[dayHeaders.indexOf(day)]}')"
                                                 class="p-1 hover:bg-red-100 rounded text-red-500 hover:text-red-700 transition-colors"
                                                 title="${day}요일 전체 삭제">
@@ -1278,7 +1283,22 @@ async function loadTimeSlots() {
             })();
 
             timetableHtml += `<tr class="timetable-row">`;
-            timetableHtml += `<td class="timetable-time">${time}-${endTime}</td>`;
+            timetableHtml += `
+                <td class="timetable-time">
+                    <div>${time}-${endTime}</div>
+                    <div class="flex items-center justify-center gap-1 mt-1">
+                        <button onclick="openBulkCapacityModal('time', '${time}')"
+                                class="p-1 hover:bg-blue-100 rounded text-blue-400 hover:text-blue-600 transition-colors"
+                                title="시간대 정원 일괄 수정">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">edit</span>
+                        </button>
+                        <button onclick="deleteTimeRow('${time}')"
+                                class="p-1 hover:bg-red-100 rounded text-red-400 hover:text-red-600 transition-colors"
+                                title="시간대 전체 삭제">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">delete</span>
+                        </button>
+                    </div>
+                </td>`;
 
             days.forEach(day => {
                 const slot = slotsByDay[day].find(s => s.start_time === time);
@@ -2331,6 +2351,544 @@ async function deleteDaySlots(day) {
     } catch (error) {
         console.error('[Admin] 요일별 슬롯 삭제 오류:', error);
         showError('삭제에 실패했습니다.');
+    }
+}
+
+// =====================================================
+// 일괄 정원 수정 기능
+// =====================================================
+
+// 일괄 정원 수정 모달 열기
+// type: 'day' (요일별) 또는 'time' (시간대별)
+// value: 요일('mon','tue',...) 또는 시간('13:00')
+function openBulkCapacityModal(type, value) {
+    const modal = document.getElementById('bulk-capacity-modal');
+    const targetDisplay = document.getElementById('bulk-capacity-target-display');
+    const typeInput = document.getElementById('bulk-capacity-type');
+    const valueInput = document.getElementById('bulk-capacity-value');
+    const capacityInput = document.getElementById('bulk-capacity-input');
+
+    typeInput.value = type;
+    valueInput.value = value;
+
+    if (type === 'day') {
+        const dayKorean = { 'mon': '월요일', 'tue': '화요일', 'wed': '수요일', 'thu': '목요일', 'fri': '금요일' }[value] || value;
+        targetDisplay.textContent = `${dayKorean} 전체 슬롯`;
+    } else if (type === 'time') {
+        // 해당 시간대의 종료 시간 찾기
+        const slot = currentTimeSlots.find(s => s.start_time === value);
+        const endTime = slot ? slot.end_time : '';
+        targetDisplay.textContent = `${value}-${endTime} 전체 슬롯`;
+    }
+
+    // 기본값 설정 (현재 슬롯들의 평균 정원)
+    const relevantSlots = currentTimeSlots.filter(s =>
+        type === 'day' ? s.day_of_week === value : s.start_time === value
+    );
+    if (relevantSlots.length > 0) {
+        const avgCapacity = Math.round(relevantSlots.reduce((sum, s) => sum + s.capacity, 0) / relevantSlots.length);
+        capacityInput.value = avgCapacity;
+    } else {
+        capacityInput.value = 5;
+    }
+
+    modal.classList.add('show');
+}
+
+// 일괄 정원 수정 모달 닫기
+function closeBulkCapacityModal() {
+    const modal = document.getElementById('bulk-capacity-modal');
+    modal.classList.remove('show');
+    document.getElementById('bulk-capacity-form').reset();
+}
+
+// 일괄 정원 입력값 조정 (+/-)
+function adjustBulkCapacity(delta) {
+    const input = document.getElementById('bulk-capacity-input');
+    let currentValue = parseInt(input.value) || 5;
+    let newValue = currentValue + delta;
+
+    if (newValue < 1) newValue = 1;
+    if (newValue > 50) newValue = 50;
+
+    input.value = newValue;
+}
+
+// 일괄 정원 수정 제출
+async function submitBulkCapacity(event) {
+    event.preventDefault();
+
+    const type = document.getElementById('bulk-capacity-type').value;
+    const value = document.getElementById('bulk-capacity-value').value;
+    const newCapacity = parseInt(document.getElementById('bulk-capacity-input').value);
+
+    if (isNaN(newCapacity) || newCapacity < 1 || newCapacity > 50) {
+        showError('정원은 1-50명 사이로 설정해주세요.');
+        return;
+    }
+
+    if (type === 'day') {
+        await bulkUpdateDayCapacity(value, newCapacity);
+    } else if (type === 'time') {
+        await bulkUpdateTimeCapacity(value, newCapacity);
+    }
+}
+
+// 요일별 정원 일괄 수정
+async function bulkUpdateDayCapacity(day, newCapacity) {
+    if (!currentPeriod || !currentPeriod.id) {
+        showError('기간 정보가 없습니다.');
+        return;
+    }
+
+    const dayKorean = { 'mon': '월요일', 'tue': '화요일', 'wed': '수요일', 'thu': '목요일', 'fri': '금요일' }[day] || day;
+
+    try {
+        // 해당 요일의 슬롯 수 확인
+        const slotsToUpdate = currentTimeSlots.filter(s => s.day_of_week === day);
+
+        if (slotsToUpdate.length === 0) {
+            showError('수정할 슬롯이 없습니다.');
+            closeBulkCapacityModal();
+            return;
+        }
+
+        // 정원 감소 시 경고
+        const hasOverCapacity = slotsToUpdate.some(s => s.current_count > newCapacity);
+        if (hasOverCapacity) {
+            const confirmed = await showConfirm(
+                '정원 감소 경고',
+                `일부 슬롯의 현재 신청 인원이 새 정원(${newCapacity}명)보다 많습니다.\n정말 변경하시겠습니까?`
+            );
+            if (!confirmed) return;
+        }
+
+        // 일괄 업데이트
+        const { error } = await supabase
+            .from('course_time_slots')
+            .update({ capacity: newCapacity })
+            .eq('period_id', currentPeriod.id)
+            .eq('day_of_week', day);
+
+        if (error) throw error;
+
+        showToast(`${dayKorean} 정원이 ${newCapacity}명으로 변경되었습니다.`);
+        closeBulkCapacityModal();
+        await loadTimeSlots();
+
+    } catch (error) {
+        console.error('[Admin] 요일별 정원 일괄 수정 오류:', error);
+        showError('정원 수정에 실패했습니다.');
+    }
+}
+
+// 시간대별 정원 일괄 수정
+async function bulkUpdateTimeCapacity(startTime, newCapacity) {
+    if (!currentPeriod || !currentPeriod.id) {
+        showError('기간 정보가 없습니다.');
+        return;
+    }
+
+    try {
+        // 해당 시간대의 슬롯들
+        const slotsToUpdate = currentTimeSlots.filter(s => s.start_time === startTime);
+
+        if (slotsToUpdate.length === 0) {
+            showError('수정할 슬롯이 없습니다.');
+            closeBulkCapacityModal();
+            return;
+        }
+
+        // 정원 감소 시 경고
+        const hasOverCapacity = slotsToUpdate.some(s => s.current_count > newCapacity);
+        if (hasOverCapacity) {
+            const confirmed = await showConfirm(
+                '정원 감소 경고',
+                `일부 슬롯의 현재 신청 인원이 새 정원(${newCapacity}명)보다 많습니다.\n정말 변경하시겠습니까?`
+            );
+            if (!confirmed) return;
+        }
+
+        // 슬롯 ID들로 일괄 업데이트
+        const slotIds = slotsToUpdate.map(s => s.id);
+        const { error } = await supabase
+            .from('course_time_slots')
+            .update({ capacity: newCapacity })
+            .in('id', slotIds);
+
+        if (error) throw error;
+
+        // 종료 시간 표시를 위해 첫 번째 슬롯 정보 사용
+        const endTime = slotsToUpdate[0]?.end_time || '';
+        showToast(`${startTime}-${endTime} 정원이 ${newCapacity}명으로 변경되었습니다.`);
+        closeBulkCapacityModal();
+        await loadTimeSlots();
+
+    } catch (error) {
+        console.error('[Admin] 시간대별 정원 일괄 수정 오류:', error);
+        showError('정원 수정에 실패했습니다.');
+    }
+}
+
+// 시간대별 행 삭제 (해당 시간의 모든 요일 슬롯 삭제)
+async function deleteTimeRow(startTime) {
+    if (!currentPeriod || !currentPeriod.id) {
+        showError('기간 정보가 없습니다.');
+        return;
+    }
+
+    // 해당 시간대의 슬롯들
+    const slotsToDelete = currentTimeSlots.filter(s => s.start_time === startTime);
+
+    if (slotsToDelete.length === 0) {
+        showError('삭제할 슬롯이 없습니다.');
+        return;
+    }
+
+    const endTime = slotsToDelete[0]?.end_time || '';
+    const confirmed = await showConfirm(
+        '시간대 삭제',
+        `${startTime}-${endTime} 시간대의 모든 슬롯(${slotsToDelete.length}개)을 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+        const slotIds = slotsToDelete.map(s => s.id);
+        const { error } = await supabase
+            .from('course_time_slots')
+            .delete()
+            .in('id', slotIds);
+
+        if (error) throw error;
+
+        showToast(`${startTime}-${endTime} 시간대 슬롯이 모두 삭제되었습니다.`);
+        await loadTimeSlots();
+
+    } catch (error) {
+        console.error('[Admin] 시간대별 삭제 오류:', error);
+        showError('삭제에 실패했습니다.');
+    }
+}
+
+// =====================================================
+// 슬롯 수정 기능 (시간 범위 변경)
+// =====================================================
+
+// 슬롯 수정 모달 열기
+function openSlotEditModal() {
+    if (!currentPeriod || !currentPeriod.id) {
+        showError('먼저 기간을 선택해주세요.');
+        return;
+    }
+
+    if (currentTimeSlots.length === 0) {
+        showError('수정할 슬롯이 없습니다. 먼저 슬롯을 추가해주세요.');
+        return;
+    }
+
+    const modal = document.getElementById('slot-edit-modal');
+
+    // 현재 슬롯 정보 표시
+    updateCurrentSlotInfo();
+
+    // 기본 모드 설정
+    selectSlotEditMode('shift');
+    document.getElementById('slot-shift-minutes').value = 0;
+
+    // 범위 모드 기본값 설정
+    setRangeEditDefaults();
+
+    modal.classList.add('show');
+}
+
+// 슬롯 수정 모달 닫기
+function closeSlotEditModal() {
+    const modal = document.getElementById('slot-edit-modal');
+    modal.classList.remove('show');
+}
+
+// 현재 슬롯 정보 업데이트
+function updateCurrentSlotInfo() {
+    const infoContainer = document.getElementById('current-slot-info');
+
+    if (currentTimeSlots.length === 0) {
+        infoContainer.innerHTML = '<p>등록된 슬롯이 없습니다.</p>';
+        return;
+    }
+
+    // 요일별 슬롯 수 계산
+    const dayCount = { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0 };
+    currentTimeSlots.forEach(slot => {
+        if (dayCount[slot.day_of_week] !== undefined) {
+            dayCount[slot.day_of_week]++;
+        }
+    });
+
+    // 시간 범위 계산
+    const startTimes = currentTimeSlots.map(s => s.start_time).sort();
+    const endTimes = currentTimeSlots.map(s => s.end_time).sort();
+    const earliestStart = startTimes[0];
+    const latestEnd = endTimes[endTimes.length - 1];
+
+    // 슬롯 간격 계산 (첫 번째 슬롯 기준)
+    let slotInterval = 30;
+    if (currentTimeSlots.length > 0) {
+        const firstSlot = currentTimeSlots[0];
+        const [sh, sm] = firstSlot.start_time.split(':').map(Number);
+        const [eh, em] = firstSlot.end_time.split(':').map(Number);
+        slotInterval = (eh * 60 + em) - (sh * 60 + sm);
+    }
+
+    const dayKorean = { mon: '월', tue: '화', wed: '수', thu: '목', fri: '금' };
+    const dayInfo = Object.entries(dayCount)
+        .filter(([_, count]) => count > 0)
+        .map(([day, count]) => `${dayKorean[day]}(${count}개)`)
+        .join(', ');
+
+    infoContainer.innerHTML = `
+        <div class="grid grid-cols-2 gap-2">
+            <div><span class="text-gray-500">총 슬롯:</span> <strong>${currentTimeSlots.length}개</strong></div>
+            <div><span class="text-gray-500">슬롯 단위:</span> <strong>${slotInterval}분</strong></div>
+            <div><span class="text-gray-500">시간 범위:</span> <strong>${earliestStart} ~ ${latestEnd}</strong></div>
+            <div><span class="text-gray-500">요일별:</span> <strong>${dayInfo || '없음'}</strong></div>
+        </div>
+    `;
+}
+
+// 범위 편집 기본값 설정
+function setRangeEditDefaults() {
+    if (currentTimeSlots.length === 0) return;
+
+    // 현재 슬롯의 가장 이른 시작 시간과 가장 늦은 종료 시간
+    const startTimes = currentTimeSlots.map(s => s.start_time).sort();
+    const endTimes = currentTimeSlots.map(s => s.end_time).sort();
+    const earliestStart = startTimes[0];
+    const latestEnd = endTimes[endTimes.length - 1];
+
+    // 시작 시간 설정
+    const [startHour, startMin] = earliestStart.split(':').map(Number);
+    const startAmpm = startHour >= 12 ? 'PM' : 'AM';
+    const startHour12 = startHour % 12 || 12;
+
+    document.getElementById('edit-start-ampm').value = startAmpm;
+    document.getElementById('edit-start-hour').value = startHour12;
+    document.getElementById('edit-start-minute').value = startMin;
+
+    // 종료 시간 설정
+    const [endHour, endMin] = latestEnd.split(':').map(Number);
+    const endAmpm = endHour >= 12 ? 'PM' : 'AM';
+    const endHour12 = endHour % 12 || 12;
+
+    document.getElementById('edit-end-ampm').value = endAmpm;
+    document.getElementById('edit-end-hour').value = endHour12;
+    document.getElementById('edit-end-minute').value = endMin;
+}
+
+// 수정 모드 선택
+function selectSlotEditMode(mode) {
+    document.getElementById('slot-edit-mode').value = mode;
+
+    // 버튼 활성화 상태 변경
+    document.getElementById('edit-mode-shift').classList.toggle('active', mode === 'shift');
+    document.getElementById('edit-mode-range').classList.toggle('active', mode === 'range');
+
+    // 섹션 표시/숨김
+    document.getElementById('shift-mode-section').classList.toggle('hidden', mode !== 'shift');
+    document.getElementById('range-mode-section').classList.toggle('hidden', mode !== 'range');
+}
+
+// 시간 이동 값 조정
+function adjustShiftMinutes(delta) {
+    const input = document.getElementById('slot-shift-minutes');
+    let value = parseInt(input.value) || 0;
+    value += delta;
+
+    // 범위 제한 (-12시간 ~ +12시간)
+    if (value < -720) value = -720;
+    if (value > 720) value = 720;
+
+    input.value = value;
+}
+
+// 슬롯 수정 제출
+async function submitSlotEdit(event) {
+    event.preventDefault();
+
+    const mode = document.getElementById('slot-edit-mode').value;
+
+    if (mode === 'shift') {
+        await applySlotTimeShift();
+    } else if (mode === 'range') {
+        await applySlotRangeChange();
+    }
+}
+
+// 시간 이동 적용
+async function applySlotTimeShift() {
+    const shiftMinutes = parseInt(document.getElementById('slot-shift-minutes').value) || 0;
+
+    if (shiftMinutes === 0) {
+        showError('이동할 시간을 입력해주세요.');
+        return;
+    }
+
+    // 시간 이동 후 유효성 검사
+    const invalidSlots = [];
+    currentTimeSlots.forEach(slot => {
+        const [startH, startM] = slot.start_time.split(':').map(Number);
+        const [endH, endM] = slot.end_time.split(':').map(Number);
+
+        const newStartMin = startH * 60 + startM + shiftMinutes;
+        const newEndMin = endH * 60 + endM + shiftMinutes;
+
+        if (newStartMin < 0 || newEndMin > 24 * 60 || newStartMin >= newEndMin) {
+            invalidSlots.push(slot);
+        }
+    });
+
+    if (invalidSlots.length > 0) {
+        showError(`시간 이동 후 유효하지 않은 시간대가 발생합니다.\n(0:00~24:00 범위를 벗어남)`);
+        return;
+    }
+
+    const direction = shiftMinutes > 0 ? '뒤로' : '앞으로';
+    const absMinutes = Math.abs(shiftMinutes);
+    const confirmed = await showConfirm(
+        '시간 이동 확인',
+        `모든 슬롯(${currentTimeSlots.length}개)을 ${absMinutes}분 ${direction} 이동하시겠습니까?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+        // 각 슬롯 업데이트
+        for (const slot of currentTimeSlots) {
+            const [startH, startM] = slot.start_time.split(':').map(Number);
+            const [endH, endM] = slot.end_time.split(':').map(Number);
+
+            const newStartMin = startH * 60 + startM + shiftMinutes;
+            const newEndMin = endH * 60 + endM + shiftMinutes;
+
+            const newStartTime = `${String(Math.floor(newStartMin / 60)).padStart(2, '0')}:${String(newStartMin % 60).padStart(2, '0')}`;
+            const newEndTime = `${String(Math.floor(newEndMin / 60)).padStart(2, '0')}:${String(newEndMin % 60).padStart(2, '0')}`;
+
+            const { error } = await supabase
+                .from('course_time_slots')
+                .update({ start_time: newStartTime, end_time: newEndTime })
+                .eq('id', slot.id);
+
+            if (error) throw error;
+        }
+
+        showToast(`모든 슬롯이 ${absMinutes}분 ${direction} 이동되었습니다.`);
+        closeSlotEditModal();
+        await loadTimeSlots();
+
+    } catch (error) {
+        console.error('[Admin] 시간 이동 오류:', error);
+        showError('시간 이동에 실패했습니다.');
+    }
+}
+
+// 범위 변경 적용
+async function applySlotRangeChange() {
+    // 새 시작/종료 시간 계산
+    const startAmpm = document.getElementById('edit-start-ampm').value;
+    let startHour = parseInt(document.getElementById('edit-start-hour').value);
+    const startMinute = parseInt(document.getElementById('edit-start-minute').value);
+
+    const endAmpm = document.getElementById('edit-end-ampm').value;
+    let endHour = parseInt(document.getElementById('edit-end-hour').value);
+    const endMinute = parseInt(document.getElementById('edit-end-minute').value);
+
+    // 12시간제 → 24시간제 변환
+    if (startAmpm === 'PM' && startHour !== 12) startHour += 12;
+    if (startAmpm === 'AM' && startHour === 12) startHour = 0;
+    if (endAmpm === 'PM' && endHour !== 12) endHour += 12;
+    if (endAmpm === 'AM' && endHour === 12) endHour = 0;
+
+    const newStartMin = startHour * 60 + startMinute;
+    const newEndMin = endHour * 60 + endMinute;
+
+    if (newStartMin >= newEndMin) {
+        showError('종료 시간은 시작 시간보다 뒤여야 합니다.');
+        return;
+    }
+
+    // 현재 슬롯 간격 계산
+    let slotInterval = 30;
+    if (currentTimeSlots.length > 0) {
+        const firstSlot = currentTimeSlots[0];
+        const [sh, sm] = firstSlot.start_time.split(':').map(Number);
+        const [eh, em] = firstSlot.end_time.split(':').map(Number);
+        slotInterval = (eh * 60 + em) - (sh * 60 + sm);
+    }
+
+    const newStartTime = `${String(startHour).padStart(2, '0')}:${String(startMinute).padStart(2, '0')}`;
+    const newEndTime = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
+
+    // 신청 데이터 확인
+    const hasRegistrations = currentTimeSlots.some(s => s.current_count > 0);
+    let confirmMessage = `시간 범위를 ${newStartTime} ~ ${newEndTime}로 변경하시겠습니까?\n\n기존 슬롯이 삭제되고 새로운 슬롯이 생성됩니다.`;
+
+    if (hasRegistrations) {
+        confirmMessage += '\n\n⚠️ 주의: 일부 슬롯에 신청 데이터가 있습니다!';
+    }
+
+    const confirmed = await showConfirm('범위 변경 확인', confirmMessage);
+    if (!confirmed) return;
+
+    try {
+        // 기존 요일 목록과 정원 정보 저장
+        const existingDays = [...new Set(currentTimeSlots.map(s => s.day_of_week))];
+        const defaultCapacity = currentTimeSlots[0]?.capacity || 5;
+
+        // 기존 슬롯 삭제
+        const { error: deleteError } = await supabase
+            .from('course_time_slots')
+            .delete()
+            .eq('period_id', currentPeriod.id);
+
+        if (deleteError) throw deleteError;
+
+        // 새 슬롯 생성
+        const newSlots = [];
+        let currentMin = newStartMin;
+
+        while (currentMin + slotInterval <= newEndMin) {
+            const slotStartTime = `${String(Math.floor(currentMin / 60)).padStart(2, '0')}:${String(currentMin % 60).padStart(2, '0')}`;
+            const slotEndTime = `${String(Math.floor((currentMin + slotInterval) / 60)).padStart(2, '0')}:${String((currentMin + slotInterval) % 60).padStart(2, '0')}`;
+
+            for (const day of existingDays) {
+                newSlots.push({
+                    period_id: currentPeriod.id,
+                    day_of_week: day,
+                    start_time: slotStartTime,
+                    end_time: slotEndTime,
+                    capacity: defaultCapacity,
+                    current_count: 0
+                });
+            }
+
+            currentMin += slotInterval;
+        }
+
+        if (newSlots.length > 0) {
+            const { error: insertError } = await supabase
+                .from('course_time_slots')
+                .insert(newSlots);
+
+            if (insertError) throw insertError;
+        }
+
+        showToast(`시간 범위가 ${newStartTime} ~ ${newEndTime}로 변경되었습니다. (${newSlots.length}개 슬롯 생성)`);
+        closeSlotEditModal();
+        await loadTimeSlots();
+
+    } catch (error) {
+        console.error('[Admin] 범위 변경 오류:', error);
+        showError('범위 변경에 실패했습니다.');
     }
 }
 
