@@ -1747,17 +1747,44 @@ function closePeriodModal() {
     document.getElementById('period-modal').classList.remove('show');
 }
 
+// 입력 필드에서 직접 날짜 생성
+function getDateTimeFromInputs(type) {
+    const year = parseInt(document.getElementById(`period-${type}-year-input`).value);
+    const month = parseInt(document.getElementById(`period-${type}-month-input`).value);
+    const day = parseInt(document.getElementById(`period-${type}-day-input`).value);
+    const ampm = document.getElementById(`period-${type}-ampm`).value;
+    let hour = parseInt(document.getElementById(`period-${type}-hour-input`).value);
+    const minute = parseInt(document.getElementById(`period-${type}-minute-input`).value);
+
+    // 값 유효성 검사
+    if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hour) || isNaN(minute)) {
+        return null;
+    }
+
+    // 12시간제를 24시간제로 변환
+    if (ampm === 'PM' && hour !== 12) {
+        hour += 12;
+    } else if (ampm === 'AM' && hour === 12) {
+        hour = 0;
+    }
+
+    // Date 객체 생성 (월은 0-11)
+    return new Date(year, month - 1, day, hour, minute);
+}
+
 // 기간 저장
 async function savePeriod(event) {
     event.preventDefault();
 
     const id = document.getElementById('period-id').value;
     const name = document.getElementById('period-name').value.trim();
-    const openDatetime = document.getElementById('period-open').value;
-    const closeDatetime = document.getElementById('period-close').value;
     const description = document.getElementById('period-description').value.trim();
 
-    if (!name || !openDatetime) {
+    // 입력 필드에서 직접 날짜 생성
+    const openDate = getDateTimeFromInputs('open');
+    const closeDate = getDateTimeFromInputs('close');
+
+    if (!name || !openDate) {
         showError('필수 항목을 모두 입력해주세요.');
         return;
     }
@@ -1765,8 +1792,8 @@ async function savePeriod(event) {
     try {
         const data = {
             name,
-            open_datetime: new Date(openDatetime).toISOString(),
-            close_datetime: closeDatetime ? new Date(closeDatetime).toISOString() : null,
+            open_datetime: openDate.toISOString(),
+            close_datetime: closeDate ? closeDate.toISOString() : null,
             default_capacity: 5, // 기본 정원 5명 고정
             slot_interval_minutes: 30, // 기본 슬롯 단위 30분 고정
             description: description || null
