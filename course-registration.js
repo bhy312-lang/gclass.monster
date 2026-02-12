@@ -398,6 +398,18 @@ function renderSlotGrid() {
         }
     });
 
+    // 각 요일별 슬롯을 시작 시간 기준으로 정렬
+    days.forEach(day => {
+        slotsByDay[day].sort((a, b) => a.start_time.localeCompare(b.start_time));
+    });
+
+    // 모든 고유한 시작 시간 추출 (시간순 정렬)
+    const allStartTimes = new Set();
+    days.forEach(day => {
+        slotsByDay[day].forEach(slot => allStartTimes.add(slot.start_time));
+    });
+    const sortedTimes = Array.from(allStartTimes).sort();
+
     // HTML 생성
     let html = '';
 
@@ -406,12 +418,11 @@ function renderSlotGrid() {
         html += `<div class="day-header">${day}</div>`;
     });
 
-    // 슬롯 그리드
-    const maxSlots = Math.max(...days.map(d => slotsByDay[d].length));
-
-    for (let i = 0; i < maxSlots; i++) {
+    // 슬롯 그리드 (시간대별로 정렬하여 렌더링)
+    sortedTimes.forEach(time => {
         days.forEach(day => {
-            const slot = slotsByDay[day][i];
+            // 해당 시간대의 슬롯 찾기
+            const slot = slotsByDay[day].find(s => s.start_time === time);
             if (slot) {
                 const isSelected = selectedSlots[day].includes(slot.id);
                 const isMySlot = editingSlotIds.includes(slot.id);  // 본인이 기존에 신청한 슬롯
@@ -447,10 +458,11 @@ function renderSlotGrid() {
                     </div>
                 `;
             } else {
-                html += `<div class="slot-item" style="visibility: hidden;"></div>`;
+                // 해당 시간대에 슬롯이 없는 경우 빈 셀 표시
+                html += `<div class="slot-item slot-empty"></div>`;
             }
         });
-    }
+    });
 
     grid.innerHTML = html;
     updateSelectedSummary();
