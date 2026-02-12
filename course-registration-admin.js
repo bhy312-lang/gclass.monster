@@ -2575,6 +2575,9 @@ async function deleteTimeRow(startTime) {
 // 슬롯 수정 기능 (시간 범위 변경)
 // =====================================================
 
+// 슬롯 수정용 선택된 요일
+let selectedEditDays = [];
+
 // 슬롯 수정 모달 열기
 function openSlotEditModal() {
     if (!currentPeriod || !currentPeriod.id) {
@@ -2592,6 +2595,9 @@ function openSlotEditModal() {
     // 현재 슬롯 정보 표시
     updateCurrentSlotInfo();
 
+    // 요일 선택 초기화
+    initEditDaySelector();
+
     // 기본 모드 설정
     selectSlotEditMode('shift');
     document.getElementById('slot-shift-minutes').value = 0;
@@ -2606,6 +2612,69 @@ function openSlotEditModal() {
 function closeSlotEditModal() {
     const modal = document.getElementById('slot-edit-modal');
     modal.classList.remove('show');
+    selectedEditDays = [];
+}
+
+// 수정용 요일 선택기 초기화
+function initEditDaySelector() {
+    selectedEditDays = [];
+    const existingDays = [...new Set(currentTimeSlots.map(s => s.day_of_week))];
+
+    document.querySelectorAll('#edit-day-selector .day-option').forEach(option => {
+        const day = option.dataset.day;
+        option.classList.remove('selected');
+
+        // 슬롯이 없는 요일은 비활성화
+        if (existingDays.includes(day)) {
+            option.style.opacity = '1';
+            option.style.pointerEvents = 'auto';
+        } else {
+            option.style.opacity = '0.4';
+            option.style.pointerEvents = 'none';
+        }
+    });
+}
+
+// 수정용 요일 토글
+function toggleEditDay(day) {
+    const option = document.querySelector(`#edit-day-selector .day-option[data-day="${day}"]`);
+
+    if (selectedEditDays.includes(day)) {
+        selectedEditDays = selectedEditDays.filter(d => d !== day);
+        option.classList.remove('selected');
+    } else {
+        selectedEditDays.push(day);
+        option.classList.add('selected');
+    }
+}
+
+// 전체 요일 선택
+function selectAllEditDays() {
+    const existingDays = [...new Set(currentTimeSlots.map(s => s.day_of_week))];
+    selectedEditDays = [...existingDays];
+
+    document.querySelectorAll('#edit-day-selector .day-option').forEach(option => {
+        const day = option.dataset.day;
+        if (existingDays.includes(day)) {
+            option.classList.add('selected');
+        }
+    });
+}
+
+// 요일 선택 해제
+function clearAllEditDays() {
+    selectedEditDays = [];
+    document.querySelectorAll('#edit-day-selector .day-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+}
+
+// 수정 대상 요일 가져오기 (선택 없으면 전체)
+function getTargetEditDays() {
+    if (selectedEditDays.length === 0) {
+        return [...new Set(currentTimeSlots.map(s => s.day_of_week))];
+    }
+    return selectedEditDays;
 }
 
 // 현재 슬롯 정보 업데이트
@@ -2733,9 +2802,18 @@ async function applySlotTimeShift() {
         return;
     }
 
+    // 대상 요일 가져오기
+    const targetDays = getTargetEditDays();
+    const targetSlots = currentTimeSlots.filter(s => targetDays.includes(s.day_of_week));
+
+    if (targetSlots.length === 0) {
+        showError('수정할 슬롯이 없습니다.');
+        return;
+    }
+
     // 시간 이동 후 유효성 검사
     const invalidSlots = [];
-    currentTimeSlots.forEach(slot => {
+    targetSlots.forEach(slot => {
         const [startH, startM] = slot.start_time.split(':').map(Number);
         const [endH, endM] = slot.end_time.split(':').map(Number);
 
@@ -2754,16 +2832,19 @@ async function applySlotTimeShift() {
 
     const direction = shiftMinutes > 0 ? '뒤로' : '앞으로';
     const absMinutes = Math.abs(shiftMinutes);
+    const dayKorean = { mon: '월', tue: '화', wed: '수', thu: '목', fri: '금' };
+    const dayNames = targetDays.map(d => dayKorean[d]).join(', ');
+
     const confirmed = await showConfirm(
         '시간 이동 확인',
-        `모든 슬롯(${currentTimeSlots.length}개)을 ${absMinutes}분 ${direction} 이동하시겠습니까?`
+        `${dayNames}요일 슬롯(${targetSlots.length}개)을 ${absMinutes}분 ${direction} 이동하시겠습니까?`
     );
 
     if (!confirmed) return;
 
     try {
-        // 각 슬롯 업데이트
-        for (const slot of currentTimeSlots) {
+        // 선택된 요일의 슬롯만 업데이트
+        for (const slot of targetSlots) {
             const [startH, startM] = slot.start_time.split(':').map(Number);
             const [endH, endM] = slot.end_time.split(':').map(Number);
 
@@ -2781,7 +2862,7 @@ async function applySlotTimeShift() {
             if (error) throw error;
         }
 
-        showToast(`모든 슬롯이 ${absMinutes}분 ${direction} 이동되었습니다.`);
+        showToast(`${dayNames}요일 슬롯이 ${absMinutes}분 ${direction} 이동되었습니다.`);
         closeSlotEditModal();
         await loadTimeSlots();
 
@@ -2816,10 +2897,19 @@ async function applySlotRangeChange() {
         return;
     }
 
+    // 대상 요일 가져오기
+    const targetDays = getTargetEditDays();
+    const targetSlots = currentTimeSlots.filter(s => targetDays.includes(s.day_of_week));
+
+    if (targetSlots.length === 0) {
+        showError('수정할 슬롯이 없습니다.');
+        return;
+    }
+
     // 현재 슬롯 간격 계산
     let slotInterval = 30;
-    if (currentTimeSlots.length > 0) {
-        const firstSlot = currentTimeSlots[0];
+    if (targetSlots.length > 0) {
+        const firstSlot = targetSlots[0];
         const [sh, sm] = firstSlot.start_time.split(':').map(Number);
         const [eh, em] = firstSlot.end_time.split(':').map(Number);
         slotInterval = (eh * 60 + em) - (sh * 60 + sm);
@@ -2828,9 +2918,12 @@ async function applySlotRangeChange() {
     const newStartTime = `${String(startHour).padStart(2, '0')}:${String(startMinute).padStart(2, '0')}`;
     const newEndTime = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
 
+    const dayKorean = { mon: '월', tue: '화', wed: '수', thu: '목', fri: '금' };
+    const dayNames = targetDays.map(d => dayKorean[d]).join(', ');
+
     // 신청 데이터 확인
-    const hasRegistrations = currentTimeSlots.some(s => s.current_count > 0);
-    let confirmMessage = `시간 범위를 ${newStartTime} ~ ${newEndTime}로 변경하시겠습니까?\n\n기존 슬롯이 삭제되고 새로운 슬롯이 생성됩니다.`;
+    const hasRegistrations = targetSlots.some(s => s.current_count > 0);
+    let confirmMessage = `${dayNames}요일 슬롯의 시간 범위를 ${newStartTime} ~ ${newEndTime}로 변경하시겠습니까?\n\n해당 요일의 기존 슬롯이 삭제되고 새로운 슬롯이 생성됩니다.`;
 
     if (hasRegistrations) {
         confirmMessage += '\n\n⚠️ 주의: 일부 슬롯에 신청 데이터가 있습니다!';
@@ -2840,19 +2933,18 @@ async function applySlotRangeChange() {
     if (!confirmed) return;
 
     try {
-        // 기존 요일 목록과 정원 정보 저장
-        const existingDays = [...new Set(currentTimeSlots.map(s => s.day_of_week))];
-        const defaultCapacity = currentTimeSlots[0]?.capacity || 5;
+        const defaultCapacity = targetSlots[0]?.capacity || 5;
 
-        // 기존 슬롯 삭제
+        // 선택된 요일의 기존 슬롯만 삭제
+        const slotIdsToDelete = targetSlots.map(s => s.id);
         const { error: deleteError } = await supabase
             .from('course_time_slots')
             .delete()
-            .eq('period_id', currentPeriod.id);
+            .in('id', slotIdsToDelete);
 
         if (deleteError) throw deleteError;
 
-        // 새 슬롯 생성
+        // 새 슬롯 생성 (선택된 요일만)
         const newSlots = [];
         let currentMin = newStartMin;
 
@@ -2860,7 +2952,7 @@ async function applySlotRangeChange() {
             const slotStartTime = `${String(Math.floor(currentMin / 60)).padStart(2, '0')}:${String(currentMin % 60).padStart(2, '0')}`;
             const slotEndTime = `${String(Math.floor((currentMin + slotInterval) / 60)).padStart(2, '0')}:${String((currentMin + slotInterval) % 60).padStart(2, '0')}`;
 
-            for (const day of existingDays) {
+            for (const day of targetDays) {
                 newSlots.push({
                     period_id: currentPeriod.id,
                     day_of_week: day,
@@ -2882,7 +2974,7 @@ async function applySlotRangeChange() {
             if (insertError) throw insertError;
         }
 
-        showToast(`시간 범위가 ${newStartTime} ~ ${newEndTime}로 변경되었습니다. (${newSlots.length}개 슬롯 생성)`);
+        showToast(`${dayNames}요일 시간 범위가 ${newStartTime} ~ ${newEndTime}로 변경되었습니다. (${newSlots.length}개 슬롯 생성)`);
         closeSlotEditModal();
         await loadTimeSlots();
 

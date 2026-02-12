@@ -1746,6 +1746,22 @@
 
             <form id="slot-edit-form" onsubmit="submitSlotEdit(event)">
                 <div class="input-group">
+                    <label>수정할 요일 선택</label>
+                    <p class="text-xs text-gray-500 mb-2">수정할 요일을 선택하세요. 선택하지 않으면 전체 요일이 수정됩니다.</p>
+                    <div class="day-selector" id="edit-day-selector">
+                        <div class="day-option" data-day="mon" onclick="toggleEditDay('mon')">월</div>
+                        <div class="day-option" data-day="tue" onclick="toggleEditDay('tue')">화</div>
+                        <div class="day-option" data-day="wed" onclick="toggleEditDay('wed')">수</div>
+                        <div class="day-option" data-day="thu" onclick="toggleEditDay('thu')">목</div>
+                        <div class="day-option" data-day="fri" onclick="toggleEditDay('fri')">금</div>
+                    </div>
+                    <div class="flex gap-2 mt-2">
+                        <button type="button" onclick="selectAllEditDays()" class="text-xs text-blue-500 hover:text-blue-700">전체 선택</button>
+                        <button type="button" onclick="clearAllEditDays()" class="text-xs text-gray-500 hover:text-gray-700">선택 해제</button>
+                    </div>
+                </div>
+
+                <div class="input-group">
                     <label>수정 방식</label>
                     <div class="flex gap-2 mb-4">
                         <button type="button" id="edit-mode-shift" class="interval-select-btn active" data-mode="shift" onclick="selectSlotEditMode('shift')" style="flex: 1;">
