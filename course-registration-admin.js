@@ -2606,14 +2606,6 @@ function closeAllCapacityEditModal() {
     modal.classList.remove('show');
 }
 
-// 전체 정원 조절
-function adjustAllCapacity(delta) {
-    const input = document.getElementById('all-capacity-input');
-    let value = parseInt(input.value) || 5;
-    value = Math.max(1, Math.min(50, value + delta));
-    input.value = value;
-}
-
 // 전체 정원 일괄 수정 제출
 async function submitAllCapacityEdit(event) {
     event.preventDefault();
