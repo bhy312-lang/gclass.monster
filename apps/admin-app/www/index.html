@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>inCLASS 관리자</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+    <style>
+        * { font-family: 'Noto Sans KR', sans-serif; }
+        html {
+            padding-top: constant(safe-area-inset-top); /* iOS 11 */
+            padding-top: env(safe-area-inset-top); /* iOS 12+ */
+            padding-bottom: constant(safe-area-inset-bottom);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        body {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+            min-height: 100vh;
+            padding-top: 48px; /* 상태바 영역 확보 */
+        }
+        .menu-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .menu-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+        }
+        .menu-card:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="p-6">
+    <div class="max-w-md mx-auto">
+        <!-- 헤더 -->
+        <div class="text-center mb-10 pt-8">
+            <div class="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-white text-5xl">admin_panel_settings</span>
+            </div>
+            <h1 class="text-3xl font-bold text-white mb-2">inCLASS 관리자</h1>
+            <p class="text-blue-200">공부방 관리 시스템</p>
+        </div>
+
+        <!-- 메뉴 카드들 -->
+        <div class="space-y-4">
+            <!-- 프랜차이즈 관리 -->
+            <a href="franchise.html" class="menu-card block">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-white text-3xl">store</span>
+                    </div>
+                    <div class="text-left flex-1">
+                        <h3 class="text-lg font-bold text-gray-800">프랜차이즈 관리</h3>
+                        <p class="text-sm text-gray-500">학생, 좌석, 수업 관리</p>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                </div>
+            </a>
+
+            <!-- 수강신청 관리 -->
+            <a href="course-registration-admin.html" class="menu-card block">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-white text-3xl">edit_calendar</span>
+                    </div>
+                    <div class="text-left flex-1">
+                        <h3 class="text-lg font-bold text-gray-800">수강신청 관리</h3>
+                        <p class="text-sm text-gray-500">강좌 개설 및 신청 현황</p>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                </div>
+            </a>
+
+            <!-- 키오스크 -->
+            <a href="kiosk.html" class="menu-card block">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-white text-3xl">touch_app</span>
+                    </div>
+                    <div class="text-left flex-1">
+                        <h3 class="text-lg font-bold text-gray-800">키오스크</h3>
+                        <p class="text-sm text-gray-500">학생 등원/하원 체크</p>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- 하단 정보 -->
+        <div class="text-center mt-10 text-blue-200 text-sm">
+            <p>v1.0.0</p>
+        </div>
+    </div>
+
+    <!-- Android 뒤로가기 버튼 처리 (앱 종료) -->
+    <script>
+        document.addEventListener('hardwareBackButton', function() {
+            // 메인 화면에서는 앱 종료
+            if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+                window.Capacitor.Plugins.App.exitApp();
+            }
+        });
+    </script>
+</body>
+</html>

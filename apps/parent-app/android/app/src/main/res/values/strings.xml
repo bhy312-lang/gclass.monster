@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">inCLASS 학부모</string>
+    <string name="title_activity_main">inCLASS 학부모</string>
+    <string name="package_name">com.inclass.parent</string>
+    <string name="custom_url_scheme">com.inclass.parent</string>
+</resources>

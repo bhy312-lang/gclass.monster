@@ -1,0 +1,28 @@
+{
+  "name": "inclass-parent",
+  "version": "1.0.0",
+  "description": "inCLASS 학부모 앱",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'No build step needed'",
+    "cap:add:android": "npx cap add android",
+    "cap:add:ios": "npx cap add ios",
+    "cap:sync": "npx cap sync",
+    "cap:open:android": "npx cap open android",
+    "cap:open:ios": "npx cap open ios"
+  },
+  "keywords": [
+    "capacitor",
+    "mobile",
+    "parent"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/cli": "^8.1.0",
+    "@capacitor/core": "^8.1.0",
+    "@capacitor/push-notifications": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0"
+  }
+}

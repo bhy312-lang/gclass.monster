@@ -2,19 +2,20 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>꿈터공부방 학부모앱</title>
 
   <!-- PWA 매니페스트 -->
   <link rel="manifest" href="/parent/manifest.json">
-  <meta name="theme-color" content="#ec4899">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="apple-touch-icon" href="/parent/icons/pwa_icon_192x192.png">
 
   <!-- 스타일시트 -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/parent/parent.css">
 </head>
-<body class="bg-pink-50 min-h-screen pb-20">
+<body class="bg-pink-50 min-h-screen" style="padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));">
   <!-- 로딩 오버레이 -->
   <div id="loading-overlay" class="fixed inset-0 bg-pink-50 flex items-center justify-center z-50">
     <div class="text-center">
@@ -24,7 +25,7 @@
   </div>
 
   <!-- 상단 네비게이션 -->
-  <nav class="bg-gradient-to-r from-pink-500 to-pink-600 text-white p-4 shadow-lg sticky top-0 z-40">
+  <nav class="bg-gradient-to-r from-pink-500 to-pink-600 text-white p-4 shadow-lg sticky top-0 z-40" style="padding-top: env(safe-area-inset-top, 0px);">
     <div class="container mx-auto flex justify-between items-center">
       <h1 class="text-xl font-bold">꿈터공부방</h1>
       <div id="user-info" class="flex items-center gap-3">
@@ -111,7 +112,7 @@
   </main>
 
   <!-- 하단 탭 바 -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40" style="padding-bottom: env(safe-area-inset-bottom, 0px);">
     <div class="flex justify-around py-2">
       <button class="flex flex-col items-center text-pink-500 px-4 py-2" onclick="showTab('dashboard')">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

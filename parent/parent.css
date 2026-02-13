@@ -74,6 +74,17 @@ input[type="checkbox"]:checked + div {
   }
 }
 
+/* Safe Area 처리 */
+html {
+  background-color: #ffffff;
+}
+
+@supports (padding: env(safe-area-inset-top)) {
+  html {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
 /* PWA 설치 프롬프트 스타일 (나중에 추가) */
 .pwa-install-prompt {
   position: fixed;

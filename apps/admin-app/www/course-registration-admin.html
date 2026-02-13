@@ -1,0 +1,2145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>수강신청 관리 - 퍼스트초등전과목</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Symbols+Outlined" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        html {
+            padding-top: constant(safe-area-inset-top);
+            padding-top: env(safe-area-inset-top);
+        }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+            min-height: 100vh;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-top: 48px; /* 상태바 영역 확보 */
+        }
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        .nav-tab {
+            padding: 12px 24px;
+            border-radius: 999px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .nav-tab.active {
+            background: linear-gradient(135deg, #58d3d3 0%, #14b8a6 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(88, 211, 211, 0.4);
+        }
+        .nav-tab:not(.active) {
+            background-color: white;
+            color: #6b7280;
+        }
+        .nav-tab:not(.active):hover {
+            background-color: #f0fdfa;
+            color: #58d3d3;
+        }
+        .section-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.2s;
+            background: #fafafa;
+        }
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
+            border-color: #58d3d3;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(88, 211, 211, 0.1);
+        }
+        .btn-primary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #58d3d3 0%, #14b8a6 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(88, 211, 211, 0.4);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(88, 211, 211, 0.5);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 24px;
+            background: #f1f5f9;
+            color: #475569;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+        .btn-danger {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: #fef2f2;
+            color: #dc2626;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+            color: white;
+        }
+
+        /* Interval Button Styles */
+        .interval-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            color: #64748b;
+        }
+        .interval-btn:hover {
+            border-color: #58d3d3;
+            background: #f0fdfa;
+            color: #14b8a6;
+        }
+        .interval-btn.active {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        .interval-btn .material-symbols-outlined {
+            font-size: 18px;
+        }
+
+        /* Interval Select Button Styles */
+        .interval-select-btn {
+            padding: 12px 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            color: #64748b;
+            flex: 1;
+            text-align: center;
+            box-shadow:
+                0 1px 3px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+        .interval-select-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 0.25s;
+            border-radius: 10px;
+        }
+        .interval-select-btn:hover {
+            border-color: #cbd5e1;
+            transform: translateY(-2px);
+            box-shadow:
+                0 4px 12px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        /* 15분 선택 시 */
+        .interval-select-btn[data-interval="15"]::before {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%);
+        }
+        .interval-select-btn[data-interval="15"]:hover::before {
+            opacity: 1;
+        }
+        .interval-select-btn[data-interval="15"].active {
+            background: linear-gradient(145deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+            border-color: #1d4ed8;
+            color: white;
+            box-shadow:
+                0 6px 20px rgba(59, 130, 246, 0.4),
+                0 2px 8px rgba(37, 99, 235, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .interval-select-btn[data-interval="15"].active::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 2px;
+        }
+
+        /* 30분 선택 시 */
+        .interval-select-btn[data-interval="30"]::before {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.05) 100%);
+        }
+        .interval-select-btn[data-interval="30"]:hover::before {
+            opacity: 1;
+        }
+        .interval-select-btn[data-interval="30"].active {
+            background: linear-gradient(145deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
+            border-color: #15803d;
+            color: white;
+            box-shadow:
+                0 6px 20px rgba(34, 197, 94, 0.4),
+                0 2px 8px rgba(22, 163, 74, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .interval-select-btn[data-interval="30"].active::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 2px;
+        }
+
+        /* 45분 선택 시 */
+        .interval-select-btn[data-interval="45"]::before {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%);
+        }
+        .interval-select-btn[data-interval="45"]:hover::before {
+            opacity: 1;
+        }
+        .interval-select-btn[data-interval="45"].active {
+            background: linear-gradient(145deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+            border-color: #b45309;
+            color: white;
+            box-shadow:
+                0 6px 20px rgba(245, 158, 11, 0.4),
+                0 2px 8px rgba(217, 119, 6, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .interval-select-btn[data-interval="45"].active::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 2px;
+        }
+
+        /* 60분 선택 시 */
+        .interval-select-btn[data-interval="60"]::before {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.05) 100%);
+        }
+        .interval-select-btn[data-interval="60"]:hover::before {
+            opacity: 1;
+        }
+        .interval-select-btn[data-interval="60"].active {
+            background: linear-gradient(145deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+            border-color: #6d28d9;
+            color: white;
+            box-shadow:
+                0 6px 20px rgba(139, 92, 246, 0.4),
+                0 2px 8px rgba(124, 58, 237, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .interval-select-btn[data-interval="60"].active::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 2px;
+        }
+
+        .btn-sm {
+            padding: 8px 14px;
+            font-size: 13px;
+        }
+        .period-card {
+            background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+            border: 2px solid #58d3d3;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.2s;
+        }
+        .period-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(88, 211, 211, 0.2);
+        }
+        .period-card.inactive {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            opacity: 0.7;
+        }
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .status-active {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        .status-inactive {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+        .status-confirmed {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        .status-waiting {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .status-cancelled {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .status-pending {
+            background: #e0e7ff;
+            color: #4f46e5;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table th {
+            background: #f8fafc;
+            padding: 14px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .data-table td {
+            padding: 14px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            color: #334155;
+        }
+        .data-table tr:hover {
+            background: #f8fafc;
+        }
+        .filter-btn {
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f1f5f9;
+            color: #64748b;
+            border: none;
+        }
+        .filter-btn.active {
+            background: #58d3d3;
+            color: white;
+        }
+        .filter-btn:not(.active):hover {
+            background: #e2e8f0;
+        }
+        .time-slot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        .time-slot-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s;
+        }
+        .time-slot-card:hover {
+            border-color: #58d3d3;
+            box-shadow: 0 4px 15px rgba(88, 211, 211, 0.2);
+        }
+        .time-slot-card.full {
+            border-color: #fca5a5;
+            background: #fef2f2;
+        }
+        .day-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .day-option {
+            padding: 12px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            color: #64748b;
+            box-shadow:
+                0 1px 3px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+        .day-option::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(88, 211, 211, 0.1) 0%, rgba(20, 184, 166, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .day-option:hover {
+            border-color: #58d3d3;
+            transform: translateY(-2px);
+            box-shadow:
+                0 6px 20px rgba(88, 211, 211, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+        .day-option:hover::before {
+            opacity: 1;
+        }
+        .day-option.selected {
+            background: linear-gradient(135deg, #58d3d3 0%, #14b8a6 100%);
+            border-color: #14b8a6;
+            color: white;
+            box-shadow:
+                0 6px 20px rgba(88, 211, 211, 0.4),
+                0 2px 8px rgba(20, 184, 166, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        .day-option.selected::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 2px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: all 0.3s;
+        }
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+
+        /* Confirm Modal Styles */
+        #confirm-modal .modal-content {
+            background: linear-gradient(145deg, #ffffff 0%, #fefefe 50%, #f8fafc 100%);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
+        }
+        #confirm-ok {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.4);
+            transition: all 0.3s;
+        }
+        #confirm-ok:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px -5px rgba(239, 68, 68, 0.5);
+        }
+
+        /* Capacity Edit Modal Styles */
+        #capacity-edit-modal .modal-content {
+            background: linear-gradient(145deg, #ffffff 0%, #fefefe 50%, #f8fafc 100%);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            padding-top: 40px;
+        }
+        #capacity-edit-modal .input-group label {
+            text-align: center;
+        }
+        #capacity-edit-modal .capacity-input {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        #capacity-edit-modal .capacity-input input {
+            flex: 0 0 auto;
+            width: 80px;
+            text-align: center;
+        }
+        #capacity-edit-modal .capacity-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #475569;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #capacity-edit-modal .capacity-btn:hover {
+            border-color: #58d3d3;
+            background: #f0fdfa;
+            color: #14b8a6;
+        }
+        #capacity-edit-modal .capacity-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Capacity Arrow Buttons (Up/Down) */
+        .capacity-arrow {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .capacity-arrow:hover {
+            border-color: #58d3d3;
+            background: #f0fdfa;
+            color: #14b8a6;
+        }
+        .capacity-arrow:active {
+            transform: scale(0.95);
+        }
+        .capacity-arrow .material-symbols-outlined {
+            font-size: 24px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .checkbox-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .checkbox-option:hover {
+            border-color: #58d3d3;
+        }
+        .checkbox-option.selected {
+            border-color: #58d3d3;
+            background: #f0fdfa;
+        }
+        .checkbox-option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #58d3d3;
+        }
+        .capacity-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .capacity-input input {
+            width: 80px !important;
+            text-align: center;
+        }
+        /* 숫자 입력 필드 내부 스피너 숨기기 */
+        input.no-spinner::-webkit-outer-spin-button,
+        input.no-spinner::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            appearance: none;
+            margin: 0;
+        }
+        input.no-spinner[type=number] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        /* 신청현황 새로고침 아이콘 */
+        .refresh-icon-spin {
+            animation: spin 2s linear infinite, colorChange 2s ease-in-out infinite;
+            vertical-align: middle;
+        }
+        @keyframes colorChange {
+            0%, 100% { color: #3b82f6; }
+            50% { color: #ef4444; }
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+        .empty-state span {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+        .copy-link-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: #f0fdfa;
+            color: #58d3d3;
+            border: 2px solid #58d3d3;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .copy-link-btn:hover {
+            background: #58d3d3;
+            color: white;
+        }
+        .time-range {
+            font-family: monospace;
+            font-size: 13px;
+        }
+        /* datetime-local input 스타일 - 시간이 잘리지 않도록 */
+        input[type="datetime-local"],
+        input[type="time"] {
+            padding-right: 50px !important;
+            min-width: 240px;
+        }
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            margin-right: -10px;
+            cursor: pointer;
+        }
+        /* 기간 설정 모달의 grid layout을 전체 너비로 변경 */
+        #period-form .grid {
+            grid-template-columns: 1fr;
+        }
+        #period-form .grid .input-group {
+            width: 100%;
+        }
+
+        /* 세련된 시간표 스타일 */
+        .timetable-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            width: 916px;
+        }
+        .timetable {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .timetable-header {
+            background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+            padding: 16px 12px;
+            text-align: center;
+            font-weight: 700;
+            color: #0f766e;
+            border-bottom: 2px solid #ccfbf1;
+            font-size: 14px;
+        }
+        .timetable-header:first-child {
+            border-top-left-radius: 16px;
+        }
+        .timetable-header:last-child {
+            border-top-right-radius: 16px;
+        }
+        .timetable-row {
+            transition: background 0.2s;
+        }
+        .timetable-row:hover {
+            background: #fafafa;
+        }
+        .timetable-time {
+            padding: 14px 20px;
+            text-align: center;
+            font-weight: 600;
+            color: #475569;
+            font-size: 13px;
+            background: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+            min-width: 100px;
+        }
+        .timetable-cell {
+            padding: 0;
+            border: 1px solid #e2e8f0;
+            min-width: 140px;
+        }
+        .timetable-cell.cell-empty {
+            background: #fafafa;
+        }
+        .add-slot-btn {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            color: #94a3b8;
+            transition: all 0.2s;
+        }
+        .add-slot-btn:hover {
+            color: #58d3d3;
+            background: #f0fdfa;
+        }
+        .add-slot-btn .material-symbols-outlined {
+            font-size: 28px;
+        }
+        .cell-content {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            min-height: 80px;
+        }
+        .cell-available {
+            background: linear-gradient(145deg, #f0fdfa 0%, #ccfbf1 100%);
+        }
+        .cell-available .cell-content {
+            background: linear-gradient(145deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 100%);
+            border-radius: 8px;
+        }
+        .cell-full {
+            background: linear-gradient(145deg, #fef2f2 0%, #fee2e2 100%);
+        }
+        .cell-full .cell-content {
+            background: linear-gradient(145deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 100%);
+            border-radius: 8px;
+        }
+        .cell-status {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+        .status-available {
+            background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+            color: white;
+        }
+        .status-full {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        .cell-capacity {
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+        }
+        .cell-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .cell-edit, .cell-delete {
+            padding: 4px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .cell-edit:hover {
+            background: #ccfbf1;
+        }
+        .cell-delete:hover {
+            background: #fee2e2;
+        }
+        /* 학생 목록 스타일 */
+        .student-list {
+            width: 100%;
+            margin-top: 4px;
+        }
+        .student-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 4px 8px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 4px;
+            font-size: 11px;
+            margin-bottom: 2px;
+        }
+        .student-name {
+            font-weight: 600;
+            color: #334155;
+            text-align: center;
+        }
+        .student-info {
+            color: #64748b;
+            font-size: 10px;
+        }
+        /* 학교 관리 스타일 */
+        .schools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        .school-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s;
+        }
+        .school-card:hover {
+            border-color: #58d3d3;
+            box-shadow: 0 4px 15px rgba(88, 211, 211, 0.2);
+        }
+        .school-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-edit, .btn-delete {
+            padding: 8px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-edit:hover {
+            background: #f0fdfa;
+            color: #14b8a6;
+        }
+        .btn-delete:hover {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        /* View Toggle Buttons */
+        .view-toggle-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .view-toggle-btn:hover {
+            border-color: #58d3d3;
+            background: #f0fdfa;
+            color: #14b8a6;
+        }
+        .view-toggle-btn.active {
+            border-color: #58d3d3;
+            background: linear-gradient(135deg, #58d3d3 0%, #14b8a6 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(88, 211, 211, 0.4);
+        }
+        .view-toggle-btn .material-symbols-outlined {
+            font-size: 20px;
+        }
+
+        /* Reset Modal Animation */
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        #reset-all-modal .modal-content {
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        #reset-all-modal:not(.show) .modal-content {
+            animation: modalSlideOut 0.2s ease-in forwards;
+        }
+        @keyframes modalSlideOut {
+            from {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: scale(0.8) translateY(-50px);
+            }
+        }
+
+        /* DateTime Picker Styles */
+        .datetime-field {
+            position: relative;
+            z-index: 1;
+        }
+        /* 드롭다운이 열릴 때는 가장 위에 표시 */
+        .datetime-select:focus {
+            z-index: 100;
+        }
+        .datetime-select {
+            padding: 10px 28px 10px 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            background: #fafafa;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            /* Custom dropdown arrow */
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 28px;
+        }
+        .datetime-select:hover {
+            border-color: #cbd5e1;
+        }
+        .datetime-select:focus {
+            outline: none;
+            border-color: #58d3d3;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(88, 211, 211, 0.1);
+        }
+        /* 드롭다운 옵션 스타일 - 브라우저 호환성 */
+        .datetime-select option {
+            background: white !important;
+            color: #334155 !important;
+            padding: 10px;
+            font-size: 15px;
+            /* 일부 브라우저에서 text-shadow로 텍스트 가시성 확보 */
+            text-shadow: 0 0 0 #334155;
+        }
+        .datetime-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 10px 8px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            font-size: 15px;
+            text-align: center;
+            background: transparent;
+            color: #334155;
+            outline: none;
+            transition: all 0.2s;
+            /* Always allow clicks to pass through to select for dropdown to work properly */
+            pointer-events: none !important;
+        }
+        .datetime-input:hover,
+        .datetime-input:focus {
+            border-color: #58d3d3;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0 0 3px rgba(88, 211, 211, 0.1);
+            /* Don't change pointer-events or z-index to avoid blocking select dropdown */
+        }
+        /* Hide select spinner buttons */
+        .datetime-input::-webkit-outer-spin-button,
+        .datetime-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .datetime-input[type=number] {
+            -moz-appearance: textfield;
+        }
+        /* 기간 설정의 시/분은 숫자 입력으로 변경 */
+        #period-open-hour-select,
+        #period-open-minute-select,
+        #period-close-hour-select,
+        #period-close-minute-select {
+            display: none !important;
+        }
+        #period-open-hour-input,
+        #period-open-minute-input,
+        #period-close-hour-input,
+        #period-close-minute-input {
+            position: relative !important;
+            pointer-events: auto !important;
+            background: white !important;
+            border: 2px solid #e2e8f0 !important;
+        }
+        #period-open-hour-input:hover,
+        #period-open-minute-input:hover,
+        #period-close-hour-input:hover,
+        #period-close-minute-input:hover,
+        #period-open-hour-input:focus,
+        #period-open-minute-input:focus,
+        #period-close-hour-input:focus,
+        #period-close-minute-input:focus {
+            border-color: #58d3d3 !important;
+            box-shadow: 0 0 0 3px rgba(88, 211, 211, 0.1) !important;
+        }
+        /* Hide spinner buttons on capacity edit input */
+        #edit-slot-capacity::-webkit-outer-spin-button,
+        #edit-slot-capacity::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        #edit-slot-capacity {
+            -moz-appearance: textfield;
+        }
+
+        /* 모든 select 옵션에 대해 기본 색상 강제 적용 */
+        select option {
+            background-color: white;
+            color: #1e293b !important;
+        }
+
+        /* 슬롯 모달 내의 select 요소는 기본 브라우저 스타일 사용 */
+        #slot-modal .datetime-select {
+            appearance: auto !important;
+            -webkit-appearance: auto !important;
+            -moz-appearance: auto !important;
+            background-image: none !important;
+            padding-right: 10px !important;
+        }
+        #slot-modal .datetime-select option {
+            background-color: white !important;
+            color: #1e293b !important;
+        }
+
+        /* 슬롯 모달 내의 datetime-field 처리 */
+        #slot-modal .datetime-field {
+            position: relative;
+        }
+        #slot-modal .datetime-select {
+            appearance: auto !important;
+            -webkit-appearance: auto !important;
+            -moz-appearance: auto !important;
+            background-image: none !important;
+            padding-right: 10px !important;
+            /* 선택한 값이 보이도록 보장 */
+            color: #1e293b !important;
+            background-color: #fafafa !important;
+        }
+        #slot-modal .datetime-select option {
+            background-color: white !important;
+            color: #1e293b !important;
+        }
+        /* input은 완전히 제거 - select만 사용 */
+        #slot-modal .datetime-input {
+            display: none !important;
+            position: absolute !important;
+            left: -9999px !important;
+            visibility: hidden !important;
+        }
+
+        /* 슬롯 모달용 네이티브 시간 select 스타일 */
+        .native-time-select {
+            padding: 8px 22px 8px 8px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            min-width: 70px;
+            /* 네이티브 브라우저 드롭다운 화살표 표시 */
+            appearance: auto;
+            -webkit-appearance: auto;
+            -moz-appearance: auto;
+        }
+        .native-time-select:hover {
+            border-color: #cbd5e1;
+        }
+        .native-time-select:focus {
+            outline: none;
+            border-color: #58d3d3;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(88, 211, 211, 0.1);
+            /* 드롭다운이 열릴 때 가장 위에 표시되도록 z-index 설정 */
+            z-index: 1000;
+            position: relative;
+        }
+        .native-time-select option {
+            background: white;
+            color: #1e293b;
+            padding: 8px;
+            font-size: 14px;
+        }
+        /* AM/PM select는 좀 더 넓게 */
+        #slot-start-ampm,
+        #slot-end-ampm {
+            min-width: 70px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-lg fixed top-0 left-0 right-0 z-50 border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <a href="index.html" class="flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
+                        <span class="material-symbols-outlined text-gray-600">arrow_back</span>
+                    </a>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-800">수강신청 관리</h1>
+                        <p class="text-xs text-gray-500">선착순 수강신청 시스템</p>
+                    </div>
+                </div>
+                <button onclick="openPeriodModal()" class="btn-primary btn-sm">
+                    <span class="material-symbols-outlined">add</span>
+                    새 기간 생성
+                </button>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex gap-2 bg-gray-100 p-1.5 rounded-full overflow-x-auto">
+                <button class="nav-tab" data-tab="info" onclick="switchTab('info')">정보 설정</button>
+                <button class="nav-tab active" data-tab="periods" onclick="switchTab('periods')">기간 설정</button>
+                <button class="nav-tab" data-tab="slots" onclick="switchTab('slots')">시간&정원 관리</button>
+                <button class="nav-tab" data-tab="applications" onclick="switchTab('applications')">신청 현황</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-6" style="margin-top: 160px;">
+
+        <!-- Tab 0: 정보 설정 -->
+        <div id="tab-info" class="tab-content">
+            <!-- 학교 관리 -->
+            <section class="section-card">
+                <h2 class="section-title">
+                    <span class="material-symbols-outlined text-teal-500">school</span>
+                    학교 관리
+                </h2>
+
+                <!-- 학교 추가 폼 -->
+                <div class="flex gap-2 mb-6 items-stretch h-14">
+                    <input type="text" id="school-name-input" placeholder="학교명 입력" class="flex-1 min-w-0 px-4 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:outline-none text-base" onkeydown="if(event.key==='Enter'){event.preventDefault();addSchool(event);}">
+                    <button onclick="addSchool(event)" class="btn-primary flex-shrink-0 whitespace-nowrap !py-0 px-8">
+                        <span class="material-symbols-outlined">add</span>
+                        <span class="hidden sm:inline">학교 추가</span>
+                    </button>
+                </div>
+
+                <!-- 학교 목록 -->
+                <div id="schools-list" class="schools-grid">
+                    <div class="empty-state col-span-full">
+                        <span class="material-symbols-outlined text-4xl text-gray-300">school</span>
+                        <p class="text-gray-500 mt-2">등록된 학교가 없습니다</p>
+                        <p class="text-sm text-gray-400 mt-1">위 폼에서 학교를 등록하세요</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 주간 최대 신청 가능시간 설정 -->
+            <section class="section-card">
+                <h2 class="section-title">
+                    <span class="material-symbols-outlined text-blue-500">schedule</span>
+                    주간 최대 신청 가능시간
+                </h2>
+
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 flex-1">
+                        <select id="max-weekly-hours" class="px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:outline-none" onchange="toggleCustomHoursInput()">
+                            <option value="1">1시간</option>
+                            <option value="2">2시간</option>
+                            <option value="3">3시간</option>
+                            <option value="4">4시간</option>
+                            <option value="5" selected>5시간</option>
+                            <option value="6">6시간</option>
+                            <option value="7">7시간</option>
+                            <option value="8">8시간</option>
+                            <option value="9">9시간</option>
+                            <option value="10">10시간</option>
+                            <option value="custom">직접 입력</option>
+                        </select>
+                        <input type="number" id="custom-hours-input" class="hidden px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:outline-none w-24" min="1" max="50" placeholder="시간">
+                        <span id="custom-hours-label" class="hidden text-gray-500">시간</span>
+                    </div>
+                    <button onclick="saveMaxWeeklyHours()" class="btn-primary">
+                        <span class="material-symbols-outlined">save</span>
+                        저장
+                    </button>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">학생이 주간에 신청할 수 있는 최대 시간을 설정합니다.</p>
+            </section>
+        </div>
+
+        <!-- Tab 1: 기간 설정 -->
+        <div id="tab-periods" class="tab-content active">
+            <section class="section-card">
+                <h2 class="section-title">
+                    <span class="material-symbols-outlined text-teal-500">calendar_month</span>
+                    신청 기간 목록
+                </h2>
+                <div id="periods-list">
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">event_busy</span>
+                        <p>등록된 신청 기간이 없습니다.</p>
+                        <p class="text-sm mt-2">우측 상단의 '새 기간 생성' 버튼으로 새로운 기간을 만드세요.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Tab 2: 시간 관리 -->
+        <div id="tab-slots" class="tab-content">
+            <section class="section-card">
+                <h2 class="section-title">
+                    <span class="material-symbols-outlined text-blue-500">schedule</span>
+                    기간 선택
+                </h2>
+                <div id="period-selector" class="mb-6">
+                    <select id="period-select" onchange="loadTimeSlots()">
+                        <option value="">기간을 선택하세요</option>
+                    </select>
+                </div>
+
+                <div id="slot-management-content" class="hidden">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-700">
+                            시간대 슬롯
+                            <span id="slot-count" class="text-sm font-normal text-gray-500 ml-2">(0개)</span>
+                        </h3>
+                        <div class="flex gap-2">
+                            <button onclick="deleteAllSlots()" class="btn-secondary btn-sm" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none;">
+                                <span class="material-symbols-outlined">delete</span>
+                                전체 삭제
+                            </button>
+                            <button onclick="openSlotModal()" class="btn-primary btn-sm">
+                                <span class="material-symbols-outlined">add</span>
+                                슬롯 추가
+                            </button>
+                            <button onclick="openSlotEditModal()" class="btn-secondary btn-sm" style="border: 2px solid #3b82f6; color: #3b82f6;">
+                                <span class="material-symbols-outlined">edit_calendar</span>
+                                슬롯 수정
+                            </button>
+                            <button onclick="openAllCapacityEditModal()" class="btn-secondary btn-sm" style="border: 2px solid #8b5cf6; color: #8b5cf6;">
+                                <span class="material-symbols-outlined">group</span>
+                                정원 일괄 수정
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="time-slots-grid" class="time-slot-grid">
+                        <!-- Time slots will be loaded here -->
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Tab 3: 신청 현황 -->
+        <div id="tab-applications" class="tab-content">
+            <section class="section-card">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="section-title mb-0">
+                        <span class="material-symbols-outlined text-purple-500">list_alt</span>
+                        신청 현황
+                        <span id="applications-refresh-icon" class="material-symbols-outlined refresh-icon-spin" style="font-size: 20px; margin-left: 8px;">sync</span>
+                    </h2>
+                    <!-- View Toggle Buttons -->
+                    <div class="flex gap-2">
+                        <button onclick="openResetAllConfirmModal()" class="view-toggle-btn" title="전체 초기화" style="border-color: #ef4444; color: white; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 10px 16px;">
+                            <span class="material-symbols-outlined">restart_alt</span>
+                            전체 초기화
+                        </button>
+                        <button id="view-timetable-btn" onclick="switchView('timetable')" class="view-toggle-btn active" title="시간표 보기">
+                            <span class="material-symbols-outlined">calendar_view_month</span>
+                        </button>
+                        <button id="view-list-btn" onclick="switchView('list')" class="view-toggle-btn" title="목록 보기">
+                            <span class="material-symbols-outlined">list</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <select id="applications-period-select" onchange="onApplicationsPeriodChange()" class="max-w-xs">
+                        <option value="">기간 선택</option>
+                    </select>
+                </div>
+
+                <!-- Timetable View (Default) -->
+                <div id="applications-timetable-container">
+                    <div class="empty-state text-center py-12">
+                        <span class="material-symbols-outlined text-6xl text-gray-300">table_chart</span>
+                        <p class="text-gray-500 mt-4">기간을 선택하세요</p>
+                    </div>
+                </div>
+
+                <!-- List View -->
+                <div id="applications-table-container" class="overflow-x-auto hidden">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>신청 시간</th>
+                                <th>순서</th>
+                                <th>학생명</th>
+                                <th>학교</th>
+                                <th>학년</th>
+                                <th>연락처</th>
+                                <th>선택 시간</th>
+                                <th>상태</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="applications-tbody">
+                            <tr>
+                                <td colspan="9" class="text-center py-8 text-gray-400">
+                                    기간을 선택해주세요.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex justify-end mt-4 gap-2">
+                    <button onclick="exportCSV()" class="btn-secondary btn-sm">
+                        <span class="material-symbols-outlined">download</span>
+                        CSV 내보내기
+                    </button>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <!-- Period Modal -->
+    <div id="period-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-800">새 신청 기간 생성</h3>
+                <button onclick="closePeriodModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <form id="period-form" onsubmit="savePeriod(event)">
+                <input type="hidden" id="period-id">
+
+                <div class="input-group">
+                    <label>기간명 *</label>
+                    <input type="text" id="period-name" placeholder="예: 2026년 2월 정규수강" required>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="input-group">
+                        <label>오픈 일시 *</label>
+                        <div class="datetime-picker" id="open-datetime-picker">
+                            <!-- 날짜 줄 (년 월 일) -->
+                            <div class="date-row" style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+                                <!-- 연도 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-open-year-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-open-year-input" class="datetime-input text-center text-sm" min="2024" max="2100">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">년</span>
+
+                                <!-- 월 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-open-month-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-open-month-input" class="datetime-input text-center text-sm" min="1" max="12">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">월</span>
+
+                                <!-- 일 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-open-day-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-open-day-input" class="datetime-input text-center text-sm" min="1" max="31">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">일</span>
+                            </div>
+
+                            <!-- 시간 줄 (오전/오후 시 분) -->
+                            <div class="time-row" style="display: flex; gap: 6px; align-items: center;">
+                                <!-- 오전/오후 -->
+                                <select id="period-open-ampm" class="datetime-select text-center text-sm" style="width: 98px;">
+                                    <option value="AM">오전</option>
+                                    <option value="PM">오후</option>
+                                </select>
+
+                                <!-- 시 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-open-hour-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-open-hour-input" class="datetime-input text-center text-sm" min="1" max="12">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">시</span>
+
+                                <!-- 분 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-open-minute-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-open-minute-input" class="datetime-input text-center text-sm" min="0" max="59">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">분</span>
+                            </div>
+                            <input type="hidden" id="period-open" required>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>마감 일시</label>
+                        <div class="datetime-picker" id="close-datetime-picker">
+                            <!-- 날짜 줄 (년 월 일) -->
+                            <div class="date-row" style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+                                <!-- 연도 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-close-year-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-close-year-input" class="datetime-input text-center text-sm" min="2024" max="2100">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">년</span>
+
+                                <!-- 월 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-close-month-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-close-month-input" class="datetime-input text-center text-sm" min="1" max="12">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">월</span>
+
+                                <!-- 일 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-close-day-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-close-day-input" class="datetime-input text-center text-sm" min="1" max="31">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">일</span>
+                            </div>
+
+                            <!-- 시간 줄 (오전/오후 시 분) -->
+                            <div class="time-row" style="display: flex; gap: 6px; align-items: center;">
+                                <!-- 오전/오후 -->
+                                <select id="period-close-ampm" class="datetime-select text-center text-sm" style="width: 98px;">
+                                    <option value="AM">오전</option>
+                                    <option value="PM">오후</option>
+                                </select>
+
+                                <!-- 시 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-close-hour-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-close-hour-input" class="datetime-input text-center text-sm" min="1" max="12">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">시</span>
+
+                                <!-- 분 -->
+                                <div class="datetime-field" style="position: relative; width: 98px;">
+                                    <select id="period-close-minute-select" class="datetime-select text-center text-sm"></select>
+                                    <input type="number" id="period-close-minute-input" class="datetime-input text-center text-sm" min="0" max="59">
+                                </div>
+                                <span style="color: #6b7280; font-size: 14px; margin: 0 4px;">분</span>
+                            </div>
+                            <input type="hidden" id="period-close">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>설명 (선택)</label>
+                    <textarea id="period-description" rows="2" placeholder="기간에 대한 추가 정보"></textarea>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closePeriodModal()" class="btn-secondary flex-1">취소</button>
+                    <button type="submit" class="btn-primary flex-1">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Slot Modal -->
+    <div id="slot-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-800">시간 슬롯 추가</h3>
+                <button onclick="closeSlotModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <form id="slot-form" onsubmit="saveSlot(event)">
+                <div class="input-group">
+                    <label>요일 *</label>
+                    <div class="day-selector" id="day-selector">
+                        <div class="day-option" data-day="mon" onclick="toggleDay('mon')">월</div>
+                        <div class="day-option" data-day="tue" onclick="toggleDay('tue')">화</div>
+                        <div class="day-option" data-day="wed" onclick="toggleDay('wed')">수</div>
+                        <div class="day-option" data-day="thu" onclick="toggleDay('thu')">목</div>
+                        <div class="day-option" data-day="fri" onclick="toggleDay('fri')">금</div>
+                    </div>
+                    <input type="hidden" id="selected-days" value="">
+                </div>
+
+                <div>
+                    <div class="input-group">
+                        <label>시작 시간 *</label>
+                        <div class="time-picker" style="display: flex; gap: 12px; align-items: center;">
+                            <!-- 오전/오후 -->
+                            <select id="slot-start-ampm" class="native-time-select">
+                                <option value="AM">오전</option>
+                                <option value="PM">오후</option>
+                            </select>
+                            <!-- 시 -->
+                            <select id="slot-start-hour-select" class="native-time-select">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                            </select>
+                            <span style="color: #4b5563; font-size: 13px; font-weight: 500;">시</span>
+                            <!-- 분 -->
+                            <select id="slot-start-minute-select" class="native-time-select">
+                                <option value="0">00</option>
+                                <option value="5">05</option>
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                                <option value="20">20</option>
+                                <option value="25">25</option>
+                                <option value="30">30</option>
+                                <option value="35">35</option>
+                                <option value="40">40</option>
+                                <option value="45">45</option>
+                                <option value="50">50</option>
+                                <option value="55">55</option>
+                            </select>
+                            <span style="color: #4b5563; font-size: 13px; font-weight: 500;">분</span>
+                        </div>
+                        <input type="hidden" id="slot-start" required>
+                        <!-- Input elements for JavaScript compatibility (hidden) -->
+                        <input type="hidden" id="slot-start-hour-input">
+                        <input type="hidden" id="slot-start-minute-input">
+                    </div>
+                    <div class="input-group">
+                        <label>종료 시간 *</label>
+                        <div class="time-picker" style="display: flex; gap: 12px; align-items: center;">
+                            <!-- 오전/오후 -->
+                            <select id="slot-end-ampm" class="native-time-select">
+                                <option value="AM">오전</option>
+                                <option value="PM">오후</option>
+                            </select>
+                            <!-- 시 -->
+                            <select id="slot-end-hour-select" class="native-time-select">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                            </select>
+                            <span style="color: #4b5563; font-size: 13px; font-weight: 500;">시</span>
+                            <!-- 분 -->
+                            <select id="slot-end-minute-select" class="native-time-select">
+                                <option value="0">00</option>
+                                <option value="5">05</option>
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                                <option value="20">20</option>
+                                <option value="25">25</option>
+                                <option value="30">30</option>
+                                <option value="35">35</option>
+                                <option value="40">40</option>
+                                <option value="45">45</option>
+                                <option value="50">50</option>
+                                <option value="55">55</option>
+                            </select>
+                            <span style="color: #4b5563; font-size: 13px; font-weight: 500;">분</span>
+                        </div>
+                        <input type="hidden" id="slot-end" required>
+                        <!-- Input elements for JavaScript compatibility (hidden) -->
+                        <input type="hidden" id="slot-end-hour-input">
+                        <input type="hidden" id="slot-end-minute-input">
+                        <p class="text-xs text-gray-500 mt-1">선택한 단위 시간으로 자동 생성</p>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>정원 *</label>
+                    <div class="capacity-input" style="position: relative; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <!-- 감소 버튼 -->
+                        <button type="button" onclick="adjustSlotCapacity(-1)" class="capacity-arrow" style="width: 40px; height: 40px;" title="감소">
+                            <span class="material-symbols-outlined">remove</span>
+                        </button>
+
+                        <!-- 정원 입력 필드 -->
+                        <div style="position: relative; width: 80px;">
+                            <select id="slot-capacity-select" class="datetime-select text-center text-sm" style="width: 100%;"></select>
+                            <input type="number" id="slot-capacity" min="1" max="50" value="5" required class="datetime-input text-center text-sm" style="padding-left: 0; padding-right: 0;">
+                        </div>
+
+                        <!-- 증가 버튼 -->
+                        <button type="button" onclick="adjustSlotCapacity(1)" class="capacity-arrow" style="width: 40px; height: 40px;" title="증가">
+                            <span class="material-symbols-outlined">add</span>
+                        </button>
+
+                        <span class="text-gray-500">명</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">각 시간대별 기본 정원 (개별 수정 가능)</p>
+                </div>
+
+                <div class="input-group">
+                    <label>슬롯 단위 시간 *</label>
+                    <p class="text-xs text-gray-500 mb-2">시간표의 각 슬롯 구간 길이를 설정합니다.</p>
+
+                    <!-- 버튼 선택 -->
+                    <div class="flex gap-2 mb-3">
+                        <button type="button" class="interval-select-btn" data-interval="15" onclick="selectSlotInterval(15)">
+                            15분
+                        </button>
+                        <button type="button" class="interval-select-btn active" data-interval="30" onclick="selectSlotInterval(30)">
+                            30분
+                        </button>
+                        <button type="button" class="interval-select-btn" data-interval="45" onclick="selectSlotInterval(45)">
+                            45분
+                        </button>
+                        <button type="button" class="interval-select-btn" data-interval="60" onclick="selectSlotInterval(60)">
+                            60분
+                        </button>
+                    </div>
+
+                    <!-- 직접 입력 필드 -->
+                    <div class="flex items-center gap-2 mt-3">
+                        <input type="number" id="slot-custom-interval-input" min="5" max="120" value="30" class="px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-teal-400 focus:outline-none w-16 text-center text-sm">
+                        <span class="text-sm text-gray-500">분</span>
+                    </div>
+                    <input type="hidden" id="slot-interval" value="30">
+                    <p class="text-xs text-gray-500 mt-1">선택한 단위로 시간 슬롯이 자동 생성됩니다 (기본: 30분)</p>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closeSlotModal()" class="btn-secondary flex-1">취소</button>
+                    <button type="submit" class="btn-primary flex-1">추가</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Slot Edit Modal (시간 범위 수정) -->
+    <div id="slot-edit-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-800">시간 슬롯 수정</h3>
+                <button onclick="closeSlotEditModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- 현재 슬롯 정보 표시 -->
+            <div class="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-4 mb-6">
+                <h4 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-gray-500">info</span>
+                    현재 슬롯 정보
+                </h4>
+                <div id="current-slot-info" class="text-sm text-gray-600">
+                    <p>등록된 슬롯이 없습니다.</p>
+                </div>
+            </div>
+
+            <form id="slot-edit-form" onsubmit="submitSlotEdit(event)">
+                <div class="input-group">
+                    <label>수정할 요일 선택</label>
+                    <p class="text-xs text-gray-500 mb-2">수정할 요일을 선택하세요. 선택하지 않으면 전체 요일이 수정됩니다.</p>
+                    <div class="day-selector" id="edit-day-selector">
+                        <div class="day-option" data-day="mon" onclick="toggleEditDay('mon')">월</div>
+                        <div class="day-option" data-day="tue" onclick="toggleEditDay('tue')">화</div>
+                        <div class="day-option" data-day="wed" onclick="toggleEditDay('wed')">수</div>
+                        <div class="day-option" data-day="thu" onclick="toggleEditDay('thu')">목</div>
+                        <div class="day-option" data-day="fri" onclick="toggleEditDay('fri')">금</div>
+                    </div>
+                    <div class="flex gap-2 mt-2">
+                        <button type="button" onclick="selectAllEditDays()" class="text-xs text-blue-500 hover:text-blue-700">전체 선택</button>
+                        <button type="button" onclick="clearAllEditDays()" class="text-xs text-gray-500 hover:text-gray-700">선택 해제</button>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>수정 방식</label>
+                    <div class="flex gap-2 mb-4">
+                        <button type="button" id="edit-mode-shift" class="interval-select-btn active" data-mode="shift" onclick="selectSlotEditMode('shift')" style="flex: 1;">
+                            시간 이동
+                        </button>
+                        <button type="button" id="edit-mode-range" class="interval-select-btn" data-mode="range" onclick="selectSlotEditMode('range')" style="flex: 1;">
+                            범위 변경
+                        </button>
+                    </div>
+                    <input type="hidden" id="slot-edit-mode" value="shift">
+                </div>
+
+                <!-- 시간 이동 모드 -->
+                <div id="shift-mode-section">
+                    <div class="input-group">
+                        <label>이동 시간 (분)</label>
+                        <p class="text-xs text-gray-500 mb-2">모든 슬롯의 시작/종료 시간을 지정한 시간만큼 앞으로(+) 또는 뒤로(-) 이동</p>
+                        <div class="flex items-center gap-3 justify-center">
+                            <button type="button" onclick="adjustShiftMinutes(-30)" class="capacity-arrow">
+                                <span class="material-symbols-outlined">remove</span>
+                            </button>
+                            <input type="number" id="slot-shift-minutes" value="0" class="text-center" style="width: 100px; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 18px; font-weight: 600;">
+                            <span class="text-gray-500 font-medium">분</span>
+                            <button type="button" onclick="adjustShiftMinutes(30)" class="capacity-arrow">
+                                <span class="material-symbols-outlined">add</span>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2 text-center">예: +30 → 13:00이 13:30으로 변경</p>
+                    </div>
+                </div>
+
+                <!-- 범위 변경 모드 -->
+                <div id="range-mode-section" class="hidden">
+                    <div class="input-group">
+                        <label>새로운 시작 시간</label>
+                        <div class="time-picker" style="display: flex; gap: 12px; align-items: center;">
+                            <select id="edit-start-ampm" class="native-time-select">
+                                <option value="AM">오전</option>
+                                <option value="PM">오후</option>
+                            </select>
+                            <select id="edit-start-hour" class="native-time-select">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                            </select>
+                            <span style="color: #4b5563;">시</span>
+                            <select id="edit-start-minute" class="native-time-select">
+                                <option value="0">00</option>
+                                <option value="30">30</option>
+                            </select>
+                            <span style="color: #4b5563;">분</span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>새로운 종료 시간</label>
+                        <div class="time-picker" style="display: flex; gap: 12px; align-items: center;">
+                            <select id="edit-end-ampm" class="native-time-select">
+                                <option value="AM">오전</option>
+                                <option value="PM">오후</option>
+                            </select>
+                            <select id="edit-end-hour" class="native-time-select">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                            </select>
+                            <span style="color: #4b5563;">시</span>
+                            <select id="edit-end-minute" class="native-time-select">
+                                <option value="0">00</option>
+                                <option value="30">30</option>
+                            </select>
+                            <span style="color: #4b5563;">분</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-amber-600 mt-2">
+                        <span class="material-symbols-outlined text-sm align-middle">warning</span>
+                        범위 변경 시 기존 슬롯이 삭제되고 새로운 슬롯이 생성됩니다. 신청 데이터가 있는 경우 주의하세요.
+                    </p>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closeSlotEditModal()" class="btn-secondary flex-1">취소</button>
+                    <button type="submit" class="btn-primary flex-1">수정 적용</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Registration Detail Modal -->
+    <div id="registration-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-800">신청 상세</h3>
+                <button onclick="closeRegistrationModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <div id="registration-detail-content">
+                <!-- Detail content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Capacity Edit Modal -->
+    <div id="capacity-edit-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <button onclick="closeCapacityEditModal()" class="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <div class="w-16 h-16 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-teal-600" style="font-size: 32px;">edit</span>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">정원 수정</h3>
+
+            <div class="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg p-4 mb-4 mx-auto" style="max-width: 280px;">
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <span class="material-symbols-outlined text-teal-600">schedule</span>
+                    <span class="font-semibold text-teal-700">시간대</span>
+                </div>
+                <p id="edit-slot-time-display" class="text-gray-700 font-medium"></p>
+            </div>
+
+            <form id="capacity-edit-form" onsubmit="updateSlotCapacity(event)">
+                <input type="hidden" id="edit-slot-id">
+                <input type="hidden" id="edit-slot-day">
+                <input type="hidden" id="edit-slot-time">
+
+                <div class="input-group text-left" style="max-width: 280px; margin: 0 auto 16px;">
+                        <div class="capacity-input">
+                        <input type="number" id="edit-slot-capacity" min="1" max="50" required style="background: #f8fafc; color: #64748b;">
+                        <span class="text-gray-500">명</span>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <button type="button" onclick="adjustCapacity(1)" class="capacity-arrow" style="width: 32px; height: 28px; padding: 0;" title="증가">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">keyboard_arrow_up</span>
+                            </button>
+                            <button type="button" onclick="adjustCapacity(-1)" class="capacity-arrow" style="width: 32px; height: 28px; padding: 0;" title="감소">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">keyboard_arrow_down</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 text-center">1명 ~ 50명까지 설정 가능</p>
+                </div>
+
+                <div class="flex gap-3 justify-center">
+                    <button type="submit" class="btn-primary" style="flex: 1; max-width: 130px;">저장</button>
+                    <button type="button" onclick="closeCapacityEditModal()" class="btn-secondary" style="flex: 1; max-width: 130px;">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk Capacity Edit Modal -->
+    <div id="bulk-capacity-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <button onclick="closeBulkCapacityModal()" class="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <div class="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-blue-600" style="font-size: 32px;">edit_note</span>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">정원 일괄 수정</h3>
+
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-4 mx-auto" style="max-width: 280px;">
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <span class="material-symbols-outlined text-blue-600">calendar_today</span>
+                    <span class="font-semibold text-blue-700">대상</span>
+                </div>
+                <p id="bulk-capacity-target-display" class="text-gray-700 font-medium"></p>
+            </div>
+
+            <form id="bulk-capacity-form" onsubmit="submitBulkCapacity(event)">
+                <input type="hidden" id="bulk-capacity-type">
+                <input type="hidden" id="bulk-capacity-value">
+
+                <div class="input-group text-left" style="max-width: 280px; margin: 0 auto 16px;">
+                    <div class="capacity-input">
+                        <input type="number" id="bulk-capacity-input" min="1" max="50" value="5" required style="background: #f8fafc; color: #64748b;">
+                        <span class="text-gray-500">명</span>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <button type="button" onclick="adjustBulkCapacity(1)" class="capacity-arrow" style="width: 32px; height: 28px; padding: 0;" title="증가">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">keyboard_arrow_up</span>
+                            </button>
+                            <button type="button" onclick="adjustBulkCapacity(-1)" class="capacity-arrow" style="width: 32px; height: 28px; padding: 0;" title="감소">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">keyboard_arrow_down</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 text-center">1명 ~ 50명까지 설정 가능</p>
+                </div>
+
+                <div class="flex gap-3 justify-center">
+                    <button type="submit" class="btn-primary" style="flex: 1; max-width: 130px;">일괄 적용</button>
+                    <button type="button" onclick="closeBulkCapacityModal()" class="btn-secondary" style="flex: 1; max-width: 130px;">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- All Capacity Edit Modal -->
+    <div id="all-capacity-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <button onclick="closeAllCapacityEditModal()" class="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <div class="w-16 h-16 bg-gradient-to-br from-purple-100 to-violet-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-purple-600" style="font-size: 32px;">group</span>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">전체 정원 일괄 수정</h3>
+
+            <div class="bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg p-4 mb-4 mx-auto" style="max-width: 280px;">
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <span class="material-symbols-outlined text-purple-600">info</span>
+                    <span class="font-semibold text-purple-700">안내</span>
+                </div>
+                <p class="text-gray-700 text-sm">선택된 기간의 모든 슬롯 정원을 일괄 변경합니다.</p>
+                <p id="all-capacity-slot-count" class="text-purple-600 font-semibold mt-2"></p>
+            </div>
+
+            <form id="all-capacity-form" onsubmit="submitAllCapacityEdit(event)">
+                <div class="input-group text-left" style="max-width: 280px; margin: 0 auto 16px;">
+                    <div class="capacity-input">
+                        <input type="number" id="all-capacity-input" min="1" max="50" value="5" required class="no-spinner" style="background: #f8fafc; color: #64748b;">
+                        <span class="text-gray-500">명</span>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <button type="button" onclick="adjustAllCapacity(1)" class="capacity-arrow" style="width: 32px; height: 28px; padding: 0;" title="증가">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">keyboard_arrow_up</span>
+                            </button>
+                            <button type="button" onclick="adjustAllCapacity(-1)" class="capacity-arrow" style="width: 32px; height: 28px; padding: 0;" title="감소">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">keyboard_arrow_down</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 text-center">1명 ~ 50명까지 설정 가능</p>
+                </div>
+
+                <div class="flex gap-3 justify-center">
+                    <button type="submit" class="btn-primary" style="flex: 1; max-width: 130px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">일괄 적용</button>
+                    <button type="button" onclick="closeAllCapacityEditModal()" class="btn-secondary" style="flex: 1; max-width: 130px;">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit School Modal -->
+    <div id="edit-school-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-800">학교명 수정</h3>
+                <button onclick="closeEditSchoolModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <form id="edit-school-form" onsubmit="updateSchool(event)">
+                <input type="hidden" id="edit-school-id">
+
+                <div class="input-group">
+                    <label>학교명 *</label>
+                    <input type="text" id="edit-school-name" placeholder="수정할 학교명 입력" required>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closeEditSchoolModal()" class="btn-secondary flex-1">취소</button>
+                    <button type="submit" class="btn-primary flex-1">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reset All Applications Confirm Modal -->
+    <div id="reset-all-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 480px; background: linear-gradient(145deg, #fff5f5 0%, #fef2f2 50%, #fee2e2 100%); border: 2px solid #fca5a5;">
+            <div class="text-center py-6">
+                <div class="w-24 h-24 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+                    <span class="material-symbols-outlined text-red-600" style="font-size: 48px;">warning</span>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-3">⚠️ 전체 초기화</h3>
+                <p class="text-gray-700 mb-4 leading-relaxed">
+                    선택한 기간의 <span class="font-bold text-red-600">모든 신청 내역</span>을 삭제하시겠습니까?
+                </p>
+                <div class="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 mb-6 text-left">
+                    <p class="text-red-700 text-sm font-medium mb-2">⚠️ 주의사항</p>
+                    <ul class="text-red-600 text-sm space-y-1">
+                        <li>• 모든 신청 데이터가 영구적으로 삭제됩니다</li>
+                        <li>• 삭제된 데이터는 복구할 수 없습니다</li>
+                        <li>• 모든 슬롯의 신청 인원이 0으로 초기화됩니다</li>
+                    </ul>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeResetAllConfirmModal()" class="btn-secondary flex-1 py-4">
+                        <span class="material-symbols-outlined text-sm">cancel</span>
+                        취소
+                    </button>
+                    <button onclick="confirmResetAllApplications()" class="flex-1 py-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 active:scale-95" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.5);">
+                        <span class="material-symbols-outlined text-sm">delete_forever</span>
+                        전체 삭제
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="material-symbols-outlined text-red-600" style="font-size: 32px;">warning</span>
+                </div>
+                <h3 id="confirm-title" class="text-xl font-bold text-gray-800 mb-2">확인</h3>
+                <p id="confirm-message" class="text-gray-600 mb-6"></p>
+
+                <div class="flex gap-3">
+                    <button id="confirm-ok" class="btn-primary flex-1" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">확인</button>
+                    <button id="confirm-cancel" class="btn-secondary flex-1">취소</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg transition-all duration-300 opacity-0 translate-y-4 pointer-events-none z-50">
+        <span id="toast-message"></span>
+    </div>
+
+    <script src="course-registration-admin.js"></script>
+
+    <!-- Android 뒤로가기 버튼 처리 -->
+    <script>
+        document.addEventListener('hardwareBackButton', function() {
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>

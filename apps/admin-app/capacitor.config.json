@@ -1,0 +1,19 @@
+{
+  "appId": "com.inclass.admin",
+  "appName": "inCLASS 관리자",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "handleBackButton": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#1e40af",
+      "showSpinner": false
+    }
+  }
+}
