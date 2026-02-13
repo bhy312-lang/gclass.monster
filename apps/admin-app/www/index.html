@@ -5,21 +5,179 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>inCLASS 관리자</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
     <style>
         * { font-family: 'Noto Sans KR', sans-serif; }
-        html {
-            padding-top: constant(safe-area-inset-top); /* iOS 11 */
-            padding-top: env(safe-area-inset-top); /* iOS 12+ */
-            padding-bottom: constant(safe-area-inset-bottom);
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-        body {
-            background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+
+        /* 로그인 화면 */
+        .login-screen {
             min-height: 100vh;
-            padding-top: 48px; /* 상태바 영역 확보 */
+            background: linear-gradient(180deg, #ffffff 0%, #e0f2fe 50%, #bae6fd 100%);
+            display: flex;
+            flex-direction: column;
+            padding: 0 24px;
+            padding-bottom: 48px;
         }
+
+        .login-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: calc(env(safe-area-inset-top, 40px) + 80px);
+            padding-bottom: calc(env(safe-area-inset-bottom, 34px) + 40px);
+        }
+
+        .admin-label {
+            position: absolute;
+            top: calc(env(safe-area-inset-top, 20px) + 16px);
+            right: 16px;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+
+        .logo-title-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .app-description {
+            text-align: center;
+            color: #6b7280;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-top: 40px;
+        }
+
+        .app-description strong {
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .login-bottom-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logo-container {
+            margin-bottom: 16px;
+        }
+
+        .logo-image {
+            width: 240px;
+            height: auto;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 10px 20px rgba(14, 165, 233, 0.3));
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .app-title {
+            font-size: 32px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .app-subtitle {
+            font-size: 16px;
+            color: #9ca3af;
+            margin-bottom: 60px;
+        }
+
+        .login-buttons {
+            width: 100%;
+            max-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .login-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 16px 24px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            width: 100%;
+        }
+
+        .login-btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-kakao {
+            background: #FEE500;
+            color: #191919;
+        }
+
+        .btn-kakao:hover {
+            background: #F5DC00;
+            box-shadow: 0 8px 24px rgba(254, 229, 0, 0.4);
+        }
+
+        .btn-google {
+            background: #ffffff;
+            color: #374151;
+            border: 2px solid #e5e7eb;
+        }
+
+        .btn-google:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .kakao-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .google-icon {
+            width: 22px;
+            height: 22px;
+        }
+
+        /* 메인 화면 */
+        .main-screen {
+            display: none;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            min-height: 100vh;
+            padding: 16px;
+            padding-top: calc(env(safe-area-inset-top, 20px) + 16px);
+            padding-bottom: calc(80px + 48px);
+        }
+
+        .main-screen.active {
+            display: block;
+        }
+
+        .login-screen.hidden {
+            display: none;
+        }
+
         .menu-card {
             background: white;
             border-radius: 20px;
@@ -35,74 +193,573 @@
         .menu-card:active {
             transform: scale(0.98);
         }
+
+        /* 유저 프로필 헤더 */
+        .user-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 700;
+            color: #1f2937;
+            font-size: 16px;
+        }
+
+        .user-email {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        /* 인앱 푸시 알림 토스트 */
+        .push-toast {
+            position: fixed;
+            top: 60px;
+            left: 16px;
+            right: 16px;
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            color: white;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(14, 165, 233, 0.4);
+            z-index: 9999;
+            transform: translateY(-120%);
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            display: none;
+        }
+        .push-toast.show {
+            transform: translateY(0);
+            display: block;
+        }
+        .push-toast-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        .push-toast-body {
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        /* 스플래시/로딩 화면 */
+        .splash-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(180deg, #ffffff 0%, #e0f2fe 50%, #bae6fd 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+        }
+
+        .splash-screen.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .splash-logo {
+            width: 200px;
+            height: auto;
+            animation: floatSplash 2s ease-in-out infinite;
+            filter: drop-shadow(0 15px 30px rgba(14, 165, 233, 0.25));
+        }
+
+        @keyframes floatSplash {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .splash-description {
+            text-align: center;
+            color: #6b7280;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+
+        .splash-description strong {
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .splash-label {
+            margin-top: 20px;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+
+        .splash-dots {
+            display: flex;
+            gap: 8px;
+            margin-top: 24px;
+        }
+
+        .splash-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #0ea5e9;
+            animation: dotPulse 1.4s ease-in-out infinite;
+        }
+
+        .splash-dot:nth-child(2) { animation-delay: 0.2s; }
+        .splash-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotPulse {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateX(-50%) translateY(0); opacity: 1; }
+            to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+        }
     </style>
 </head>
-<body class="p-6">
-    <div class="max-w-md mx-auto">
-        <!-- 헤더 -->
-        <div class="text-center mb-10 pt-8">
-            <div class="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <span class="material-symbols-outlined text-white text-5xl">admin_panel_settings</span>
-            </div>
-            <h1 class="text-3xl font-bold text-white mb-2">inCLASS 관리자</h1>
-            <p class="text-blue-200">공부방 관리 시스템</p>
-        </div>
-
-        <!-- 메뉴 카드들 -->
-        <div class="space-y-4">
-            <!-- 프랜차이즈 관리 -->
-            <a href="franchise.html" class="menu-card block">
-                <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                        <span class="material-symbols-outlined text-white text-3xl">store</span>
-                    </div>
-                    <div class="text-left flex-1">
-                        <h3 class="text-lg font-bold text-gray-800">프랜차이즈 관리</h3>
-                        <p class="text-sm text-gray-500">학생, 좌석, 수업 관리</p>
-                    </div>
-                    <span class="material-symbols-outlined text-gray-400">chevron_right</span>
-                </div>
-            </a>
-
-            <!-- 수강신청 관리 -->
-            <a href="course-registration-admin.html" class="menu-card block">
-                <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                        <span class="material-symbols-outlined text-white text-3xl">edit_calendar</span>
-                    </div>
-                    <div class="text-left flex-1">
-                        <h3 class="text-lg font-bold text-gray-800">수강신청 관리</h3>
-                        <p class="text-sm text-gray-500">강좌 개설 및 신청 현황</p>
-                    </div>
-                    <span class="material-symbols-outlined text-gray-400">chevron_right</span>
-                </div>
-            </a>
-
-            <!-- 키오스크 -->
-            <a href="kiosk.html" class="menu-card block">
-                <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                        <span class="material-symbols-outlined text-white text-3xl">touch_app</span>
-                    </div>
-                    <div class="text-left flex-1">
-                        <h3 class="text-lg font-bold text-gray-800">키오스크</h3>
-                        <p class="text-sm text-gray-500">학생 등원/하원 체크</p>
-                    </div>
-                    <span class="material-symbols-outlined text-gray-400">chevron_right</span>
-                </div>
-            </a>
-        </div>
-
-        <!-- 하단 정보 -->
-        <div class="text-center mt-10 text-blue-200 text-sm">
-            <p>v1.0.0</p>
+<body>
+    <!-- 스플래시/로딩 화면 -->
+    <div id="splash-screen" class="splash-screen">
+        <img src="Logo.png" alt="inCLASS" class="splash-logo">
+        <p class="splash-description">
+            원장님들을 위한<br>
+            <strong>스마트</strong> 공부방, 학원관리 앱
+        </p>
+        <div class="splash-label">관리자용</div>
+        <div class="splash-dots">
+            <div class="splash-dot"></div>
+            <div class="splash-dot"></div>
+            <div class="splash-dot"></div>
         </div>
     </div>
 
-    <!-- Android 뒤로가기 버튼 처리 (앱 종료) -->
+    <!-- 로그인 화면 -->
+    <div id="login-screen" class="login-screen">
+        <div class="admin-label">관리자용</div>
+        <div class="login-content">
+            <div class="logo-title-wrapper">
+                <div class="logo-container">
+                    <img src="Logo.png" alt="inCLASS" class="logo-image">
+                </div>
+                <p class="app-description">
+                    원장님들을 위한<br>
+                    <strong>스마트</strong> 공부방, 학원관리 앱
+                </p>
+            </div>
+
+            <div class="login-bottom-section">
+                <div class="login-buttons">
+                    <button class="login-btn btn-kakao" onclick="loginWithKakao()">
+                        <svg class="kakao-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 3C6.48 3 2 6.58 2 11c0 2.83 1.88 5.31 4.68 6.73l-.95 3.53c-.08.29.25.54.51.38l4.2-2.77c.51.07 1.03.11 1.56.11 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
+                        </svg>
+                        카카오로 시작하기
+                    </button>
+
+                    <button class="login-btn btn-google" onclick="loginWithGoogle()">
+                        <svg class="google-icon" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        Google로 시작하기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메인 화면 -->
+    <div id="main-screen" class="main-screen">
+        <!-- 인앱 푸시 알림 토스트 -->
+        <div id="push-toast" class="push-toast" style="display:none !important;">
+            <div class="push-toast-title" id="push-toast-title"></div>
+            <div class="push-toast-body" id="push-toast-body"></div>
+        </div>
+
+        <div class="max-w-md mx-auto">
+            <!-- 유저 헤더 -->
+            <div class="user-header">
+                <div class="user-avatar" id="user-avatar">
+                    <span class="material-symbols-outlined text-white text-2xl">person</span>
+                </div>
+                <div class="user-info">
+                    <div class="user-name" id="user-name">관리자님</div>
+                    <div class="user-email" id="user-email">환영합니다</div>
+                </div>
+                <button onclick="logout()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <span class="material-symbols-outlined text-gray-400">logout</span>
+                </button>
+            </div>
+
+            <!-- 헤더 -->
+            <div class="text-center mb-6">
+                <h1 class="text-xl font-bold text-gray-800 mb-1">공부방 관리 시스템</h1>
+                <p class="text-sky-500 text-sm">inCLASS 관리자</p>
+            </div>
+
+            <!-- 메뉴 카드들 -->
+            <div class="space-y-4">
+                <!-- 프랜차이즈 관리 -->
+                <a href="franchise.html" class="menu-card block">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-white text-3xl">store</span>
+                        </div>
+                        <div class="text-left flex-1">
+                            <h3 class="text-lg font-bold text-gray-800">프랜차이즈 관리</h3>
+                            <p class="text-sm text-gray-500">학생, 좌석, 수업 관리</p>
+                        </div>
+                        <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                    </div>
+                </a>
+
+                <!-- 수강신청 관리 -->
+                <a href="course-registration-admin.html" class="menu-card block">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-white text-3xl">edit_calendar</span>
+                        </div>
+                        <div class="text-left flex-1">
+                            <h3 class="text-lg font-bold text-gray-800">수강신청 관리</h3>
+                            <p class="text-sm text-gray-500">강좌 개설 및 신청 현황</p>
+                        </div>
+                        <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                    </div>
+                </a>
+
+                <!-- 키오스크 -->
+                <a href="kiosk.html" class="menu-card block">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-white text-3xl">touch_app</span>
+                        </div>
+                        <div class="text-left flex-1">
+                            <h3 class="text-lg font-bold text-gray-800">키오스크</h3>
+                            <p class="text-sm text-gray-500">학생 등원/하원 체크</p>
+                        </div>
+                        <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 하단 정보 -->
+            <div class="text-center mt-10 text-sky-600 text-sm">
+                <p>v1.0.0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+
     <script>
+        // 로그인 상태 확인
+        async function checkLoginStatus() {
+            // Supabase 세션 확인
+            if (isSupabaseConfigured()) {
+                try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.user) {
+                        // OAuth 로그인 성공
+                        const user = session.user;
+                        localStorage.setItem('isLoggedIn', 'true');
+                        localStorage.setItem('userName', user.user_metadata?.full_name || user.user_metadata?.name || '관리자님');
+                        localStorage.setItem('userEmail', user.email || '');
+                        localStorage.setItem('userPhoto', user.user_metadata?.avatar_url || user.user_metadata?.picture || '');
+
+                        showMainScreen();
+                        updateUserInfo();
+
+                        // 푸시 알림 초기화
+                        if (window.Capacitor && window.Capacitor.Plugins) {
+                            initAdminPushNotifications();
+                        }
+                        return;
+                    }
+                } catch (e) {
+                    console.error('세션 확인 오류:', e);
+                }
+            }
+
+            // localStorage 기반 로그인 확인
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+
+            if (isLoggedIn === 'true') {
+                showMainScreen();
+                updateUserInfo();
+
+                // 푸시 알림 초기화
+                if (window.Capacitor && window.Capacitor.Plugins) {
+                    initAdminPushNotifications();
+                }
+            } else {
+                showLoginScreen();
+            }
+        }
+
+        function showLoginScreen() {
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('main-screen').classList.remove('active');
+        }
+
+        function showMainScreen() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-screen').classList.add('active');
+        }
+
+        function updateUserInfo() {
+            const userName = localStorage.getItem('userName') || '관리자님';
+            const userEmail = localStorage.getItem('userEmail') || '';
+            const userPhoto = localStorage.getItem('userPhoto');
+
+            document.getElementById('user-name').textContent = userName;
+            document.getElementById('user-email').textContent = userEmail;
+
+            if (userPhoto) {
+                const avatarEl = document.getElementById('user-avatar');
+                avatarEl.innerHTML = `<img src="${userPhoto}" class="w-full h-full rounded-full object-cover" alt="프로필">`;
+            }
+        }
+
+        // Supabase 설정 확인
+        function isSupabaseConfigured() {
+            return typeof supabase !== 'undefined' && supabase !== null;
+        }
+
+        // 카카오 로그인
+        async function loginWithKakao() {
+            if (!isSupabaseConfigured()) {
+                alert('서버 연결에 실패했습니다.\n잠시 후 다시 시도해주세요.');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'kakao',
+                    options: {
+                        redirectTo: window.location.origin + window.location.pathname
+                    }
+                });
+
+                if (error) {
+                    console.error('카카오 로그인 실패:', error);
+                    alert('로그인에 실패했습니다: ' + error.message);
+                }
+            } catch (e) {
+                console.error('로그인 오류:', e);
+                alert('로그인 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 구글 로그인
+        async function loginWithGoogle() {
+            if (!isSupabaseConfigured()) {
+                alert('서버 연결에 실패했습니다.\n잠시 후 다시 시도해주세요.');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin + window.location.pathname
+                    }
+                });
+
+                if (error) {
+                    console.error('구글 로그인 실패:', error);
+                    alert('로그인에 실패했습니다: ' + error.message);
+                }
+            } catch (e) {
+                console.error('로그인 오류:', e);
+                alert('로그인 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 로그아웃
+        async function logout() {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                // Supabase 로그아웃
+                if (isSupabaseConfigured()) {
+                    try {
+                        await supabase.auth.signOut();
+                    } catch (e) {
+                        console.error('Supabase 로그아웃 오류:', e);
+                    }
+                }
+
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userEmail');
+                localStorage.removeItem('userPhoto');
+                showLoginScreen();
+            }
+        }
+
+        // 스플래시 화면 처리
+        function hideSplashScreen() {
+            const splash = document.getElementById('splash-screen');
+            if (splash) {
+                splash.classList.add('fade-out');
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                }, 500);
+            }
+        }
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            // 스플래시 화면을 2초 후에 숨김
+            setTimeout(() => {
+                hideSplashScreen();
+                checkLoginStatus();
+            }, 2000);
+        });
+
+        // 인앱 알림 표시 함수
+        function showInAppNotification(title, body) {
+            const toast = document.getElementById('push-toast');
+            const toastTitle = document.getElementById('push-toast-title');
+            const toastBody = document.getElementById('push-toast-body');
+
+            if (!toast || !toastTitle || !toastBody) return;
+
+            toastTitle.textContent = title;
+            toastBody.textContent = body;
+            toast.style.cssText = 'display: block !important;';
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.style.cssText = 'display: none !important;';
+            }, 5000);
+
+            toast.onclick = () => {
+                toast.classList.remove('show');
+                toast.style.cssText = 'display: none !important;';
+            };
+        }
+
+        // 푸시 알림 초기화 및 FCM 토큰 등록
+        async function initAdminPushNotifications() {
+            if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.PushNotifications) {
+                console.log('PushNotifications 플러그인 없음 (웹 환경)');
+                return;
+            }
+
+            const PushNotifications = window.Capacitor.Plugins.PushNotifications;
+
+            try {
+                // 권한 요청
+                const permResult = await PushNotifications.requestPermissions();
+                if (permResult.receive !== 'granted') {
+                    console.log('푸시 알림 권한 거부됨');
+                    return;
+                }
+
+                // 푸시 알림 등록
+                await PushNotifications.register();
+
+                // 토큰 수신 리스너
+                PushNotifications.addListener('registration', async (token) => {
+                    console.log('FCM 토큰 수신:', token.value);
+                    await saveAdminFcmToken(token.value);
+                });
+
+                // 알림 수신 리스너 (앱 포그라운드)
+                PushNotifications.addListener('pushNotificationReceived', (notification) => {
+                    console.log('푸시 알림 수신:', notification);
+                    showInAppNotification(notification.title, notification.body);
+                });
+
+                // 알림 탭 리스너
+                PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+                    console.log('푸시 알림 액션:', notification);
+                    // 필요시 특정 페이지로 이동
+                    if (notification.notification.data?.type === 'new_registration') {
+                        window.location.href = 'franchise.html';
+                    }
+                });
+
+            } catch (error) {
+                console.error('푸시 알림 초기화 실패:', error);
+            }
+        }
+
+        // 관리자 FCM 토큰 저장
+        async function saveAdminFcmToken(fcmToken) {
+            if (!window.supabase) {
+                console.error('Supabase 미설정');
+                return;
+            }
+
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                const adminId = session?.user?.id || null;
+
+                // 토큰 저장 (upsert)
+                const { error } = await supabase.from('admin_fcm_tokens').upsert({
+                    fcm_token: fcmToken,
+                    admin_id: adminId,
+                    device_name: navigator.userAgent.substring(0, 100),
+                    updated_at: new Date().toISOString()
+                }, {
+                    onConflict: 'fcm_token'
+                });
+
+                if (error) {
+                    console.error('FCM 토큰 저장 실패:', error);
+                } else {
+                    console.log('관리자 FCM 토큰 저장 완료');
+                }
+            } catch (error) {
+                console.error('토큰 저장 중 오류:', error);
+            }
+        }
+
+        // Android 뒤로가기 버튼 처리 (앱 종료)
         document.addEventListener('hardwareBackButton', function() {
-            // 메인 화면에서는 앱 종료
             if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
                 window.Capacitor.Plugins.App.exitApp();
             }

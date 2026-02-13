@@ -16,13 +16,14 @@ icon_sizes = {
 }
 
 def create_icon_with_label(logo_img, size, is_foreground=False):
-    """로고 이미지에 '학부모용' 라벨을 로고 아래에 추가한 아이콘 생성"""
+    """로고 이미지에 '관리자용' 라벨을 로고 아래에 추가한 아이콘 생성"""
 
-    # 새 이미지 생성 (투명 배경)
+    # 새 이미지 생성 (밝은 하늘색 배경)
     if is_foreground:
         icon = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     else:
-        icon = Image.new('RGBA', (size, size), (255, 255, 255, 255))
+        # 밝은 파스텔 하늘색 배경
+        icon = Image.new('RGBA', (size, size), (224, 242, 254, 255))  # #e0f2fe
 
     # 라벨 높이 계산 (더 크게)
     label_height = int(size * 0.18)
@@ -52,8 +53,8 @@ def create_icon_with_label(logo_img, size, is_foreground=False):
     label_x = (size - label_width) // 2
     label_y = logo_y + logo_resized.height - int(size * 0.06)  # 로고에 더 겹치게
 
-    # 라벨 배경색 (핑크색)
-    label_color = (236, 72, 153)  # #ec4899
+    # 라벨 배경색 (하늘색/파란색)
+    label_color = (14, 165, 233)  # #0ea5e9 (sky-500)
 
     # 둥근 모서리 라벨 그리기
     corner_radius = int(label_height * 0.4)
@@ -75,7 +76,7 @@ def create_icon_with_label(logo_img, size, is_foreground=False):
             font = ImageFont.load_default()
 
     # 텍스트 그리기
-    text = "학부모용"
+    text = "관리자용"
     bbox = draw.textbbox((0, 0), text, font=font)
     text_width = bbox[2] - bbox[0]
     text_height = bbox[3] - bbox[1]
@@ -94,7 +95,8 @@ def create_round_icon(icon_img, size):
     draw = ImageDraw.Draw(mask)
     draw.ellipse([0, 0, size, size], fill=255)
 
-    round_icon = Image.new('RGBA', (size, size), (255, 255, 255, 255))
+    # 밝은 하늘색 배경
+    round_icon = Image.new('RGBA', (size, size), (224, 242, 254, 255))
     round_icon.paste(icon_img, (0, 0))
 
     output = Image.new('RGBA', (size, size), (0, 0, 0, 0))
