@@ -51,6 +51,11 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         await loadUserProfile();
         updateAuthUI();
 
+        // 승인 상태에 따른 페이지 분기 (index.html에서만 실행)
+        if (window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/')) {
+            await handleApprovalRedirect();
+        }
+
         // DataService 초기화 (가맹점 데이터 로드)
         if (typeof DataService !== 'undefined') {
             try {
@@ -375,3 +380,168 @@ async function checkSession() {
 
 // 페이지 로드 시 세션 확인
 document.addEventListener('DOMContentLoaded', checkSession);
+
+// ============================================
+// 승인 시스템 관련 함수
+// ============================================
+
+// 승인 상태에 따른 페이지 분기 처리
+async function handleApprovalRedirect() {
+    if (!currentProfile) {
+        // 프로필이 없으면 가입 페이지로
+        window.location.href = 'admin-join.html';
+        return;
+    }
+
+    const { is_super_admin, approval_status, role, academy_name } = currentProfile;
+
+    // 슈퍼관리자인 경우
+    if (is_super_admin) {
+        // 슈퍼관리자 페이지로 이동 (메뉴에서 선택 가능하도록 main 화면 유지)
+        console.log('[Auth] 슈퍼관리자 로그인');
+        return;
+    }
+
+    // 관리자(role = 'Admin' 또는 'admin')이지만 가입 정보가 없는 경우
+    if ((role !== 'Admin' && role !== 'admin') || !academy_name) {
+        window.location.href = 'admin-join.html';
+        return;
+    }
+
+    // 승인 대기 중
+    if (approval_status === 'pending') {
+        window.location.href = 'admin-status.html';
+        return;
+    }
+
+    // 거절됨
+    if (approval_status === 'rejected') {
+        window.location.href = 'admin-status.html';
+        return;
+    }
+
+    // 승인 완료
+    if (approval_status === 'approved') {
+        console.log('[Auth] 승인된 관리자 로그인');
+        return;
+    }
+}
+
+// 승인 상태 확인 함수
+async function checkApprovalStatus() {
+    if (!currentProfile) {
+        await loadUserProfile();
+    }
+
+    return currentProfile?.approval_status || 'pending';
+}
+
+// 슈퍼관리자 여부 확인
+async function isSuperAdmin() {
+    if (!currentProfile) {
+        await loadUserProfile();
+    }
+
+    return currentProfile?.is_super_admin || false;
+}
+
+// 관리자 승인 여부 확인
+async function isApprovedAdmin() {
+    if (!currentProfile) {
+        await loadUserProfile();
+    }
+
+    return (currentProfile?.role === 'Admin' || currentProfile?.role === 'admin') && currentProfile?.approval_status === 'approved';
+}
+
+// 관리자 가입 신청 제출
+async function submitAdminRegistration(formData) {
+    if (!currentUser) {
+        showAlert('로그인이 필요합니다.', 'error');
+        return { success: false, message: '로그인이 필요합니다.' };
+    }
+
+    try {
+        // 사업자등록증 이미지 업로드
+        let imageUrl = null;
+        if (formData.businessLicense) {
+            imageUrl = await uploadBusinessLicense(formData.businessLicense);
+        }
+
+        // 프로필 업데이트
+        const { data, error } = await supabase
+            .from('profiles')
+            .update({
+                academy_name: formData.academyName,
+                business_number: formData.businessNumber,
+                name: formData.name,
+                full_phone: formData.fullPhone,
+                business_license_url: imageUrl,
+                role: 'admin',
+                approval_status: 'pending'
+            })
+            .eq('id', currentUser.id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // 슈퍼관리자에게 알림 전송
+        await sendSuperAdminNotification('new_admin_registration', {
+            adminId: currentUser.id,
+            academyName: formData.academyName
+        });
+
+        currentProfile = data;
+
+        return {
+            success: true,
+            message: '가입 신청이 완료되었습니다. 승인 대기 중입니다.'
+        };
+    } catch (error) {
+        console.error('가입 신청 실패:', error);
+        return {
+            success: false,
+            message: '가입 신청에 실패했습니다: ' + error.message
+        };
+    }
+}
+
+// 사업자등록증 이미지 업로드
+async function uploadBusinessLicense(file) {
+    try {
+        const fileName = `business_licenses/${currentUser.id}_${Date.now()}.png`;
+        const { data, error } = await supabase.storage
+            .from('documents')
+            .upload(fileName, file);
+
+        if (error) throw error;
+
+        // 공개 URL 가져오기
+        const { data: { publicUrl } } = supabase.storage
+            .from('documents')
+            .getPublicUrl(fileName);
+
+        return publicUrl;
+    } catch (error) {
+        console.error('이미지 업로드 실패:', error);
+        throw error;
+    }
+}
+
+// 슈퍼관리자 알림 전송 (Edge Function 호출)
+async function sendSuperAdminNotification(type, data) {
+    try {
+        // Edge Function으로 알림 전송
+        await fetch(`${supabase.supabaseUrl}/functions/v1/send-notification`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabase.supabaseKey}`
+            },
+            body: JSON.stringify({ type, data })
+        });
+    } catch (error) {
+        console.error('알림 전송 실패:', error);
+    }
+}

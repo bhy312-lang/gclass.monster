@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>관리자 가입 신청 | inCLASS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+        * { font-family: 'Noto Sans KR', sans-serif; }
+
+        html {
+            position: relative;
+            overflow-y: auto;
+            height: auto;
+            min-height: 100%;
+        }
+
+        body {
+            min-height: 100vh;
+            min-height: 100dvh;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 메인 컨테이너 */
+        .max-w-lg {
+            max-width: 32rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+        }
+
+        .input-wrapper .input-icon {
+            flex-shrink: 0;
+            margin-left: 16px;
+            margin-right: 12px;
+            color: #9ca3af;
+            transition: color 0.3s ease;
+            pointer-events: none;
+        }
+
+        .input-wrapper:focus-within .input-icon {
+            color: #0ea5e9;
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 16px;
+            padding: 16px 16px 16px 0;
+            height: 52px;
+            min-width: 0;
+        }
+
+        .input-wrapper input::placeholder {
+            color: #9ca3af;
+        }
+
+        /* 사업자등록번호 input-group (버튼이 있는 경우) */
+        .input-group .flex {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-group .flex input {
+            flex: 1;
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            font-size: 16px;
+            height: 52px;
+            box-sizing: border-box;
+        }
+
+        .input-group .flex input:focus {
+            outline: none;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+        }
+
+        .required::after {
+            content: ' *';
+            color: #ef4444;
+        }
+
+        .upload-zone {
+            border: 2px dashed #d1d5db;
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(249, 250, 251, 0.8);
+        }
+
+        .upload-zone:hover {
+            border-color: #0ea5e9;
+            background: rgba(234, 244, 255, 0.5);
+        }
+
+        .upload-zone.has-file {
+            border-color: #10b981;
+            border-style: solid;
+            background: rgba(236, 253, 245, 0.5);
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 12px;
+            margin-top: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+            padding: 18px 32px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 16px;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(14, 165, 233, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(14, 165, 233, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #374151;
+            border: 2px solid #e5e7eb;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            border-color: #0ea5e9;
+            color: #0ea5e9;
+        }
+
+        .progress-ring {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+
+        .progress-ring circle {
+            transition: stroke-dashoffset 0.3s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1f2937;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+            opacity: 0;
+            transition: all 0.4s ease;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .ocr-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .ocr-badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            transition: all 0.3s ease;
+        }
+
+        .step-dot.active {
+            background: #0ea5e9;
+            width: 32px;
+            border-radius: 5px;
+        }
+
+        .step-dot.completed {
+            background: #10b981;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* 키보드 열렸을 때 스크롤 가능 */
+        .input-group {
+            scroll-margin-bottom: 200px;
+        }
+
+        input, textarea {
+            scroll-margin-bottom: 200px;
+            scroll-margin-top: 100px;
+        }
+
+        /* iOS safe area */
+        @supports (padding: env(safe-area-inset-bottom)) {
+            body {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+        }
+
+        /* Sticky 버튼 영역 */
+        .sticky-footer {
+            position: sticky;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+            margin: 1.5rem -1.5rem -1.5rem -1.5rem;
+            z-index: 100;
+        }
+
+        @supports (padding: env(safe-area-inset-bottom)) {
+            .sticky-footer {
+                padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <!-- 로딩 스피너 -->
+    <div id="loading-spinner" class="hidden">
+        <svg class="progress-ring" width="80" height="80">
+            <circle cx="40" cy="40" r="36" stroke="rgba(255,255,255,0.3)" stroke-width="6" fill="none"/>
+            <circle id="progress-circle" cx="40" cy="40" r="36" stroke="#0ea5e9" stroke-width="6" fill="none"
+                stroke-dasharray="226" stroke-dashoffset="226"/>
+        </svg>
+        <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 translate-y-12 text-white font-semibold text-center">
+            <p id="loading-text">처리 중...</p>
+            <p id="loading-percent" class="text-2xl font-bold mt-2">0%</p>
+        </div>
+    </div>
+
+    <!-- 토스트 메시지 -->
+    <div id="toast" class="toast"></div>
+
+    <!-- 메인 카드 -->
+    <div class="max-w-lg mx-auto">
+        <div class="glass-card rounded-3xl shadow-2xl overflow-hidden">
+            <!-- 헤더 -->
+            <div class="bg-gradient-to-r from-sky-500 to-blue-600 p-6 text-white text-center">
+                <div class="w-20 h-20 bg-white/20 rounded-2xl mx-auto mb-4 flex items-center justify-center backdrop-blur-sm">
+                    <span class="material-symbols-outlined text-4xl">business</span>
+                </div>
+                <h1 class="text-2xl font-bold mb-1">관리자 가입 신청</h1>
+                <p class="text-sky-100 text-sm">공부방/학원 정보를 등록해주세요</p>
+            </div>
+
+            <!-- 단계 표시 -->
+            <div class="px-6 pt-6">
+                <div class="step-indicator">
+                    <div class="step-dot active" data-step="1"></div>
+                    <div class="step-dot" data-step="2"></div>
+                    <div class="step-dot" data-step="3"></div>
+                </div>
+            </div>
+
+            <!-- 폼 -->
+            <form id="join-form" class="p-6 space-y-6">
+                <!-- 1단계: 기본 정보 -->
+                <div id="step-1" class="step-content">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center">
+                            <span class="material-symbols-outlined text-sky-600 text-sm">badge</span>
+                        </span>
+                        기본 정보
+                    </h2>
+
+                    <div class="input-group">
+                        <label class="input-label required">공부방/학원명</label>
+                        <div class="input-wrapper">
+                            <span class="material-symbols-outlined input-icon">store</span>
+                            <input type="text" id="academy-name" placeholder="예: 열공 스터디카페" required>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label required">대표자 성함</label>
+                        <div class="input-wrapper">
+                            <span class="material-symbols-outlined input-icon">person</span>
+                            <input type="text" id="owner-name" placeholder="홍길동" required>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label required">연락처</label>
+                        <div class="input-wrapper">
+                            <span class="material-symbols-outlined input-icon">phone</span>
+                            <input type="tel" id="phone" placeholder="010-0000-0000" maxlength="13" inputmode="numeric" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2단계: 사업자등록번호 -->
+                <div id="step-2" class="step-content hidden">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center">
+                            <span class="material-symbols-outlined text-sky-600 text-sm">confirmation_number</span>
+                        </span>
+                        사업자등록번호
+                    </h2>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                        <div class="flex items-start gap-3">
+                            <span class="material-symbols-outlined text-blue-600">info</span>
+                            <div class="text-sm text-blue-800">
+                                <p class="font-semibold mb-1">사업자등록증 첨부 시 OCR이 자동으로 번호를 인식합니다.</p>
+                                <p>인식이 안 될 경우 직접 입력할 수 있습니다.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label required">사업자등록번호</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="business-number" placeholder="000-00-00000" maxlength="12" required>
+                            <button type="button" onclick="extractBusinessNumber()" class="ocr-badge">
+                                <span class="material-symbols-outlined text-sm">document_scanner</span>
+                                OCR 추출
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('license-file').click()">
+                        <input type="file" id="license-file" accept="image/*" class="hidden" onchange="handleFileUpload(event)">
+                        <div id="upload-placeholder">
+                            <span class="material-symbols-outlined text-5xl text-gray-400 mb-3 block">cloud_upload</span>
+                            <p class="text-gray-600 font-semibold">사업자등록증 첨부</p>
+                            <p class="text-gray-400 text-sm mt-1">클릭하거나 이미지를 드래그하세요</p>
+                        </div>
+                        <div id="upload-preview" class="hidden">
+                            <img id="preview-img" class="preview-image" alt="사업자등록증 미리보기">
+                            <p class="text-green-600 font-semibold mt-3">
+                                <span class="material-symbols-outlined align-middle">check_circle</span>
+                                첨부 완료
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3단계: 확인 -->
+                <div id="step-3" class="step-content hidden">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center">
+                            <span class="material-symbols-outlined text-sky-600 text-sm">fact_check</span>
+                        </span>
+                        정보 확인
+                    </h2>
+
+                    <div class="bg-gray-50 rounded-2xl p-5 space-y-4">
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span class="text-gray-600">공부방/학원명</span>
+                            <span id="confirm-academy" class="font-semibold text-gray-800"></span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span class="text-gray-600">대표자 성함</span>
+                            <span id="confirm-name" class="font-semibold text-gray-800"></span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span class="text-gray-600">연락처</span>
+                            <span id="confirm-phone" class="font-semibold text-gray-800"></span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span class="text-gray-600">사업자등록번호</span>
+                            <span id="confirm-business" class="font-semibold text-gray-800"></span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-gray-600">사업자등록증</span>
+                            <span id="confirm-file" class="font-semibold text-green-600">
+                                <span class="material-symbols-outlined align-middle text-sm">check_circle</span>
+                                첨부됨
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-6">
+                        <div class="flex items-start gap-3">
+                            <span class="material-symbols-outlined text-amber-600">schedule</span>
+                            <div class="text-sm text-amber-800">
+                                <p class="font-semibold">승인 대기 시간</p>
+                                <p>슈퍼관리자가 신청 내용을 확인 후 승인 처리합니다. 영업일 기준 1~2일 소요될 수 있습니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 버튼 (sticky) -->
+                <div class="sticky-footer flex gap-3">
+                    <button type="button" id="prev-btn" onclick="prevStep()" class="btn-secondary hidden">
+                        <span class="material-symbols-outlined align-middle">arrow_back</span>
+                        이전
+                    </button>
+                    <button type="button" id="next-btn" onclick="nextStep()" class="btn-primary flex-1">
+                        다음
+                        <span class="material-symbols-outlined align-middle text-sm ml-1">arrow_forward</span>
+                    </button>
+                    <button type="submit" id="submit-btn" class="btn-primary hidden">
+                        <span class="material-symbols-outlined align-middle text-sm mr-1">send</span>
+                        가입 신청
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 하단 링크 -->
+        <div class="text-center mt-6">
+            <button onclick="window.location.href='index.html'" class="text-white/80 hover:text-white text-sm font-medium transition-colors">
+                <span class="material-symbols-outlined align-middle text-sm">home</span>
+                홈으로 돌아가기
+            </button>
+        </div>
+    </div>
+
+    <!-- 스크립트 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="js/admin-join.js"></script>
+</body>
+</html>

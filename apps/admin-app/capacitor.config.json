@@ -3,11 +3,15 @@
   "appName": "inCLASS 관리자",
   "webDir": "www",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "inclassadmin",
+    "cleartext": true
   },
   "android": {
     "allowMixedContent": true,
-    "handleBackButton": false
+    "handleBackButton": false,
+    "captures": {
+      "allowMixedContent": true
+    }
   },
   "plugins": {
     "SplashScreen": {

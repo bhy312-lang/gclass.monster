@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>승인 대기 중 | inCLASS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+    <style>
+        * { font-family: 'Noto Sans KR', sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%);
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(1.3); opacity: 0; }
+        }
+
+        .status-icon {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .pulse-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(14, 165, 233, 0.3);
+            animation: pulse-ring 2s ease-out infinite;
+        }
+
+        .pulse-ring:nth-child(2) {
+            animation-delay: 0.5s;
+        }
+
+        .pulse-ring:nth-child(3) {
+            animation-delay: 1s;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-md mx-auto">
+        <!-- 메인 카드 -->
+        <div class="glass-card rounded-3xl shadow-2xl overflow-hidden">
+            <!-- 헤더 -->
+            <div class="bg-gradient-to-r from-sky-500 to-blue-600 p-6 text-white text-center">
+                <div class="w-16 h-16 bg-white/20 rounded-2xl mx-auto mb-4 flex items-center justify-center backdrop-blur-sm relative">
+                    <span class="material-symbols-outlined text-4xl status-icon">schedule</span>
+                    <div class="pulse-ring"></div>
+                    <div class="pulse-ring"></div>
+                </div>
+                <h1 class="text-2xl font-bold" id="status-title">승인 대기 중</h1>
+                <p class="text-sky-100 text-sm mt-1" id="status-subtitle">관리자가 승인 처리 중입니다</p>
+            </div>
+
+            <!-- 내용 -->
+            <div class="p-6">
+                <!-- 대기 상태 -->
+                <div id="pending-content">
+                    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
+                        <div class="flex items-start gap-3">
+                            <span class="material-symbols-outlined text-amber-600 text-2xl">info</span>
+                            <div class="text-amber-900">
+                                <p class="font-semibold mb-1">승인 대기 안내</p>
+                                <p class="text-sm">슈퍼관리자가 신청 내용을 확인 후 승인 처리합니다. 영업일 기준 1~2일 소요될 수 있습니다.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 신청 정보 -->
+                    <div class="bg-gray-50 rounded-2xl p-5 mb-6">
+                        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sky-600">description</span>
+                            신청 정보
+                        </h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">공부방/학원명</span>
+                                <span class="font-medium" id="info-academy">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">대표자</span>
+                                <span class="font-medium" id="info-name">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">사업자등록번호</span>
+                                <span class="font-medium" id="info-business">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">신청일</span>
+                                <span class="font-medium" id="info-date">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 새로고침 버튼 -->
+                    <button onclick="refreshStatus()" class="w-full bg-white border-2 border-sky-200 text-sky-600 py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-sky-50 transition-colors">
+                        <span class="material-symbols-outlined spinner" id="refresh-icon">refresh</span>
+                        상태 새로고침
+                    </button>
+                </div>
+
+                <!-- 거절 상태 -->
+                <div id="rejected-content" class="hidden">
+                    <div class="bg-red-50 border border-red-200 rounded-2xl p-5 mb-6">
+                        <div class="flex items-start gap-3">
+                            <span class="material-symbols-outlined text-red-600 text-2xl">error</span>
+                            <div class="text-red-900">
+                                <p class="font-semibold mb-1">승인 거절</p>
+                                <p class="text-sm">승인이 거절되었습니다. 아래 사유를 확인하고 다시 신청해주세요.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 거절 사유 -->
+                    <div class="bg-gray-50 rounded-2xl p-5 mb-6">
+                        <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-red-600">cancel</span>
+                            거절 사유
+                        </h3>
+                        <p class="text-gray-700 bg-white p-4 rounded-xl" id="rejection-reason">
+                            거절 사유가 없습니다.
+                        </p>
+                    </div>
+
+                    <!-- 다시 신청 버튼 -->
+                    <button onclick="reapply()" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+                        <span class="material-symbols-outlined">refresh</span>
+                        다시 신청하기
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 하단 -->
+        <div class="text-center mt-6">
+            <button id="logout-btn" class="text-white/80 hover:text-white text-sm font-medium transition-colors">
+                <span class="material-symbols-outlined align-middle text-sm">logout</span>
+                로그아웃
+            </button>
+        </div>
+    </div>
+
+    <!-- 스크립트 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        let refreshInterval = null;
+
+        // 페이지 로드 시
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 로그아웃 버튼 이벤트 리스너
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    console.log('로그아웃 버튼 클릭됨');
+                    try {
+                        await supabase.auth.signOut();
+                        console.log('로그아웃 성공');
+                        window.location.href = 'index.html';
+                    } catch (error) {
+                        console.error('로그아웃 에러:', error);
+                    }
+                });
+            }
+
+            await checkStatus();
+
+            // 30초마다 자동 새로고침
+            refreshInterval = setInterval(checkStatus, 30000);
+        });
+
+        // 승인 상태 확인
+        async function checkStatus() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                if (error) throw error;
+
+                console.log('프로필 데이터:', profile);
+
+                // 상태에 따라 UI 업데이트
+                updateStatusUI(profile);
+
+                // 승인 완료시 메인 페이지로 이동
+                if (profile.approval_status === 'approved' && (profile.role === 'Admin' || profile.role === 'admin')) {
+                    clearInterval(refreshInterval);
+                    setTimeout(() => {
+                        window.location.href = 'franchise.html';
+                    }, 1500);
+                }
+
+            } catch (error) {
+                console.error('상태 확인 에러:', error);
+            }
+        }
+
+        // 상태 UI 업데이트
+        function updateStatusUI(profile) {
+            const status = profile.approval_status || 'pending';
+            const header = document.querySelector('.bg-gradient-to-r');
+            const statusIcon = document.querySelector('.status-icon');
+            const statusTitle = document.getElementById('status-title');
+            const statusSubtitle = document.getElementById('status-subtitle');
+            const pendingContent = document.getElementById('pending-content');
+            const rejectedContent = document.getElementById('rejected-content');
+
+            if (status === 'pending') {
+                // 대기 중
+                header.className = 'bg-gradient-to-r from-amber-400 to-amber-500 p-6 text-white text-center';
+                statusIcon.textContent = 'schedule';
+                statusTitle.textContent = '승인 대기 중';
+                statusSubtitle.textContent = '관리자가 승인 처리 중입니다';
+                pendingContent.classList.remove('hidden');
+                rejectedContent.classList.add('hidden');
+
+                // 신청 정보 표시
+                document.getElementById('info-academy').textContent = profile.academy_name || '-';
+                document.getElementById('info-name').textContent = profile.name || '-';
+                document.getElementById('info-business').textContent = profile.business_number || '-';
+                document.getElementById('info-date').textContent = new Date(profile.created_at).toLocaleDateString('ko-KR');
+
+            } else if (status === 'rejected') {
+                // 거절됨
+                header.className = 'bg-gradient-to-r from-red-500 to-red-600 p-6 text-white text-center';
+                statusIcon.textContent = 'cancel';
+                statusTitle.textContent = '승인 거절';
+                statusSubtitle.textContent = '승인이 거절되었습니다';
+                pendingContent.classList.add('hidden');
+                rejectedContent.classList.remove('hidden');
+
+                // 거절 사유 표시
+                document.getElementById('rejection-reason').textContent = profile.rejection_reason || '별도의 거절 사유가 없습니다.';
+
+            } else if (status === 'approved') {
+                // 승인 완료
+                header.className = 'bg-gradient-to-r from-emerald-500 to-green-600 p-6 text-white text-center';
+                statusIcon.textContent = 'check_circle';
+                statusTitle.textContent = '승인 완료!';
+                statusSubtitle.textContent = '메인 페이지로 이동합니다...';
+                pendingContent.classList.add('hidden');
+                rejectedContent.classList.add('hidden');
+            }
+        }
+
+        // 새로고침
+        function refreshStatus() {
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('spinner');
+            checkStatus().finally(() => {
+                setTimeout(() => icon.classList.remove('spinner'), 500);
+            });
+        }
+
+        // 다시 신청
+        function reapply() {
+            if (confirm('다시 신청하시겠습니까?')) {
+                window.location.href = 'admin-join.html';
+            }
+        }
+
+        // 로그아웃
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        }
+
+        // 페이지 언마운트 시 인터벌 정리
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>
