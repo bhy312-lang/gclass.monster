@@ -30,7 +30,7 @@ public class MainActivity extends BridgeActivity {
             Insets imeInsets = windowInsets.getInsets(WindowInsetsCompat.Type.ime());
 
             // 상태바/네비게이션바 인셋만 적용 (IME 인셋은 시스템이 자동 처리하도록)
-            view.setPadding(insets.left, insets.top, insets.right, 0);
+            view.setPadding(insets.left, insets.top, insets.right, insets.bottom);
 
             // 소비하지 않고 전파하여 WebView가 IME 인셋에 반응하도록
             return WindowInsetsCompat.CONSUMED;

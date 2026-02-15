@@ -13,6 +13,8 @@
         body {
             background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
             min-height: 100vh;
+            min-height: 100dvh;
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         .glass-card {
@@ -409,7 +411,7 @@
                         </div>
                     ` : ''}
                     <div class="flex gap-2">
-                        <button onclick="openTaxSearch('${req.business_number}')" class="flex-1 py-2 border-2 border-sky-200 text-sky-600 rounded-lg font-semibold text-sm hover:bg-sky-50">
+                        <button onclick="copyAndOpenTaxSearch('${req.business_number}')" class="flex-1 py-2 border-2 border-sky-200 text-sky-600 rounded-lg font-semibold text-sm hover:bg-sky-50">
                             <span class="material-symbols-outlined text-sm align-middle">search</span>
                             국세청 확인
                         </button>
@@ -512,6 +514,9 @@
                     .update({ is_read: true })
                     .eq('admin_id', adminId);
 
+                // 푸시 알림 전송
+                await sendPushNotification(adminId, '승인 완료', '관리자 가입이 승인되었습니다. 지금부터 서비스를 이용하실 수 있습니다.');
+
                 showToast('승인이 완료되었습니다.', 'success');
                 loadAdminRequests();
                 loadApprovedList();
@@ -582,6 +587,11 @@
 
                 if (error) throw error;
 
+                // 관리자인 경우 푸시 알림 전송
+                if (type === 'admin') {
+                    await sendPushNotification(id, '가입 거절', `관리자 가입이 거절되었습니다.\n사유: ${reason}`);
+                }
+
                 showToast('거절 처리가 완료되었습니다.', 'success');
                 closeRejectModal();
 
@@ -610,6 +620,40 @@
             window.open(`https://hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index_pp.xml&tmIdx=47&tm2lIdx=4712080000&tm3lIdx=4712080100&bn=${cleanNumber}`, '_blank');
         }
 
+        // 사업자등록번호 복사 후 국세청 조회
+        async function copyAndOpenTaxSearch(businessNumber) {
+            if (!businessNumber) {
+                showToast('사업자등록번호가 없습니다.', 'error');
+                return;
+            }
+
+            // 클립보드에 복사 (Capacitor Clipboard API 사용)
+            try {
+                if (window.Capacitor && window.Capacitor.Plugins.Clipboard) {
+                    await window.Capacitor.Plugins.Clipboard.write({
+                        string: businessNumber
+                    });
+                    showToast('사업자등록번호가 복사되었습니다.', 'success');
+                } else {
+                    // Fallback: legacy 방식
+                    const textArea = document.createElement('textarea');
+                    textArea.value = businessNumber;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showToast('사업자등록번호가 복사되었습니다.', 'success');
+                }
+            } catch (err) {
+                console.error('복사 실패:', err);
+            }
+
+            // 국세청 조회 열기
+            openTaxSearch(businessNumber);
+        }
+
         // 토스트 메시지
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
@@ -620,6 +664,25 @@
             document.body.appendChild(toast);
 
             setTimeout(() => toast.remove(), 3000);
+        }
+
+        // 푸시 알림 전송
+        async function sendPushNotification(userId, title, body) {
+            try {
+                // 알림 레코드 생성 (앱이 포그라운드에서 처리하여 푸시 알림 전송)
+                await supabase
+                    .from('notifications')
+                    .insert({
+                        user_id: userId,
+                        title: title,
+                        body: body,
+                        type: 'approval_status',
+                        read: false
+                    });
+                console.log('알림 전송 완료:', userId, title);
+            } catch (error) {
+                console.error('알림 전송 실패:', error);
+            }
         }
     </script>
 </body>

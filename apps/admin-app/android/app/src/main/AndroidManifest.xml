@@ -39,12 +39,12 @@
                 <data android:scheme="https" android:host="com.inclass.admin" />
             </intent-filter>
 
-            <!-- 커스텀 스킴을 위한 Deep Link -->
+            <!-- 커스텀 스킴을 위한 Deep Link (모든 path 허용) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="inclassadmin" android:host="auth" />
+                <data android:scheme="inclassadmin" />
             </intent-filter>
 
         </activity>
