@@ -2,19 +2,30 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>수강신청 관리 - 퍼스트초등전과목</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Symbols+Outlined" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="supabase-config.js"></script>
     <link rel="stylesheet" href="style.css">
     <style>
+        html {
+            padding-top: constant(safe-area-inset-top);
+            padding-top: env(safe-area-inset-top);
+        }
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
             min-height: 100vh;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-top: 48px; /* 상태바 영역 확보 */
+        }
+        * {
+            -webkit-tap-highlight-color: transparent;
         }
         .nav-tab {
             padding: 12px 24px;
@@ -787,6 +798,46 @@
         .timetable-cell.cell-empty {
             background: #fafafa;
         }
+        /* 홀수 시간대 행 - 연두색 */
+        .time-row-odd {
+            background-color: #dcfce7 !important;
+        }
+        .time-row-odd:hover {
+            background-color: #bbf7d0 !important;
+        }
+        /* 짝수 시간대 행 - 연한 핑크 */
+        .time-row-even {
+            background-color: #fce7f3 !important;
+        }
+        .time-row-even:hover {
+            background-color: #fbcfe8 !important;
+        }
+        /* 학생 이름 셀 스타일 */
+        .timetable-cell-student {
+            padding: 4px 8px;
+            border: 1px solid #e2e8f0;
+            font-size: 13px;
+            text-align: center;
+            min-width: 100px;
+            height: 28px;
+            vertical-align: middle;
+        }
+        /* 시간 셀 세로 중앙 정렬 */
+        .timetable-time-merged {
+            padding: 14px 12px;
+            text-align: center;
+            font-weight: 600;
+            color: #0d9488;
+            background: linear-gradient(145deg, #f0fdfa 0%, #e6fffa 100%);
+            border-right: 2px solid #99f6e4;
+            min-width: 100px;
+            vertical-align: middle;
+        }
+        .remaining-info {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
         .add-slot-btn {
             width: 100%;
             height: 100%;
@@ -1185,6 +1236,11 @@
         #slot-end-ampm {
             min-width: 70px;
         }
+
+        /* A4 인쇄용 스타일 (새 창에서 사용) */
+        .print-only {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -1193,7 +1249,7 @@
         <div class="max-w-7xl mx-auto px-4 py-4">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-3">
-                    <a href="franchise.html" class="flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
+                    <a href="index.html" class="flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
                         <span class="material-symbols-outlined text-gray-600">arrow_back</span>
                     </a>
                     <div>
@@ -1230,11 +1286,11 @@
                 </h2>
 
                 <!-- 학교 추가 폼 -->
-                <div class="flex gap-3 mb-6">
-                    <input type="text" id="school-name-input" placeholder="학교명 입력 (예: 초등학교)" class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:outline-none" onkeydown="if(event.key==='Enter'){event.preventDefault();addSchool(event);}">
-                    <button onclick="addSchool(event)" class="btn-primary">
+                <div class="flex gap-2 mb-6 items-stretch h-14">
+                    <input type="text" id="school-name-input" placeholder="학교명 입력" class="flex-1 min-w-0 px-4 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:outline-none text-base" onkeydown="if(event.key==='Enter'){event.preventDefault();addSchool(event);}">
+                    <button onclick="addSchool(event)" class="btn-primary flex-shrink-0 whitespace-nowrap !py-0 px-8">
                         <span class="material-symbols-outlined">add</span>
-                        학교 추가
+                        <span class="hidden sm:inline">학교 추가</span>
                     </button>
                 </div>
 
@@ -1248,38 +1304,6 @@
                 </div>
             </section>
 
-            <!-- 주간 최대 신청 가능시간 설정 -->
-            <section class="section-card">
-                <h2 class="section-title">
-                    <span class="material-symbols-outlined text-blue-500">schedule</span>
-                    주간 최대 신청 가능시간
-                </h2>
-
-                <div class="flex items-center gap-4">
-                    <div class="flex items-center gap-2 flex-1">
-                        <select id="max-weekly-hours" class="px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:outline-none" onchange="toggleCustomHoursInput()">
-                            <option value="1">1시간</option>
-                            <option value="2">2시간</option>
-                            <option value="3">3시간</option>
-                            <option value="4">4시간</option>
-                            <option value="5" selected>5시간</option>
-                            <option value="6">6시간</option>
-                            <option value="7">7시간</option>
-                            <option value="8">8시간</option>
-                            <option value="9">9시간</option>
-                            <option value="10">10시간</option>
-                            <option value="custom">직접 입력</option>
-                        </select>
-                        <input type="number" id="custom-hours-input" class="hidden px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:outline-none w-24" min="1" max="50" placeholder="시간">
-                        <span id="custom-hours-label" class="hidden text-gray-500">시간</span>
-                    </div>
-                    <button onclick="saveMaxWeeklyHours()" class="btn-primary">
-                        <span class="material-symbols-outlined">save</span>
-                        저장
-                    </button>
-                </div>
-                <p class="text-sm text-gray-500 mt-2">학생이 주간에 신청할 수 있는 최대 시간을 설정합니다.</p>
-            </section>
         </div>
 
         <!-- Tab 1: 기간 설정 -->
@@ -1369,10 +1393,18 @@
                     </div>
                 </div>
 
-                <div class="mb-6">
+                <div class="mb-6 flex items-center gap-4 flex-wrap">
                     <select id="applications-period-select" onchange="onApplicationsPeriodChange()" class="max-w-xs">
                         <option value="">기간 선택</option>
                     </select>
+                    <button onclick="exportTimetableExcel()" class="btn-secondary btn-sm">
+                        <span class="material-symbols-outlined">download</span>
+                        Excel 내보내기
+                    </button>
+                    <button onclick="printTimetableA4()" class="btn-secondary btn-sm">
+                        <span class="material-symbols-outlined">print</span>
+                        A4로 출력
+                    </button>
                 </div>
 
                 <!-- Timetable View (Default) -->
@@ -1407,13 +1439,6 @@
                             </tr>
                         </tbody>
                     </table>
-                </div>
-
-                <div class="flex justify-end mt-4 gap-2">
-                    <button onclick="exportCSV()" class="btn-secondary btn-sm">
-                        <span class="material-symbols-outlined">download</span>
-                        CSV 내보내기
-                    </button>
                 </div>
             </section>
         </div>
@@ -1543,6 +1568,34 @@
                             <input type="hidden" id="period-close">
                         </div>
                     </div>
+                </div>
+
+                <div class="input-group">
+                    <label>1타임당 최대 인원 *</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="period-max-capacity" min="1" max="50" value="9" required class="px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:outline-none w-24 text-center">
+                        <span class="text-gray-500">명</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">시간표와 Excel 출력 시 각 타임당 표시되는 행 수</p>
+                </div>
+
+                <div class="input-group">
+                    <label>주간 최대 신청 가능시간 *</label>
+                    <div class="flex items-center gap-2">
+                        <select id="period-max-weekly-hours" class="px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:outline-none">
+                            <option value="1">1시간</option>
+                            <option value="2">2시간</option>
+                            <option value="3">3시간</option>
+                            <option value="4">4시간</option>
+                            <option value="5" selected>5시간</option>
+                            <option value="6">6시간</option>
+                            <option value="7">7시간</option>
+                            <option value="8">8시간</option>
+                            <option value="9">9시간</option>
+                            <option value="10">10시간</option>
+                        </select>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">학생이 주간에 신청할 수 있는 최대 시간</p>
                 </div>
 
                 <div class="input-group">
@@ -2124,5 +2177,12 @@
     </div>
 
     <script src="course-registration-admin.js"></script>
+
+    <!-- Android 뒤로가기 버튼 처리 -->
+    <script>
+        document.addEventListener('hardwareBackButton', function() {
+            window.location.href = 'index.html';
+        });
+    </script>
 </body>
 </html>

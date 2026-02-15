@@ -1075,10 +1075,6 @@ async function loadPeriods() {
                             <p class="font-medium text-gray-800">${closeDate ? formatDateTime(closeDate) : '무기한'}</p>
                         </div>
                         <div>
-                            <span class="text-gray-500">기본 정원</span>
-                            <p class="font-medium text-gray-800">${period.default_capacity}명</p>
-                        </div>
-                        <div>
                             <span class="text-gray-500">신청 링크</span>
                             <button onclick="copyRegistrationLink('${registrationLink}')" class="copy-link-btn">
                                 <span class="material-symbols-outlined text-sm">content_copy</span>
@@ -1499,6 +1495,16 @@ async function loadApplicationsTimetable(silent = false) {
     }
 
     try {
+        // 기간 정보 로드 (1타임당 최대 인원)
+        const { data: periodData, error: periodError } = await supabase
+            .from('course_periods')
+            .select('default_capacity')
+            .eq('id', periodId)
+            .single();
+
+        if (periodError) throw periodError;
+        const maxCapacity = periodData?.default_capacity || 9;
+
         // 슬롯 데이터 로드
         const { data: slots, error: slotsError } = await supabase
             .from('course_time_slots')
@@ -1590,7 +1596,9 @@ async function loadApplicationsTimetable(silent = false) {
                     <tbody>
         `;
 
-        sortedTimes.forEach(time => {
+        const FIXED_SLOTS_PER_TIME = maxCapacity; // 1타임당 최대 인원
+
+        sortedTimes.forEach((time, timeIndex) => {
             // 해당 시간대의 슬롯을 찾아 종료 시간 계산
             const endTime = (() => {
                 for (const day of days) {
@@ -1605,45 +1613,32 @@ async function loadApplicationsTimetable(silent = false) {
                 return `${String(endHour).padStart(2, '0')}:${String(endMinStr).padStart(2, '0')}`;
             })();
 
-            timetableHtml += `<tr class="timetable-row">`;
-            timetableHtml += `<td class="timetable-time">${time}-${endTime}</td>`;
+            const isOddTime = timeIndex % 2 === 0; // 0-indexed, 첫번째=홀수행
+            const rowBgClass = isOddTime ? 'time-row-odd' : 'time-row-even';
 
-            days.forEach(day => {
-                const slot = slotsByDay[day].find(s => s.start_time === time);
-                if (slot) {
-                    const students = studentsBySlot[slot.id] || [];
-                    const isFull = students.length >= slot.capacity;
-                    const availableSlots = slot.capacity - students.length;
+            // 각 시간대마다 9개 행 생성
+            for (let rowIdx = 0; rowIdx < FIXED_SLOTS_PER_TIME; rowIdx++) {
+                timetableHtml += `<tr class="timetable-row ${rowBgClass}">`;
 
-                    timetableHtml += `
-                        <td class="timetable-cell ${isFull ? 'cell-full' : 'cell-available'}">
-                            <div class="cell-content">
-                                <div class="cell-status ${isFull ? 'status-full' : 'status-available'}">
-                                    ${isFull ? '마감' : `잔여 ${availableSlots}자리`}
-                                </div>
-                                <div class="cell-capacity">
-                                    <span class="${isFull ? 'text-red-500' : 'text-teal-600'}">
-                                        ${students.length}
-                                    </span>/${slot.capacity}
-                                </div>
-                                ${students.length > 0 ? `
-                                    <div class="student-list">
-                                        ${students.map(s => `
-                                            <div class="student-item">
-                                                <span class="student-name">${s.name}(${s.grade})</span>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </td>
-                    `;
-                } else {
-                    timetableHtml += `<td class="timetable-cell cell-empty"></td>`;
+                // 시간 열: 첫 번째 행에만 rowspan으로 시간 표시
+                if (rowIdx === 0) {
+                    timetableHtml += `<td class="timetable-time-merged" rowspan="${FIXED_SLOTS_PER_TIME}">${time}-${endTime}</td>`;
                 }
-            });
 
-            timetableHtml += `</tr>`;
+                // 각 요일별 셀
+                days.forEach(day => {
+                    const slot = slotsByDay[day].find(s => s.start_time === time);
+                    if (slot) {
+                        const students = studentsBySlot[slot.id] || [];
+                        const student = students[rowIdx];
+                        timetableHtml += `<td class="timetable-cell-student">${student ? `${student.name}(${student.grade})` : ''}</td>`;
+                    } else {
+                        timetableHtml += `<td class="timetable-cell-student cell-empty"></td>`;
+                    }
+                });
+
+                timetableHtml += `</tr>`;
+            }
         });
 
         timetableHtml += `
@@ -1734,6 +1729,12 @@ async function loadPeriodForEdit(periodId) {
                 setDateTimePicker('close', new Date(period.close_datetime));
             }
 
+            // 1타임당 최대 인원 설정
+            document.getElementById('period-max-capacity').value = period.default_capacity || 9;
+
+            // 주간 최대 신청 가능시간 설정
+            document.getElementById('period-max-weekly-hours').value = period.max_weekly_hours || 5;
+
             document.getElementById('period-description').value = period.description || '';
         }
     } catch (error) {
@@ -1779,6 +1780,8 @@ async function savePeriod(event) {
     const id = document.getElementById('period-id').value;
     const name = document.getElementById('period-name').value.trim();
     const description = document.getElementById('period-description').value.trim();
+    const maxCapacity = parseInt(document.getElementById('period-max-capacity').value) || 9;
+    const maxWeeklyHours = parseInt(document.getElementById('period-max-weekly-hours').value) || 5;
 
     // 입력 필드에서 직접 날짜 생성
     const openDate = getDateTimeFromInputs('open');
@@ -1794,7 +1797,8 @@ async function savePeriod(event) {
             name,
             open_datetime: openDate.toISOString(),
             close_datetime: closeDate ? closeDate.toISOString() : null,
-            default_capacity: 5, // 기본 정원 5명 고정
+            default_capacity: maxCapacity, // 1타임당 최대 인원
+            max_weekly_hours: maxWeeklyHours, // 주간 최대 신청 가능시간
             slot_interval_minutes: 30, // 기본 슬롯 단위 30분 고정
             description: description || null
         };
@@ -3389,6 +3393,415 @@ function exportCSV() {
     link.href = URL.createObjectURL(blob);
     link.download = `수강신청_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
+}
+
+// A4 인쇄 (시간표만 새 창에서 출력)
+function printTimetableA4() {
+    const periodId = document.getElementById('applications-period-select').value;
+    if (!periodId) {
+        showError('기간을 먼저 선택해주세요.');
+        return;
+    }
+
+    // 시간표 뷰가 표시되어 있는지 확인
+    const timetableContainer = document.getElementById('applications-timetable-container');
+    if (!timetableContainer || timetableContainer.querySelector('.empty-state')) {
+        showError('인쇄할 시간표가 없습니다.');
+        return;
+    }
+
+    // 기간명 가져오기
+    const periodName = document.getElementById('applications-period-select')
+        .selectedOptions[0]?.text || '수강신청 현황';
+
+    // 시간표 HTML 가져오기
+    const timetableHtml = timetableContainer.innerHTML;
+
+    // 새 창 열기
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+
+    // 인쇄용 HTML 작성 (참고: 맑은고딕 8pt, 행높이 8.5pt ≈ 11px)
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="ko">
+        <head>
+            <meta charset="UTF-8">
+            <title>${periodName} - 시간표</title>
+            <style>
+                @page {
+                    size: A4 portrait;
+                    margin: 10mm;
+                }
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+                body {
+                    font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+                    font-size: 8pt;
+                    line-height: 1.2;
+                }
+                h1 {
+                    text-align: center;
+                    font-size: 12pt;
+                    margin-bottom: 5px;
+                    color: #333;
+                }
+                .timetable-container {
+                    width: 100%;
+                }
+                .timetable {
+                    width: 100%;
+                    border-collapse: collapse;
+                    table-layout: fixed;
+                }
+                .timetable th, .timetable td {
+                    font-size: 8pt;
+                }
+                .timetable-header {
+                    background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+                    padding: 1px;
+                    text-align: center;
+                    font-weight: 600;
+                    color: #0d9488;
+                    border: 1px solid #99f6e4;
+                    height: 11px;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+                .timetable-time-merged {
+                    padding: 1px;
+                    text-align: center;
+                    font-weight: 600;
+                    font-size: 10pt;
+                    color: #0d9488;
+                    background: linear-gradient(145deg, #f0fdfa 0%, #e6fffa 100%);
+                    border: 1px solid #99f6e4;
+                    vertical-align: middle;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+                .timetable-cell-student {
+                    padding: 0px 1px;
+                    border: 1px solid #e2e8f0;
+                    text-align: center;
+                    height: 11px;
+                    vertical-align: middle;
+                    overflow: hidden;
+                }
+                .timetable-row {
+                    height: 11px;
+                }
+                .time-row-odd {
+                    background-color: #dcfce7 !important;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+                .time-row-even {
+                    background-color: #fce7f3 !important;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+                .remaining-info {
+                    display: none;
+                }
+                @media print {
+                    body {
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <h1>${periodName}</h1>
+            ${timetableHtml}
+            <script>
+                window.onload = function() {
+                    window.print();
+                    window.onafterprint = function() {
+                        window.close();
+                    };
+                };
+            </script>
+        </body>
+        </html>
+    `);
+
+    printWindow.document.close();
+}
+
+// Excel(시간표) 내보내기
+async function exportTimetableExcel() {
+    const periodId = document.getElementById('applications-period-select').value;
+    if (!periodId) {
+        showError('기간을 먼저 선택해주세요.');
+        return;
+    }
+
+    try {
+        // 기간 정보 로드 (1타임당 최대 인원)
+        const { data: periodData, error: periodError } = await supabase
+            .from('course_periods')
+            .select('default_capacity')
+            .eq('id', periodId)
+            .single();
+
+        if (periodError) throw periodError;
+        const FIXED_SLOTS_PER_TIME = periodData?.default_capacity || 9;
+
+        // 슬롯 데이터 로드
+        const { data: slots, error: slotsError } = await supabase
+            .from('course_time_slots')
+            .select('*')
+            .eq('period_id', periodId)
+            .order('day_of_week')
+            .order('start_time');
+
+        if (slotsError) throw slotsError;
+
+        // 확정된 신청 내역 로드
+        const { data: registrations, error: regError } = await supabase
+            .from('course_registrations')
+            .select('*')
+            .eq('period_id', periodId)
+            .in('status', ['confirmed', 'waiting']);
+
+        if (regError) throw regError;
+
+        // 데이터 정리
+        const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
+        const dayHeaders = ['월', '화', '수', '목', '금'];
+        const slotsByDay = { mon: [], tue: [], wed: [], thu: [], fri: [] };
+        const studentsBySlot = {};
+
+        if (slots) {
+            slots.forEach(slot => {
+                if (slotsByDay[slot.day_of_week]) {
+                    slotsByDay[slot.day_of_week].push(slot);
+                }
+            });
+        }
+
+        if (registrations) {
+            registrations.forEach(reg => {
+                if (reg.confirmed_slot_ids && Array.isArray(reg.confirmed_slot_ids)) {
+                    reg.confirmed_slot_ids.forEach(slotId => {
+                        if (!studentsBySlot[slotId]) {
+                            studentsBySlot[slotId] = [];
+                        }
+                        studentsBySlot[slotId].push({
+                            name: reg.student_name,
+                            grade: reg.grade
+                        });
+                    });
+                }
+            });
+        }
+
+        // 시간 정렬
+        days.forEach(day => {
+            slotsByDay[day].sort((a, b) => a.start_time.localeCompare(b.start_time));
+        });
+
+        const allStartTimes = new Set();
+        days.forEach(day => {
+            slotsByDay[day].forEach(slot => allStartTimes.add(slot.start_time));
+        });
+        const sortedTimes = Array.from(allStartTimes).sort();
+
+        if (sortedTimes.length === 0) {
+            showError('내보낼 시간 슬롯이 없습니다.');
+            return;
+        }
+
+        // Excel 데이터 구성
+        const wsData = [];
+
+        // 헤더 행
+        wsData.push(['시간', ...dayHeaders]);
+
+        // 각 시간대별 9행 생성
+        sortedTimes.forEach((time, timeIndex) => {
+            const endTime = (() => {
+                for (const day of days) {
+                    const slot = slotsByDay[day].find(s => s.start_time === time);
+                    if (slot) return slot.end_time;
+                }
+                const [hour, min] = time.split(':').map(Number);
+                const endMin = hour * 60 + min + 30;
+                const endHour = Math.floor(endMin / 60);
+                const endMinStr = endMin % 60;
+                return `${String(endHour).padStart(2, '0')}:${String(endMinStr).padStart(2, '0')}`;
+            })();
+
+            for (let rowIdx = 0; rowIdx < FIXED_SLOTS_PER_TIME; rowIdx++) {
+                const row = [];
+
+                // 시간 열
+                if (rowIdx === 0) {
+                    row.push(`${time}-${endTime}`);
+                } else {
+                    row.push('');
+                }
+
+                // 각 요일별 셀
+                days.forEach(day => {
+                    const slot = slotsByDay[day].find(s => s.start_time === time);
+                    if (slot) {
+                        const students = studentsBySlot[slot.id] || [];
+                        const student = students[rowIdx];
+                        row.push(student ? `${student.name}(${student.grade})` : '');
+                    } else {
+                        row.push('');
+                    }
+                });
+
+                wsData.push(row);
+            }
+        });
+
+        // 워크북 생성
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        // 셀 병합 설정 (시간 열)
+        ws['!merges'] = [];
+        let currentRow = 1; // 0은 헤더
+        sortedTimes.forEach(() => {
+            ws['!merges'].push({
+                s: { r: currentRow, c: 0 },
+                e: { r: currentRow + FIXED_SLOTS_PER_TIME - 1, c: 0 }
+            });
+            currentRow += FIXED_SLOTS_PER_TIME;
+        });
+
+        // 열 너비 설정 (참고: 12.67)
+        ws['!cols'] = [
+            { wch: 12.67 }, // 시간
+            { wch: 12.67 }, // 월
+            { wch: 12.67 }, // 화
+            { wch: 12.67 }, // 수
+            { wch: 12.67 }, // 목
+            { wch: 12.67 }  // 금
+        ];
+
+        // 행 높이 설정 (참고: 8.5pt)
+        const totalRows = 1 + (sortedTimes.length * FIXED_SLOTS_PER_TIME);
+        ws['!rows'] = [];
+        for (let i = 0; i < totalRows; i++) {
+            ws['!rows'].push({ hpt: 8.5 });
+        }
+
+        // 셀 스타일 적용
+        applyExcelStyles(ws, sortedTimes.length, FIXED_SLOTS_PER_TIME, days.length);
+
+        // 인쇄 설정 (A4 세로, 한 장에 맞추기)
+        ws['!pageSetup'] = {
+            paperSize: 9, // A4
+            orientation: 'portrait',
+            fitToPage: true,
+            fitToWidth: 1,
+            fitToHeight: 1
+        };
+
+        XLSX.utils.book_append_sheet(wb, ws, '수강신청현황');
+
+        // 파일 다운로드
+        const periodName = document.getElementById('applications-period-select')
+            .selectedOptions[0]?.text || '기간';
+        XLSX.writeFile(wb, `수강신청현황_${periodName}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    } catch (error) {
+        console.error('[Admin] Excel 내보내기 오류:', error);
+        showError('Excel 내보내기에 실패했습니다.');
+    }
+}
+
+// 셀 스타일 적용 함수 (xlsx-js-style 라이브러리용)
+function applyExcelStyles(ws, timeCount, rowsPerTime, dayCount) {
+    // 공통 폰트 설정: 맑은고딕 8pt
+    const baseFont = { name: 'Malgun Gothic', sz: 8 };
+
+    const headerStyle = {
+        font: { ...baseFont, bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '14B8A6' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: {
+            top: { style: 'thin', color: { rgb: '000000' } },
+            bottom: { style: 'thin', color: { rgb: '000000' } },
+            left: { style: 'thin', color: { rgb: '000000' } },
+            right: { style: 'thin', color: { rgb: '000000' } }
+        }
+    };
+
+    const oddRowStyle = {
+        font: { ...baseFont },
+        fill: { fgColor: { rgb: 'DCFCE7' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: {
+            top: { style: 'thin', color: { rgb: 'E2E8F0' } },
+            bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
+            left: { style: 'thin', color: { rgb: 'E2E8F0' } },
+            right: { style: 'thin', color: { rgb: 'E2E8F0' } }
+        }
+    };
+
+    const evenRowStyle = {
+        font: { ...baseFont },
+        fill: { fgColor: { rgb: 'FCE7F3' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: {
+            top: { style: 'thin', color: { rgb: 'E2E8F0' } },
+            bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
+            left: { style: 'thin', color: { rgb: 'E2E8F0' } },
+            right: { style: 'thin', color: { rgb: 'E2E8F0' } }
+        }
+    };
+
+    const timeStyle = {
+        font: { name: 'Malgun Gothic', sz: 10, bold: true, color: { rgb: '0D9488' } },
+        fill: { fgColor: { rgb: 'F0FDFA' } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: {
+            top: { style: 'thin', color: { rgb: '99F6E4' } },
+            bottom: { style: 'thin', color: { rgb: '99F6E4' } },
+            left: { style: 'thin', color: { rgb: '99F6E4' } },
+            right: { style: 'medium', color: { rgb: '99F6E4' } }
+        }
+    };
+
+    // 헤더 스타일 적용
+    for (let c = 0; c <= dayCount; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r: 0, c: c });
+        if (!ws[cellRef]) ws[cellRef] = { v: '' };
+        ws[cellRef].s = headerStyle;
+    }
+
+    // 데이터 행 스타일 적용
+    let currentRow = 1;
+    for (let timeIdx = 0; timeIdx < timeCount; timeIdx++) {
+        const isOdd = timeIdx % 2 === 0;
+        const style = isOdd ? oddRowStyle : evenRowStyle;
+
+        for (let rowOffset = 0; rowOffset < rowsPerTime; rowOffset++) {
+            // 시간 열 스타일 (첫 행에만)
+            if (rowOffset === 0) {
+                const timeCellRef = XLSX.utils.encode_cell({ r: currentRow, c: 0 });
+                if (!ws[timeCellRef]) ws[timeCellRef] = { v: '' };
+                ws[timeCellRef].s = timeStyle;
+            }
+
+            // 요일 열 스타일
+            for (let c = 1; c <= dayCount; c++) {
+                const cellRef = XLSX.utils.encode_cell({ r: currentRow, c: c });
+                if (!ws[cellRef]) ws[cellRef] = { v: '' };
+                ws[cellRef].s = style;
+            }
+            currentRow++;
+        }
+    }
 }
 
 // 링크 복사
