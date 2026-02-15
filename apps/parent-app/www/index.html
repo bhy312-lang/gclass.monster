@@ -563,14 +563,14 @@
     <script>
         // 로그인 상태 확인
         async function checkLoginStatus() {
-            // Supabase 세션 확인
+            // Supabase 세션 확인 (모든 인증의 기본)
             if (isSupabaseConfigured()) {
                 try {
                     const { data: { session } } = await supabase.auth.getSession();
                     if (session?.user) {
-                        // OAuth 로그인 성공
                         const user = session.user;
                         localStorage.setItem('isLoggedIn', 'true');
+                        localStorage.setItem('userId', user.id);  // userId 추가
                         localStorage.setItem('userName', user.user_metadata?.full_name || user.user_metadata?.name || '학부모님');
                         localStorage.setItem('userEmail', user.email || '');
                         localStorage.setItem('userPhoto', user.user_metadata?.avatar_url || user.user_metadata?.picture || '');
@@ -580,8 +580,8 @@
                             localStorage.setItem('userPhone', user.phone);
                         }
 
-                        showMainScreen();
-                        updateUserInfo();
+                        // 학부모 승인 상태 확인
+                        await handleParentApprovalRedirect(user.id);
                         return;
                     }
                 } catch (e) {
@@ -589,14 +589,69 @@
                 }
             }
 
-            // localStorage 기반 로그인 확인 (전화번호 로그인)
+            // Supabase 세션이 없는 경우: localStorage만 있어도 세션 재확인 시도
             const isLoggedIn = localStorage.getItem('isLoggedIn');
-            const userPhone = localStorage.getItem('userPhone');
+            const userId = localStorage.getItem('userId');
 
-            if (isLoggedIn === 'true' && userPhone) {
-                showMainScreen();
-                updateUserInfo();
-            } else {
+            if (isLoggedIn === 'true' && userId) {
+                // 세션이 만료되었을 수 있으므로 다시 한 번 확인
+                try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.user) {
+                        await handleParentApprovalRedirect(userId);
+                        return;
+                    }
+                } catch (e) {
+                    console.error('세션 재확인 오류:', e);
+                }
+                // 세션이 만료되면 로그인 화면으로
+                localStorage.clear();
+                showLoginScreen();
+                return;
+            }
+
+            // 로그인 정보가 없으면 로그인 화면
+            showLoginScreen();
+        }
+
+        // 학부모 승인 상태에 따른 페이지 분기
+        async function handleParentApprovalRedirect(userId) {
+            try {
+                // 등록된 자녀 확인
+                const { data: children, error } = await supabase
+                    .from('students')
+                    .select('approval_status')
+                    .eq('parent_id', userId);
+
+                if (error) {
+                    console.error('자녀 조회 실패:', error);
+                    showLoginScreen();
+                    return;
+                }
+
+                // 자녀가 없으면 가입 페이지로
+                if (!children || children.length === 0) {
+                    window.location.href = 'parent-join.html';
+                    return;
+                }
+
+                // 승인 완료된 자녀가 있으면 메인 화면
+                const hasApprovedChild = children.some(c => c.approval_status === 'approved');
+                if (hasApprovedChild) {
+                    showMainScreen();
+                    updateUserInfo();
+
+                    // 푸시 알림 초기화
+                    if (window.Capacitor && window.Capacitor.Plugins) {
+                        initPushNotifications();
+                    }
+                    return;
+                }
+
+                // 승인 대기중이면 상태 페이지로
+                window.location.href = 'parent-status.html';
+            } catch (error) {
+                console.error('승인 상태 확인 에러:', error);
                 showLoginScreen();
             }
         }
@@ -719,6 +774,7 @@
                 }
 
                 localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('userId');
                 localStorage.removeItem('userName');
                 localStorage.removeItem('userEmail');
                 localStorage.removeItem('userPhoto');

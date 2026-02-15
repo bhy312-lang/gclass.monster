@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>학부모 가입 신청 | inCLASS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+    <style>
+        * { font-family: 'Noto Sans KR', sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, #ec4899 0%, #f472b6 50%, #fb7185 100%);
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 16px 16px 16px 52px;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #ec4899;
+            box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.1);
+        }
+
+        .input-group input:focus + .input-icon, .input-group select:focus + .input-icon {
+            color: #ec4899;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            transition: color 0.3s ease;
+            pointer-events: none;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .required::after {
+            content: ' *';
+            color: #ef4444;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+            color: white;
+            padding: 18px 32px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 16px;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(236, 72, 153, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(236, 72, 153, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #374151;
+            border: 2px solid #e5e7eb;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            border-color: #ec4899;
+            color: #ec4899;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1f2937;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+            opacity: 0;
+            transition: all 0.4s ease;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .academy-search-result {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .academy-search-result:hover, .academy-search-result.selected {
+            border-color: #ec4899;
+            background: #fdf2f8;
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            transition: all 0.3s ease;
+        }
+
+        .step-dot.active {
+            background: #ec4899;
+            width: 32px;
+            border-radius: 5px;
+        }
+
+        .step-dot.completed {
+            background: #10b981;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading-spinner.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ec4899;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <!-- 토스트 메시지 -->
+    <div id="toast" class="toast"></div>
+
+    <!-- 메인 카드 -->
+    <div class="max-w-lg mx-auto">
+        <div class="glass-card rounded-3xl shadow-2xl overflow-hidden">
+            <!-- 헤더 -->
+            <div class="bg-gradient-to-r from-pink-500 to-rose-500 p-6 text-white text-center">
+                <div class="w-20 h-20 bg-white/20 rounded-2xl mx-auto mb-4 flex items-center justify-center backdrop-blur-sm">
+                    <span class="material-symbols-outlined text-4xl">family_restroom</span>
+                </div>
+                <h1 class="text-2xl font-bold mb-1">학부모 가입 신청</h1>
+                <p class="text-pink-100 text-sm">학생 정보를 등록해주세요</p>
+            </div>
+
+            <!-- 단계 표시 -->
+            <div class="px-6 pt-6">
+                <div class="step-indicator">
+                    <div class="step-dot active" data-step="1"></div>
+                    <div class="step-dot" data-step="2"></div>
+                    <div class="step-dot" data-step="3"></div>
+                </div>
+            </div>
+
+            <!-- 폼 -->
+            <form id="join-form" class="p-6 space-y-6">
+                <!-- 1단계: 학원 선택 -->
+                <div id="step-1" class="step-content">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center">
+                            <span class="material-symbols-outlined text-pink-600 text-sm">school</span>
+                        </span>
+                        학원/공부방 선택
+                    </h2>
+
+                    <div class="bg-pink-50 border border-pink-200 rounded-xl p-4 mb-6">
+                        <div class="flex items-start gap-3">
+                            <span class="material-symbols-outlined text-pink-600">info</span>
+                            <div class="text-sm text-pink-800">
+                                <p class="font-semibold mb-1">학원 검색</p>
+                                <p>승인된 학원만 검색됩니다. 정확한 학원명을 입력해주세요.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label required">학원/공부방명</label>
+                        <div class="relative">
+                            <input type="text" id="academy-search" placeholder="학원명 검색..." autocomplete="off">
+                            <span class="material-symbols-outlined input-icon">search</span>
+                        </div>
+                        <!-- 검색 결과 -->
+                        <div id="academy-results" class="mt-2 max-h-48 overflow-y-auto"></div>
+                    </div>
+
+                    <div id="selected-academy" class="hidden bg-green-50 border border-green-200 rounded-xl p-4">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-green-600">check_circle</span>
+                            <div>
+                                <p class="font-semibold text-green-800" id="selected-academy-name"></p>
+                                <p class="text-sm text-green-600" id="selected-academy-phone"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2단계: 학생 정보 -->
+                <div id="step-2" class="step-content hidden">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center">
+                            <span class="material-symbols-outlined text-pink-600 text-sm">child_care</span>
+                        </span>
+                        학생 정보
+                    </h2>
+
+                    <div class="input-group">
+                        <label class="input-label required">학생 이름</label>
+                        <input type="text" id="student-name" placeholder="홍길동" required>
+                        <span class="material-symbols-outlined input-icon">person</span>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label required">생일</label>
+                        <input type="date" id="birth-date" required>
+                        <span class="material-symbols-outlined input-icon">cake</span>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label required">학교</label>
+                        <input type="text" id="school-name" placeholder="예: 서울초등학교" required>
+                        <span class="material-symbols-outlined input-icon">school</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="input-group">
+                            <label class="input-label required">학년</label>
+                            <select id="grade" required>
+                                <option value="">선택</option>
+                                <option value="1">초1</option>
+                                <option value="2">초2</option>
+                                <option value="3">초3</option>
+                                <option value="4">초4</option>
+                                <option value="5">초5</option>
+                                <option value="6">초6</option>
+                                <option value="7">중1</option>
+                                <option value="8">중2</option>
+                                <option value="9">중3</option>
+                                <option value="10">고1</option>
+                                <option value="11">고2</option>
+                                <option value="12">고3</option>
+                            </select>
+                            <span class="material-symbols-outlined input-icon">badge</span>
+                        </div>
+
+                        <div class="input-group">
+                            <label class="input-label required">연락처</label>
+                            <input type="tel" id="phone" placeholder="010-0000-0000" maxlength="13" required>
+                            <span class="material-symbols-outlined input-icon">phone</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3단계: 확인 -->
+                <div id="step-3" class="step-content hidden">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center">
+                            <span class="material-symbols-outlined text-pink-600 text-sm">fact_check</span>
+                        </span>
+                        정보 확인
+                    </h2>
+
+                    <div class="bg-gray-50 rounded-2xl p-5 space-y-4">
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span class="text-gray-600">학원/공부방</span>
+                            <span class="font-semibold text-gray-800" id="confirm-academy"></span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span class="text-gray-600">학생 이름</span>
+                            <span class="font-semibold text-gray-800" id="confirm-name"></span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span class="text-gray-600">생일</span>
+                            <span class="font-semibold text-gray-800" id="confirm-birth"></span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span class="text-gray-600">학교</span>
+                            <span class="font-semibold text-gray-800" id="confirm-school"></span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span class="text-gray-600">학년</span>
+                            <span class="font-semibold text-gray-800" id="confirm-grade"></span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-gray-600">연락처</span>
+                            <span class="font-semibold text-gray-800" id="confirm-phone"></span>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-6">
+                        <div class="flex items-start gap-3">
+                            <span class="material-symbols-outlined text-amber-600">schedule</span>
+                            <div class="text-sm text-amber-800">
+                                <p class="font-semibold">승인 대기 시간</p>
+                                <p>학원 관리자가 신청 내용을 확인 후 승인 처리합니다. 영업일 기준 1~2일 소요될 수 있습니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 버튼 -->
+                <div class="flex gap-3 pt-4">
+                    <button type="button" id="prev-btn" onclick="prevStep()" class="btn-secondary hidden">
+                        <span class="material-symbols-outlined align-middle">arrow_back</span>
+                        이전
+                    </button>
+                    <button type="button" id="next-btn" onclick="nextStep()" class="btn-primary flex-1">
+                        다음
+                        <span class="material-symbols-outlined align-middle text-sm ml-1">arrow_forward</span>
+                    </button>
+                    <button type="submit" id="submit-btn" class="btn-primary hidden">
+                        <span class="material-symbols-outlined align-middle text-sm mr-1">send</span>
+                        가입 신청
+                    </button>
+                </div>
+            </form>
+
+            <!-- 로딩 스피너 -->
+            <div id="loading-spinner" class="loading-spinner">
+                <div class="spinner"></div>
+                <p class="text-gray-600">처리 중입니다...</p>
+            </div>
+        </div>
+
+        <!-- 하단 링크 -->
+        <div class="text-center mt-6">
+            <button onclick="window.location.href='index.html'" class="text-white/80 hover:text-white text-sm font-medium transition-colors">
+                <span class="material-symbols-outlined align-middle text-sm">home</span>
+                홈으로 돌아가기
+            </button>
+        </div>
+    </div>
+
+    <!-- 스크립트 -->
+    <script src="supabase-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+    <script src="js/parent-join.js"></script>
+</body>
+</html>

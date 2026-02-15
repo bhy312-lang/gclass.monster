@@ -2886,6 +2886,11 @@
                             class="student-tab-btn px-5 py-2.5 text-sm font-medium whitespace-nowrap rounded-t-xl border-2 border-b-0 bg-gradient-to-b from-gray-200 to-gray-100 border-gray-300 text-gray-500 hover:from-rose-50 hover:to-rose-100 hover:border-rose-300 hover:text-rose-600 transition-all">
                             <span class="material-symbols-outlined text-base align-middle mr-1">timer</span>보강시간
                         </button>
+                        <button onclick="switchStudentTab('approval')" data-tab="approval" data-color="emerald"
+                            class="student-tab-btn px-5 py-2.5 text-sm font-medium whitespace-nowrap rounded-t-xl border-2 border-b-0 bg-gradient-to-b from-gray-200 to-gray-100 border-gray-300 text-gray-500 hover:from-emerald-50 hover:to-emerald-100 hover:border-emerald-300 hover:text-emerald-600 transition-all relative">
+                            <span class="material-symbols-outlined text-base align-middle mr-1">how_to_reg</span>승인대기
+                            <span id="pending-count-badge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">0</span>
+                        </button>
                     </nav>
                 </div>
 
@@ -3044,6 +3049,44 @@
                         </div>
                         <div id="makeupList" class="space-y-2">
                             <!-- 보강시간 목록이 여기에 렌더링됨 -->
+                        </div>
+                    </div>
+
+                    <!-- 승인대기 탭 -->
+                    <div id="studentTab-approval" class="student-tab-content hidden">
+                        <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                            <p class="text-sm text-emerald-700">
+                                <span class="material-symbols-outlined text-base align-middle mr-1">info</span>
+                                학부모가 신청한 자녀 등록을 승인 또는 거절할 수 있습니다.
+                            </p>
+                        </div>
+
+                        <!-- 승인 대기 목록 -->
+                        <div class="mb-6">
+                            <h4 class="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-amber-500">schedule</span>
+                                승인 대기중
+                                <span id="pending-count-header" class="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full font-semibold">0</span>
+                            </h4>
+                            <div id="pending-students-list" class="space-y-3">
+                                <div class="text-center py-8 text-gray-400">
+                                    <span class="material-symbols-outlined text-4xl">inbox</span>
+                                    <p class="mt-2">승인 대기중인 신청이 없습니다</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 승인 완료/거절 목록 -->
+                        <div>
+                            <h4 class="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-green-500">check_circle</span>
+                                처리 완료
+                            </h4>
+                            <div id="processed-students-list" class="space-y-3">
+                                <div class="text-center py-8 text-gray-400">
+                                    <p class="text-sm">처리된 신청이 없습니다</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -6387,6 +6430,7 @@
 
     </script>
     <script src="app.js"></script>
+    <script src="js/franchise-approval.js"></script>
 
     <!-- Android 뒤로가기 버튼 처리 -->
     <script>
