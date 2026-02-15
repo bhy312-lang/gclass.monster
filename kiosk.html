@@ -640,16 +640,16 @@
                     return;
                 }
 
-                console.log(`[Kiosk] Web Push 알림 전송 시도: student_id=${student.id}, name=${student.name}, parent_id=${student.parent_id}, type=${type}`);
+                console.log(`[Kiosk] Web Push 알림 전송 시도: student_id=${student.id}, name=${student.name}, parent_phone=${student.parent_phone}, type=${type}`);
 
-                if (!student.parent_id) {
-                    console.log('[Kiosk] 부모 ID가 없음 - 알림 스킵');
+                if (!student.parent_phone) {
+                    console.log('[Kiosk] 부모 전화번호가 없음 - 알림 스킵');
                     return;
                 }
 
                 const requestBody = {
                     student_id: student.id,
-                    parent_id: student.parent_id,
+                    parent_phone: student.parent_phone,
                     type: type,
                     student_name: student.name
                 };
@@ -898,7 +898,7 @@
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/students?parent_phone_last4=eq.${phoneLast4}&select=id,name,parent_id,parent_phone_last4`, {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/students?parent_phone_last4=eq.${phoneLast4}&select=id,name,parent_id,parent_phone_last4,parent_phone`, {
                     method: 'GET',
                     headers: {
                         'apikey': SUPABASE_ANON_KEY,
