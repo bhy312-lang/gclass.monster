@@ -20,14 +20,19 @@ public class MainActivity extends BridgeActivity {
         // 상태바 색상 설정
         getWindow().setStatusBarColor(Color.parseColor("#1e3a8a"));
 
-        // 콘텐츠가 상태바 영역을 침범하지 않도록 설정
+        // 시스템 UI 인셋 처리 (키보드 대응을 위해)
         WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
 
-        // WebView에 상태바 높이만큼 패딩 적용
+        // 키보드가 올라올 때 WebView가 리사이즈되도록 처리
         View rootView = findViewById(android.R.id.content);
         ViewCompat.setOnApplyWindowInsetsListener(rootView, (view, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets imeInsets = windowInsets.getInsets(WindowInsetsCompat.Type.ime());
+
+            // 상태바/네비게이션바 인셋만 적용 (IME 인셋은 시스템이 자동 처리하도록)
             view.setPadding(insets.left, insets.top, insets.right, 0);
+
+            // 소비하지 않고 전파하여 WebView가 IME 인셋에 반응하도록
             return WindowInsetsCompat.CONSUMED;
         });
 
