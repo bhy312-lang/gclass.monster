@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <base href=".">
     <title>inCLASS 관리자</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -966,11 +967,19 @@
             console.log('[DOMContentLoaded] 페이지 로드됨');
             console.log('[DOMContentLoaded] Current URL:', window.location.href);
 
+            // 세션 스토리지에 앱 초기화 여부 확인 (뒤로가기 시 스플래시 건너뛰기)
+            const isAlreadyInitialized = sessionStorage.getItem('appInitialized');
+            const splashDelay = isAlreadyInitialized ? 0 : 1500;
+
+            if (!isAlreadyInitialized) {
+                sessionStorage.setItem('appInitialized', 'true');
+            }
+
             // 스플래시 화면 후 로그인 상태 확인
             setTimeout(async () => {
                 hideSplashScreen();
                 await checkLoginStatus();
-            }, 1500);
+            }, splashDelay);
         });
 
         // 인앱 알림 표시 함수

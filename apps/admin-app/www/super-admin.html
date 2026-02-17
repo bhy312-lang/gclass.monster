@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <base href=".">
     <title>슈퍼관리자 | inCLASS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
@@ -123,6 +124,9 @@
         <div class="max-w-7xl mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
+                    <button onclick="window.location.href='index.html'" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                        <span class="material-symbols-outlined text-gray-400">arrow_back</span>
+                    </button>
                     <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
                         <span class="material-symbols-outlined text-white">shield</span>
                     </div>
@@ -160,7 +164,7 @@
         <div id="admin-tab" class="tab-content">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-white font-semibold">관리자 가입 신청</h2>
-                <button onclick="loadAdminRequests()" class="text-sky-400 text-sm flex items-center gap-1 hover:text-sky-300">
+                <button onclick="forceReload('admin')" class="text-sky-400 text-sm flex items-center gap-1 hover:text-sky-300">
                     <span class="material-symbols-outlined text-sm">refresh</span>
                     새로고침
                 </button>
@@ -174,7 +178,7 @@
         <div id="student-tab" class="tab-content hidden">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-white font-semibold">학부모 가입 신청</h2>
-                <button onclick="loadStudentRequests()" class="text-sky-400 text-sm flex items-center gap-1 hover:text-sky-300">
+                <button onclick="forceReload('student')" class="text-sky-400 text-sm flex items-center gap-1 hover:text-sky-300">
                     <span class="material-symbols-outlined text-sm">refresh</span>
                     새로고침
                 </button>
@@ -188,7 +192,7 @@
         <div id="approved-tab" class="tab-content hidden">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-white font-semibold">승인 완료 목록</h2>
-                <button onclick="loadApprovedList()" class="text-sky-400 text-sm flex items-center gap-1 hover:text-sky-300">
+                <button onclick="forceReload('approved')" class="text-sky-400 text-sm flex items-center gap-1 hover:text-sky-300">
                     <span class="material-symbols-outlined text-sm">refresh</span>
                     새로고침
                 </button>
@@ -225,16 +229,47 @@
         let currentTab = 'admin';
         let selectedRequestId = null;
 
+        // 데이터 캐싱
+        const cachedData = {
+            admin: null,
+            student: null,
+            approved: null
+        };
+
         // 페이지 로드 시
         document.addEventListener('DOMContentLoaded', async () => {
             // 슈퍼관리자 권한 확인
             await checkSuperAdmin();
 
-            // 요청 목록 로드
+            // 카운트만 먼저 빠르게 가져오기 (가벼운 쿼리, await로 먼저 완료)
+            await loadCounts();
+
+            // 관리자 신청과 학부모 신청 목록 사전 로드 (병렬 처리)
             loadAdminRequests();
             loadStudentRequests();
-            loadApprovedList();
         });
+
+        // 카운트만 빠르게 로드
+        async function loadCounts() {
+            try {
+                // 관리자 신청 수 (가장 가벼운 쿼리)
+                const { count: adminCount } = await supabase
+                    .from('profiles')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('role', 'admin')
+                    .eq('approval_status', 'pending');
+                document.getElementById('admin-count').textContent = adminCount || 0;
+
+                // 학부모 신청 수
+                const { count: studentCount } = await supabase
+                    .from('students')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('approval_status', 'pending');
+                document.getElementById('student-count').textContent = studentCount || 0;
+            } catch (error) {
+                console.error('카운트 로드 에러:', error);
+            }
+        }
 
         // 슈퍼관리자 권한 확인
         async function checkSuperAdmin() {
@@ -286,18 +321,36 @@
             });
             document.getElementById(`${tab}-tab`).classList.remove('hidden');
 
-            // 데이터 로드
-            if (tab === 'admin') loadAdminRequests();
-            else if (tab === 'student') loadStudentRequests();
-            else loadApprovedList();
+            // 캐시된 데이터가 없으면 로드
+            if (tab === 'admin' && !cachedData.admin) {
+                loadAdminRequests();
+            } else if (tab === 'student' && !cachedData.student) {
+                loadStudentRequests();
+            } else if (tab === 'approved' && !cachedData.approved) {
+                loadApprovedList();
+            }
         }
 
-        // 관리자 요청 목록 로드
+        // 데이터 강제 새로고침 (새로고침 버튼용)
+        function forceReload(tab) {
+            if (tab === 'admin') {
+                cachedData.admin = null;
+                loadAdminRequests();
+            } else if (tab === 'student') {
+                cachedData.student = null;
+                loadStudentRequests();
+            } else if (tab === 'approved') {
+                cachedData.approved = null;
+                loadApprovedList();
+            }
+        }
+
+        // 관리자 요청 목록 로드 (이미지 제외하여 빠르게 로드)
         async function loadAdminRequests() {
             try {
                 const { data, error } = await supabase
                     .from('profiles')
-                    .select('*')
+                    .select('id, created_at, academy_name, name, full_phone, business_number')
                     .eq('role', 'admin')
                     .eq('approval_status', 'pending')
                     .order('created_at', { ascending: false });
@@ -314,10 +367,12 @@
                             <p class="text-gray-400 mt-4">대기 중인 신청이 없습니다</p>
                         </div>
                     `;
+                    cachedData.admin = container.innerHTML;
                     return;
                 }
 
                 container.innerHTML = data.map(req => createAdminCard(req)).join('');
+                cachedData.admin = container.innerHTML;
             } catch (error) {
                 console.error('관리자 요청 로드 에러:', error);
             }
@@ -344,10 +399,12 @@
                             <p class="text-gray-400 mt-4">대기 중인 신청이 없습니다</p>
                         </div>
                     `;
+                    cachedData.student = container.innerHTML;
                     return;
                 }
 
                 container.innerHTML = data.map(req => createStudentCard(req)).join('');
+                cachedData.student = container.innerHTML;
             } catch (error) {
                 console.error('학부모 요청 로드 에러:', error);
             }
@@ -373,10 +430,12 @@
                             <p class="text-gray-400 mt-4">승인 완료된 관리자가 없습니다</p>
                         </div>
                     `;
+                    cachedData.approved = container.innerHTML;
                     return;
                 }
 
                 container.innerHTML = admins.map(admin => createApprovedCard(admin)).join('');
+                cachedData.approved = container.innerHTML;
             } catch (error) {
                 console.error('승인 완료 목록 로드 에러:', error);
             }
@@ -405,11 +464,12 @@
                             <span>${req.business_number || '-'}</span>
                         </div>
                     </div>
-                    ${req.business_license_url ? `
-                        <div class="mb-4">
-                            <img src="${req.business_license_url}" alt="사업자등록증" class="w-full h-32 object-cover rounded-xl cursor-pointer hover:opacity-90" onclick="openImageModal('${req.business_license_url}')">
-                        </div>
-                    ` : ''}
+                    <div class="mb-4">
+                        <button onclick="viewBusinessLicense('${req.id}')" class="w-full py-2 border-2 border-gray-200 text-gray-600 rounded-lg font-semibold text-sm hover:bg-gray-50 flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined text-sm align-middle">image</span>
+                            사업자등록증 보기
+                        </button>
+                    </div>
                     <div class="flex gap-2">
                         <button onclick="copyAndOpenTaxSearch('${req.business_number}')" class="flex-1 py-2 border-2 border-sky-200 text-sky-600 rounded-lg font-semibold text-sm hover:bg-sky-50">
                             <span class="material-symbols-outlined text-sm align-middle">search</span>
@@ -518,6 +578,9 @@
                 await sendPushNotification(adminId, '승인 완료', '관리자 가입이 승인되었습니다. 지금부터 서비스를 이용하실 수 있습니다.');
 
                 showToast('승인이 완료되었습니다.', 'success');
+                // 캐시 무효화 후 다시 로드
+                cachedData.admin = null;
+                cachedData.approved = null;
                 loadAdminRequests();
                 loadApprovedList();
             } catch (error) {
@@ -545,6 +608,8 @@
                     .eq('student_id', studentId);
 
                 showToast('승인이 완료되었습니다.', 'success');
+                // 캐시 무효화 후 다시 로드
+                cachedData.student = null;
                 loadStudentRequests();
             } catch (error) {
                 console.error('승인 에러:', error);
@@ -595,8 +660,13 @@
                 showToast('거절 처리가 완료되었습니다.', 'success');
                 closeRejectModal();
 
-                if (type === 'admin') loadAdminRequests();
-                else loadStudentRequests();
+                if (type === 'admin') {
+                    cachedData.admin = null;
+                    loadAdminRequests();
+                } else {
+                    cachedData.student = null;
+                    loadStudentRequests();
+                }
             } catch (error) {
                 console.error('거절 에러:', error);
                 showToast('거절에 실패했습니다.', 'error');
@@ -607,6 +677,28 @@
         function openImageModal(url) {
             document.getElementById('modal-image').src = url;
             document.getElementById('image-modal').classList.add('show');
+        }
+
+        // 사업자등록증 보기 (별도 로드)
+        async function viewBusinessLicense(adminId) {
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('business_license_url')
+                    .eq('id', adminId)
+                    .single();
+
+                if (error) throw error;
+
+                if (data?.business_license_url) {
+                    openImageModal(data.business_license_url);
+                } else {
+                    alert('등록된 사업자등록증이 없습니다.');
+                }
+            } catch (error) {
+                console.error('사업자등록증 로드 에러:', error);
+                alert('사업자등록증을 불러오는데 실패했습니다.');
+            }
         }
 
         // 이미지 모달 닫기

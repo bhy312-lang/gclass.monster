@@ -18,75 +18,345 @@
             background: linear-gradient(135deg, #fce7f3 0%, #e9d5ff 25%, #dbeafe 50%, #fef3c7 75%, #fef2f2 100%);
             min-height: 100vh;
         }
+
+        /* 세로모드: 전체화면 + 중앙 정렬 */
+        .kiosk-wrapper {
+            max-width: 100% !important;
+            height: 100vh !important;
+            padding: 1.5rem !important;
+            padding-bottom: 6rem !important;
+            border-radius: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+        }
+
+        /* 세로모드: 컨텐츠 영역 중앙 정렬 */
+        .kiosk-content {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        /* 하단 버튼 고정 */
+        .kiosk-button-section {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            padding: 1rem 1.5rem !important;
+            gap: 1rem !important;
+        }
+
+        .kiosk-button-section .kiosk-action-btn {
+            padding: 2rem 1.5rem !important;
+            font-size: 2rem !important;
+            flex: 1 !important;
+        }
+
+        /* 세로모드 키패드 버튼 높이 (화면에 거의 가득차게) - 가로모드 제외 */
+        .kiosk-content > .kiosk-keypad .kiosk-key {
+            padding-top: 4.5rem !important;
+            padding-bottom: 4.5rem !important;
+        }
+
+        /* 세로모드: 뒤로가기 버튼 작게 (키패드와 겹치지 않게) */
+        .kiosk-back-btn {
+            padding: 0.5rem !important;
+            width: 2.5rem !important;
+            height: 2.5rem !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        .kiosk-back-btn span {
+            font-size: 1.5rem !important;
+        }
+
+        /* 키패드 숫자 2배 더 크게 */
+        .kiosk-key {
+            font-size: 4rem !important;
+        }
+
+        /* 세로모드 입력박스 크기 (가로모드와 동일) */
+        .kiosk-digit {
+            width: 7rem !important;
+            height: 7.5rem !important;
+            min-height: 7.5rem !important;
+            font-size: 3rem !important;
+        }
+
+        /* 세로모드: 타이틀 섹션 숨김 */
+        .kiosk-title-section {
+            display: none !important;
+        }
+
+        /* 세로모드: 가로모드용 요소들 숨김 */
+        #student-name-landscape,
+        .kiosk-landscape-instruction {
+            display: none !important;
+        }
+
+        /* 세로모드: 홈 링크 숨김 */
+        .kiosk-home-link {
+            display: none !important;
+        }
+
+        /* 세로모드 안내 문구 */
+        .portrait-instruction {
+            font-size: 1.5rem !important;
+        }
+
+        /* 키패드 버튼 빠른 반응 */
+        .kiosk-key {
+            transition: transform 50ms ease-out, box-shadow 100ms ease-out !important;
+        }
+
+        .kiosk-key:active {
+            transform: scale(0.95) !important;
+        }
+
+        /* 가로모드 레이아웃 */
+        @media (min-width: 600px) and (orientation: landscape) {
+            /* 가로모드: 뒤로가기 버튼 위로 이동 */
+            .kiosk-back-btn {
+                top: 0.5rem !important;
+                left: 0.5rem !important;
+            }
+
+            body {
+                padding: 0 !important;
+            }
+
+            .kiosk-wrapper {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 2rem !important;
+                height: 100vh !important;
+                padding: 2rem !important;
+                max-width: 100% !important;
+                border-radius: 0 !important;
+            }
+
+            /* 타이틀 섹션 숨김 */
+            .kiosk-title-section {
+                display: none !important;
+            }
+
+            /* 메인으로 돌아가기 숨김 */
+            .kiosk-home-link {
+                display: none !important;
+            }
+
+            /* 컨텐츠 섹션 */
+            .kiosk-content {
+                display: flex !important;
+                flex-direction: column !important;
+                height: 100% !important;
+                padding: 0 !important;
+                padding-bottom: 6rem !important;
+                position: relative !important;
+            }
+
+            /* 가로모드: 하단 버튼 고정 (우측 화면 하단만) */
+            .kiosk-button-section {
+                position: absolute !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                padding: 1rem !important;
+            }
+
+            /* 키패드 섹션 */
+            .kiosk-keypad-wrapper {
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .kiosk-keypad-wrapper .kiosk-keypad {
+                width: 100% !important;
+                height: 100% !important;
+                max-height: 80vh !important;
+                display: grid !important;
+                grid-template-rows: repeat(4, 1fr) !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 0.75rem !important;
+                margin-bottom: 0 !important;
+            }
+
+            /* 세로모드용 키패드 숨김 */
+            .kiosk-content > .kiosk-keypad {
+                display: none !important;
+            }
+
+            .kiosk-key {
+                font-size: 2rem !important;
+                height: 100% !important;
+            }
+
+            /* 학생 정보 */
+            #student-info {
+                display: none !important;
+            }
+
+            /* 세로모드 안내 문구 숨김 */
+            .portrait-instruction {
+                display: none !important;
+            }
+
+            /* 가로모드: 학생 이름 크게 표시 (기본 숨김) */
+            #student-name-landscape:not(.hidden) {
+                display: block !important;
+                font-size: 3rem !important;
+                font-weight: 900 !important;
+                text-align: center !important;
+                margin-bottom: 0.5rem !important;
+                background: linear-gradient(to right, #ec4899, #a855f7) !important;
+                -webkit-background-clip: text !important;
+                background-clip: text !important;
+                color: transparent !important;
+            }
+
+            /* 가로모드: 안내 문구 */
+            .kiosk-landscape-instruction {
+                display: block !important;
+                text-align: center !important;
+                font-size: 1.25rem !important;
+                font-weight: 700 !important;
+                color: #4b5563 !important;
+                margin-bottom: 1.5rem !important;
+            }
+
+            /* 가로모드: 버튼 높이 1.5배 */
+            .kiosk-action-btn {
+                padding: 1.5rem 1.5rem !important;
+                font-size: 2rem !important;
+            }
+
+            /* 번호 입력 */
+            .kiosk-digit-display {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                margin-bottom: 2rem;
+            }
+
+            .kiosk-digit {
+                width: 7rem !important;
+                height: 7.5rem !important;
+                min-height: 7.5rem !important;
+                font-size: 3rem !important;
+            }
+        }
     </style>
 </head>
-<body class="flex items-center justify-center p-6">
-    <div class="bg-gradient-to-br from-white to-pink-50/30 rounded-[40px] p-12 max-w-lg w-full shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-white/50">
-        <div class="text-center mb-10">
-            <div class="w-24 h-24 bg-gradient-to-br from-pink-200 to-purple-200 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-200/50">
-                <span class="material-symbols-outlined text-pink-600 text-6xl">touch_app</span>
+<body class="flex items-center justify-center p-0">
+    <!-- 뒤로가기 버튼 (세련된 디자인) -->
+    <button onclick="window.location.href='index.html'" class="kiosk-back-btn fixed top-4 left-4 p-4 bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg hover:bg-white hover:shadow-xl transition-all duration-200 z-50 border border-gray-200/50">
+        <span class="material-symbols-outlined text-gray-700 text-3xl">arrow_back_ios</span>
+    </button>
+
+    <div class="kiosk-wrapper bg-gradient-to-br from-white to-pink-50/30 p-8 w-full shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-white/50">
+        <!-- 왼쪽: 키패드 (가로모드) -->
+        <div class="kiosk-keypad-wrapper hidden">
+            <div class="kiosk-keypad grid grid-cols-3 gap-5 mb-10">
+                <button onclick="kioskPressKey('1')" class="kiosk-key bg-gradient-to-br from-pink-100 to-pink-200 hover:from-pink-200 hover:to-pink-300 text-3xl font-bold text-pink-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-pink-200/50 hover:shadow-xl hover:shadow-pink-300/50 active:scale-95 active:shadow-md">1</button>
+                <button onclick="kioskPressKey('2')" class="kiosk-key bg-gradient-to-br from-purple-100 to-purple-200 hover:from-purple-200 hover:to-purple-300 text-3xl font-bold text-purple-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-purple-200/50 hover:shadow-xl hover:shadow-purple-300/50 active:scale-95 active:shadow-md">2</button>
+                <button onclick="kioskPressKey('3')" class="kiosk-key bg-gradient-to-br from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 text-3xl font-bold text-blue-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-blue-200/50 hover:shadow-xl hover:shadow-blue-300/50 active:scale-95 active:shadow-md">3</button>
+                <button onclick="kioskPressKey('4')" class="kiosk-key bg-gradient-to-br from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 text-3xl font-bold text-green-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-green-200/50 hover:shadow-xl hover:shadow-green-300/50 active:scale-95 active:shadow-md">4</button>
+                <button onclick="kioskPressKey('5')" class="kiosk-key bg-gradient-to-br from-yellow-100 to-yellow-200 hover:from-yellow-200 hover:to-yellow-300 text-3xl font-bold text-yellow-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-yellow-200/50 hover:shadow-xl hover:shadow-yellow-300/50 active:scale-95 active:shadow-md">5</button>
+                <button onclick="kioskPressKey('6')" class="kiosk-key bg-gradient-to-br from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 text-3xl font-bold text-orange-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-orange-200/50 hover:shadow-xl hover:shadow-orange-300/50 active:scale-95 active:shadow-md">6</button>
+                <button onclick="kioskPressKey('7')" class="kiosk-key bg-gradient-to-br from-teal-100 to-teal-200 hover:from-teal-200 hover:to-teal-300 text-3xl font-bold text-teal-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 active:scale-95 active:shadow-md">7</button>
+                <button onclick="kioskPressKey('8')" class="kiosk-key bg-gradient-to-br from-indigo-100 to-indigo-200 hover:from-indigo-200 hover:to-indigo-300 text-3xl font-bold text-indigo-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-indigo-200/50 hover:shadow-xl hover:shadow-indigo-300/50 active:scale-95 active:shadow-md">8</button>
+                <button onclick="kioskPressKey('9')" class="kiosk-key bg-gradient-to-br from-rose-100 to-rose-200 hover:from-rose-200 hover:to-rose-300 text-3xl font-bold text-rose-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-rose-200/50 hover:shadow-xl hover:shadow-rose-300/50 active:scale-95 active:shadow-md">9</button>
+                <button onclick="kioskClearInput()" class="bg-gradient-to-br from-red-100 to-red-200 hover:from-red-200 hover:to-red-300 text-xl font-bold text-red-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-red-200/50 hover:shadow-xl hover:shadow-red-300/50 active:scale-95">지우기</button>
+                <button onclick="kioskPressKey('0')" class="kiosk-key bg-gradient-to-br from-cyan-100 to-cyan-200 hover:from-cyan-200 hover:to-cyan-300 text-3xl font-bold text-cyan-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-cyan-200/50 hover:shadow-xl hover:shadow-cyan-300/50 active:scale-95 active:shadow-md">0</button>
+                <button onclick="kioskBackspace()" class="bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-2xl font-bold text-gray-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-300/50 active:scale-95">←</button>
             </div>
-            <h1 class="text-4xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-3">키오스크</h1>
-            <p class="text-gray-400 text-lg">부모님 휴대폰 번호 뒷자리 4자리</p>
         </div>
 
-        <!-- 학생 정보 표시 영역 -->
-        <div id="student-info" class="hidden mb-2">
-            <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-2 border-2 border-emerald-200">
-                <div class="text-center">
-                    <div id="student-name" class="text-lg font-bold text-emerald-700"></div>
+        <!-- 우측: 컨텐츠 (세로모드 전체, 가로모드 우측) -->
+        <div class="kiosk-content">
+            <!-- 세로모드: 안내 문구 (제거됨 - 입력박스 위로 이동) -->
+
+            <div class="kiosk-title-section text-center mb-10">
+                <div class="w-24 h-24 bg-gradient-to-br from-pink-200 to-purple-200 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-200/50">
+                    <span class="material-symbols-outlined text-pink-600 text-6xl">touch_app</span>
+                </div>
+                <h1 class="text-4xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-3">키오스크</h1>
+                <p class="text-gray-400 text-lg">부모님 휴대폰 번호 마지막 4자리</p>
+            </div>
+
+            <!-- 학생 정보 표시 영역 -->
+            <div id="student-info" class="hidden mb-4">
+                <!-- 세로모드용 -->
+                <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-3 border-2 border-emerald-200">
+                    <div class="text-center">
+                        <div id="student-name" class="text-2xl font-bold text-emerald-700"></div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- 번호 입력 표시 -->
-        <div class="mb-10">
-            <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-8 text-center shadow-inner border-2 border-purple-100">
-                <div class="flex justify-center gap-4 mb-3">
-                    <div id="kiosk-digit-1" class="w-16 h-18 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-3xl font-bold text-purple-500 min-h-[72px]"></div>
-                    <div id="kiosk-digit-2" class="w-16 h-18 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-3xl font-bold text-purple-500 min-h-[72px]"></div>
-                    <div id="kiosk-digit-3" class="w-16 h-18 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-3xl font-bold text-purple-500 min-h-[72px]"></div>
-                    <div id="kiosk-digit-4" class="w-16 h-18 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-3xl font-bold text-purple-500 min-h-[72px]"></div>
+            <!-- 가로모드: 학생 이름 -->
+            <div id="student-name-landscape" class="hidden">학생 이름</div>
+
+            <!-- 번호 입력 표시 -->
+            <div class="kiosk-digit-display mb-10">
+                <!-- 세로모드: 안내 문구 -->
+                <p class="portrait-instruction text-center font-bold text-xl text-gray-600 mb-4">부모님 휴대폰 번호 마지막 4자리</p>
+                <!-- 가로모드: 안내 문구 -->
+                <p class="kiosk-landscape-instruction hidden text-center font-bold text-xl text-gray-700 mb-4">부모님 휴대폰 번호 마지막 4자리</p>
+                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-8 text-center shadow-inner border-2 border-purple-100">
+                    <div class="flex justify-center gap-4 mb-3">
+                        <div id="kiosk-digit-1" class="kiosk-digit w-20 h-24 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-4xl font-bold text-purple-500 min-h-[96px]"></div>
+                        <div id="kiosk-digit-2" class="kiosk-digit w-20 h-24 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-4xl font-bold text-purple-500 min-h-[96px]"></div>
+                        <div id="kiosk-digit-3" class="kiosk-digit w-20 h-24 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-4xl font-bold text-purple-500 min-h-[96px]"></div>
+                        <div id="kiosk-digit-4" class="kiosk-digit w-20 h-24 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-4xl font-bold text-purple-500 min-h-[96px]"></div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- 숫자 키패드 -->
-        <div class="grid grid-cols-3 gap-5 mb-10">
-            <button onclick="kioskPressKey('1')" class="kiosk-key bg-gradient-to-br from-pink-100 to-pink-200 hover:from-pink-200 hover:to-pink-300 text-3xl font-bold text-pink-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-pink-200/50 hover:shadow-xl hover:shadow-pink-300/50 active:scale-95 active:shadow-md">1</button>
-            <button onclick="kioskPressKey('2')" class="kiosk-key bg-gradient-to-br from-purple-100 to-purple-200 hover:from-purple-200 hover:to-purple-300 text-3xl font-bold text-purple-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-purple-200/50 hover:shadow-xl hover:shadow-purple-300/50 active:scale-95 active:shadow-md">2</button>
-            <button onclick="kioskPressKey('3')" class="kiosk-key bg-gradient-to-br from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 text-3xl font-bold text-blue-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-blue-200/50 hover:shadow-xl hover:shadow-blue-300/50 active:scale-95 active:shadow-md">3</button>
-            <button onclick="kioskPressKey('4')" class="kiosk-key bg-gradient-to-br from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 text-3xl font-bold text-green-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-green-200/50 hover:shadow-xl hover:shadow-green-300/50 active:scale-95 active:shadow-md">4</button>
-            <button onclick="kioskPressKey('5')" class="kiosk-key bg-gradient-to-br from-yellow-100 to-yellow-200 hover:from-yellow-200 hover:to-yellow-300 text-3xl font-bold text-yellow-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-yellow-200/50 hover:shadow-xl hover:shadow-yellow-300/50 active:scale-95 active:shadow-md">5</button>
-            <button onclick="kioskPressKey('6')" class="kiosk-key bg-gradient-to-br from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 text-3xl font-bold text-orange-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-orange-200/50 hover:shadow-xl hover:shadow-orange-300/50 active:scale-95 active:shadow-md">6</button>
-            <button onclick="kioskPressKey('7')" class="kiosk-key bg-gradient-to-br from-teal-100 to-teal-200 hover:from-teal-200 hover:to-teal-300 text-3xl font-bold text-teal-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 active:scale-95 active:shadow-md">7</button>
-            <button onclick="kioskPressKey('8')" class="kiosk-key bg-gradient-to-br from-indigo-100 to-indigo-200 hover:from-indigo-200 hover:to-indigo-300 text-3xl font-bold text-indigo-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-indigo-200/50 hover:shadow-xl hover:shadow-indigo-300/50 active:scale-95 active:shadow-md">8</button>
-            <button onclick="kioskPressKey('9')" class="kiosk-key bg-gradient-to-br from-rose-100 to-rose-200 hover:from-rose-200 hover:to-rose-300 text-3xl font-bold text-rose-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-rose-200/50 hover:shadow-xl hover:shadow-rose-300/50 active:scale-95 active:shadow-md">9</button>
-            <button onclick="kioskClearInput()" class="bg-gradient-to-br from-red-100 to-red-200 hover:from-red-200 hover:to-red-300 text-xl font-bold text-red-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-red-200/50 hover:shadow-xl hover:shadow-red-300/50 active:scale-95">지우기</button>
-            <button onclick="kioskPressKey('0')" class="kiosk-key bg-gradient-to-br from-cyan-100 to-cyan-200 hover:from-cyan-200 hover:to-cyan-300 text-3xl font-bold text-cyan-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-cyan-200/50 hover:shadow-xl hover:shadow-cyan-300/50 active:scale-95 active:shadow-md">0</button>
-            <button onclick="kioskBackspace()" class="bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-2xl font-bold text-gray-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-300/50 active:scale-95">←</button>
-        </div>
+            <!-- 세로모드: 숫자 키패드 -->
+            <div class="kiosk-keypad grid grid-cols-3 gap-5 mb-10">
+                <button onclick="kioskPressKey('1')" class="kiosk-key bg-gradient-to-br from-pink-100 to-pink-200 hover:from-pink-200 hover:to-pink-300 text-3xl font-bold text-pink-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-pink-200/50 hover:shadow-xl hover:shadow-pink-300/50 active:scale-95 active:shadow-md">1</button>
+                <button onclick="kioskPressKey('2')" class="kiosk-key bg-gradient-to-br from-purple-100 to-purple-200 hover:from-purple-200 hover:to-purple-300 text-3xl font-bold text-purple-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-purple-200/50 hover:shadow-xl hover:shadow-purple-300/50 active:scale-95 active:shadow-md">2</button>
+                <button onclick="kioskPressKey('3')" class="kiosk-key bg-gradient-to-br from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 text-3xl font-bold text-blue-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-blue-200/50 hover:shadow-xl hover:shadow-blue-300/50 active:scale-95 active:shadow-md">3</button>
+                <button onclick="kioskPressKey('4')" class="kiosk-key bg-gradient-to-br from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 text-3xl font-bold text-green-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-green-200/50 hover:shadow-xl hover:shadow-green-300/50 active:scale-95 active:shadow-md">4</button>
+                <button onclick="kioskPressKey('5')" class="kiosk-key bg-gradient-to-br from-yellow-100 to-yellow-200 hover:from-yellow-200 hover:to-yellow-300 text-3xl font-bold text-yellow-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-yellow-200/50 hover:shadow-xl hover:shadow-yellow-300/50 active:scale-95 active:shadow-md">5</button>
+                <button onclick="kioskPressKey('6')" class="kiosk-key bg-gradient-to-br from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 text-3xl font-bold text-orange-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-orange-200/50 hover:shadow-xl hover:shadow-orange-300/50 active:scale-95 active:shadow-md">6</button>
+                <button onclick="kioskPressKey('7')" class="kiosk-key bg-gradient-to-br from-teal-100 to-teal-200 hover:from-teal-200 hover:to-teal-300 text-3xl font-bold text-teal-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 active:scale-95 active:shadow-md">7</button>
+                <button onclick="kioskPressKey('8')" class="kiosk-key bg-gradient-to-br from-indigo-100 to-indigo-200 hover:from-indigo-200 hover:to-indigo-300 text-3xl font-bold text-indigo-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-indigo-200/50 hover:shadow-xl hover:shadow-indigo-300/50 active:scale-95 active:shadow-md">8</button>
+                <button onclick="kioskPressKey('9')" class="kiosk-key bg-gradient-to-br from-rose-100 to-rose-200 hover:from-rose-200 hover:to-rose-300 text-3xl font-bold text-rose-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-rose-200/50 hover:shadow-xl hover:shadow-rose-300/50 active:scale-95 active:shadow-md">9</button>
+                <button onclick="kioskClearInput()" class="bg-gradient-to-br from-red-100 to-red-200 hover:from-red-200 hover:to-red-300 text-xl font-bold text-red-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-red-200/50 hover:shadow-xl hover:shadow-red-300/50 active:scale-95">지우기</button>
+                <button onclick="kioskPressKey('0')" class="kiosk-key bg-gradient-to-br from-cyan-100 to-cyan-200 hover:from-cyan-200 hover:to-cyan-300 text-3xl font-bold text-cyan-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-cyan-200/50 hover:shadow-xl hover:shadow-cyan-300/50 active:scale-95 active:shadow-md">0</button>
+                <button onclick="kioskBackspace()" class="bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-2xl font-bold text-gray-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-300/50 active:scale-95">←</button>
+            </div>
 
-        <!-- 등원/하원 버튼 -->
-        <div class="flex gap-5">
-            <button onclick="kioskCheckIn()"
-                class="flex-1 px-8 py-6 bg-gradient-to-br from-emerald-300 to-emerald-400 text-white font-bold rounded-2xl shadow-lg shadow-emerald-200/50 hover:shadow-xl hover:shadow-emerald-300/50 transition-all duration-150 text-xl active:scale-95">
-                <span class="material-symbols-outlined inline align-middle mr-2 text-2xl">login</span>
-                등원
-            </button>
-            <button onclick="kioskCheckOut()"
-                class="flex-1 px-8 py-6 bg-gradient-to-br from-amber-300 to-orange-400 text-white font-bold rounded-2xl shadow-lg shadow-orange-200/50 hover:shadow-xl hover:shadow-orange-300/50 transition-all duration-150 text-xl active:scale-95">
-                <span class="material-symbols-outlined inline align-middle mr-2 text-2xl">logout</span>
-                하원
-            </button>
-        </div>
+            <!-- 등원/하원 버튼 (세로모드용) -->
+            <div class="flex gap-5 kiosk-button-section mb-0">
+                <button onclick="kioskCheckIn()"
+                    class="kiosk-action-btn flex-1 px-8 py-9 bg-gradient-to-br from-emerald-300 to-emerald-400 text-white font-bold rounded-2xl shadow-lg shadow-emerald-200/50 hover:shadow-xl hover:shadow-emerald-300/50 transition-all duration-150 text-xl active:scale-95">
+                    <span class="material-symbols-outlined inline align-middle mr-2 text-2xl">login</span>
+                    등원
+                </button>
+                <button onclick="kioskCheckOut()"
+                    class="kiosk-action-btn flex-1 px-8 py-9 bg-gradient-to-br from-amber-300 to-orange-400 text-white font-bold rounded-2xl shadow-lg shadow-orange-200/50 hover:shadow-xl hover:shadow-orange-300/50 transition-all duration-150 text-xl active:scale-95">
+                    <span class="material-symbols-outlined inline align-middle mr-2 text-2xl">logout</span>
+                    하원
+                </button>
+            </div>
 
-        <!-- 메인으로 돌아가기 -->
-        <div class="mt-8 text-center">
-            <a href="index.html" class="inline-flex items-center gap-2 px-6 py-3 bg-white/60 text-gray-400 font-semibold rounded-xl hover:bg-white/80 transition-all duration-150">
-                <span class="material-symbols-outlined">home</span>
-                메인으로 돌아가기
-            </a>
+            <!-- 메인으로 돌아가기 -->
+            <div class="mt-8 text-center kiosk-home-link">
+                <a href="index.html" class="inline-flex items-center gap-2 px-6 py-3 bg-white/60 text-gray-400 font-semibold rounded-xl hover:bg-white/80 transition-all duration-150">
+                    <span class="material-symbols-outlined">home</span>
+                    메인으로 돌아가기
+                </a>
+            </div>
         </div>
     </div>
 
@@ -276,13 +546,17 @@
         function showStudentInfo(student, statusText) {
             const infoEl = document.getElementById('student-info');
             const nameEl = document.getElementById('student-name');
+            const landscapeNameEl = document.getElementById('student-name-landscape');
 
             nameEl.textContent = student.name;
+            landscapeNameEl.textContent = student.name;
             infoEl.classList.remove('hidden');
+            landscapeNameEl.classList.remove('hidden');
         }
 
         function hideStudentInfo() {
             document.getElementById('student-info').classList.add('hidden');
+            document.getElementById('student-name-landscape').classList.add('hidden');
         }
 
         // Supabase에서 학생 검색 (직접 fetch만 사용 - 빠른 응답)

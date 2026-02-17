@@ -61,8 +61,8 @@ public class MainActivity extends BridgeActivity {
                             // 메인 화면에서는 앱 종료
                             finish();
                         } else {
-                            // 다른 화면에서는 index.html로 이동
-                            webView.loadUrl("https://localhost/index.html");
+                            // 다른 화면에서는 JavaScript로 index.html로 이동 (세션 유지)
+                            webView.evaluateJavascript("window.location.href = 'index.html';", null);
                         }
                     }
                 }
