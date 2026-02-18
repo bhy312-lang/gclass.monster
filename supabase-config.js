@@ -25,7 +25,8 @@ function isCapacitorApp_Config() {
             persistSession: true,
             autoRefreshToken: true,
             detectSessionInUrl: detectSessionInUrl,
-            flowType: 'implicit'
+            flowType: 'pkce',  // PKCE 플로우 사용 (implicit보다 OAuth 상태 관리에 안정적)
+            storage: window.localStorage  // 명시적으로 localStorage 사용
         },
         realtime: {
             params: {

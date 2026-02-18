@@ -577,32 +577,28 @@
             try {
                 console.log(`[${provider} Login] OAuth 요청 시작...`);
 
-                // 웹과 앱에 따라 다른 redirect URL 사용
-                const redirectTo = isCapacitorApp()
-                    ? 'inclassadmin://auth'
-                    : 'https://gclass.monster/admin-main.html';
-
-                console.log(`[${provider} Login] redirect URL:`, redirectTo);
-
-                // OAuth URL 생성
-                const { data, error } = await window.supabase.auth.signInWithOAuth({
-                    provider: provider,
-                    options: {
-                        redirectTo: redirectTo,
-                        queryParams: isCapacitorApp() ? {} : { showBrowser: 'true' }
-                    }
-                });
-
-                if (error) {
-                    console.error(`[${provider} Login] OAuth 실패:`, error);
-                    alert('로그인에 실패했습니다: ' + error.message);
-                    return;
-                }
-
-                console.log(`[${provider} Login] OAuth URL:`, data.url);
-
-                // 앱 환경이면 CapacitorBrowser 사용, 웹이면 페이지 이동
+                // 앱 환경이면 CapacitorBrowser 사용, 웹이면 Supabase 자동 리다이렉트
                 if (isCapacitorApp()) {
+                    // 앱 환경: 수동 OAuth 처리
+                    const redirectTo = 'inclassadmin://auth';
+                    console.log(`[${provider} Login] App 환경 - redirect URL:`, redirectTo);
+
+                    const { data, error } = await window.supabase.auth.signInWithOAuth({
+                        provider: provider,
+                        options: {
+                            redirectTo: redirectTo,
+                            skipBrowserRedirect: true  // URL만 받아서 수동 처리
+                        }
+                    });
+
+                    if (error) {
+                        console.error(`[${provider} Login] OAuth 실패:`, error);
+                        alert('로그인에 실패했습니다: ' + error.message);
+                        return;
+                    }
+
+                    console.log(`[${provider} Login] OAuth URL:`, data.url);
+
                     // appUrlOpen 이벤트에서 resolve할 Promise 생성
                     const result = await new Promise((resolve) => {
                         window.oauthResolve = resolve;
@@ -635,12 +631,33 @@
                         alert('로그인에 실패했습니다. 다시 시도해주세요.');
                     }
                 } else {
-                    // 웹 환경: OAuth 페이지로 이동 (콜백 후 돌아옴)
-                    window.location.href = data.url;
+                    // 웹 환경: Supabase가 자동으로 OAuth 플로우 처리
+                    console.log(`[${provider} Login] Web 환경 - Supabase 자동 리다이렉트`);
+                    // 스플래시 화면 표시
+                    document.getElementById('splash-screen').style.display = 'flex';
+
+                    const { error } = await window.supabase.auth.signInWithOAuth({
+                        provider: provider,
+                        options: {
+                            redirectTo: window.location.origin + window.location.pathname,
+                            // skipBrowserRedirect는 기본값 false로 유지하여 Supabase가 자동으로 리다이렉트 처리
+                        }
+                    });
+
+                    if (error) {
+                        console.error(`[${provider} Login] OAuth 실패:`, error);
+                        document.getElementById('splash-screen').style.display = 'none';
+                        alert('로그인에 실패했습니다: ' + error.message);
+                        return;
+                    }
+
+                    // Supabase가 자동으로 리다이렉트를 처리하므로 추가 작업 불필요
+                    // OAuth 플로우가 완료되면 onAuthStateChange가 호출됨
                 }
 
             } catch (e) {
                 console.error(`[${provider} Login] 예외 발생:`, e);
+                document.getElementById('splash-screen').style.display = 'none';
                 alert('로그인 중 오류가 발생했습니다: ' + e.message);
             }
         }
@@ -845,12 +862,18 @@
         window.addEventListener('popstate', function(event) {
             console.log('[popstate] 이벤트 발생, 상태:', event.state, 'URL:', window.location.pathname);
 
-            // 관리자 메인 화면에서 뒤로가기 방지
-            const mainScreen = document.getElementById('main-screen');
-            if (mainScreen && mainScreen.classList.contains('active')) {
-                // 다시 히스토리 상태를 설정하여 뒤로가기 무효화
+            // 웹 환경에서 뒤로가기 방지 - 항상 admin-main 페이지에 머무름
+            if (!isCapacitorApp()) {
+                // URL이 admin-main.html이 아니면 돌려보내기
+                if (!window.location.pathname.includes('admin-main.html')) {
+                    console.log('[Back Button] 다른 페이지로 이동 감지, admin-main으로 복귀');
+                    window.location.href = '/admin-main.html';
+                    return;
+                }
+
+                // admin-main.html 내에서의 뒤로가기 방지
                 window.history.pushState({ isAdminMain: true }, '', window.location.pathname);
-                console.log('[Back Button] 관리자 메인 화면에서 뒤로가기 차단됨');
+                console.log('[Back Button] 뒤로가기 차단됨');
             }
         });
 
@@ -906,10 +929,52 @@
             console.log('[DOMContentLoaded] 페이지 로드됨');
             console.log('[DOMContentLoaded] Current URL:', window.location.href);
 
+            // 웹 환경에서 뒤로가기 방지를 위해 히스토리 조작
+            if (!isCapacitorApp()) {
+                // 현재 페이지를 히스토리에 추가 (뒤로가기 시 이 페이지로 유지)
+                window.history.replaceState({ isAdminMain: true }, '', window.location.pathname);
+                window.history.pushState({ isAdminMain: true }, '', window.location.pathname);
+                console.log('[History] 뒤로가기 방지 설정 완료');
+            }
+
+            // URL에 OAuth 관련 파라미터가 있는지 확인 (PKCE & Implicit flow)
+            const hash = window.location.hash;
+            const search = window.location.search;
+
+            const hasOAuthParams = hash.includes('access_token=') ||
+                                   hash.includes('code=') ||
+                                   search.includes('access_token=') ||
+                                   search.includes('code=') ||
+                                   hash.includes('error=') ||
+                                   search.includes('error=') ||
+                                   hash.includes('state=') ||
+                                   search.includes('state=');
+
             // 웹 환경에서 OAuth 콜백 처리
-            if (!isCapacitorApp() && (window.location.href.includes('access_token=') || window.location.href.includes('code='))) {
+            if (!isCapacitorApp() && hasOAuthParams) {
                 console.log('[Web OAuth] OAuth 콜백 감지됨');
-                // 스플래시 화면 유지하며 대기
+                console.log('[Web OAuth] Hash:', hash);
+                console.log('[Web OAuth] Search:', search);
+
+                // 에러가 있는 경우 확인
+                const paramsSource = hash.substring(1) || search.substring(1);
+                const urlParams = new URLSearchParams(paramsSource);
+                const errorCode = urlParams.get('error_code');
+                const errorDesc = urlParams.get('error_description');
+                const error = urlParams.get('error');
+
+                if (errorCode || errorDesc || error) {
+                    console.error('[Web OAuth] OAuth 에러:', { errorCode, errorDesc, error });
+                    // URL 정리
+                    window.history.replaceState({}, '', window.location.pathname);
+                    hideSplashScreen();
+                    alert('로그인에 실패했습니다: ' + (errorDesc || error || errorCode || '알 수 없는 오류'));
+                    showLoginScreen();
+                    return;
+                }
+
+                // 스플래시 화면 유지하며 대기 (Supabase가 자동 처리)
+                console.log('[Web OAuth] Supabase 자동 처리 대기 중...');
                 await handleWebOAuthCallback();
                 return;
             }
@@ -932,40 +997,57 @@
             }
             oauthCallbackHandled = true;
 
-            // onAuthStateChange로 세션 감지 (Lock 에러 방지)
-            const { data: { subscription } } = window.supabase.auth.onAuthStateChange(async (event, session) => {
-                console.log('[Web OAuth] Auth state changed:', event, session?.user?.id);
+            // Supabase가 detectSessionInUrl로 자동 처리하도록 대기
+            // PKCE flow의 경우 세션 설정에 시간이 걸릴 수 있음
+            const maxWaitTime = 10000; // 10초 대기
+            const checkInterval = 100; // 100ms마다 확인
+            let elapsed = 0;
 
-                if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
-                    const user = session.user;
-                    localStorage.setItem('isLoggedIn', 'true');
-                    localStorage.setItem('userId', user.id);
-                    localStorage.setItem('userName', user.user_metadata?.full_name || user.user_metadata?.name || '관리자님');
-                    localStorage.setItem('userEmail', user.email || '');
-                    localStorage.setItem('userPhoto', user.user_metadata?.avatar_url || user.user_metadata?.picture || '');
+            return new Promise((resolve) => {
+                const checkSession = async () => {
+                    elapsed += checkInterval;
 
-                    // URL 정리 및 히스토리 설정
-                    window.history.replaceState({ isAdminMain: true }, '', window.location.pathname);
-                    window.history.pushState({ isAdminMain: true }, '', window.location.pathname);
+                    try {
+                        const { data: { session }, error } = await window.supabase.auth.getSession();
 
-                    // 리스너 제거
-                    subscription.unsubscribe();
+                        if (session?.user) {
+                            console.log('[Web OAuth] 세션 확인됨:', session.user.id);
+                            const user = session.user;
+                            localStorage.setItem('isLoggedIn', 'true');
+                            localStorage.setItem('userId', user.id);
+                            localStorage.setItem('userName', user.user_metadata?.full_name || user.user_metadata?.name || '관리자님');
+                            localStorage.setItem('userEmail', user.email || '');
+                            localStorage.setItem('userPhoto', user.user_metadata?.avatar_url || user.user_metadata?.picture || '');
 
-                    // 승인 상태 확인
-                    await handleApprovalRedirect(user.id, user.email);
-                }
+                            // URL 정리 (해시 및 쿼리 파라미터 제거)
+                            window.history.replaceState({ isAdminMain: true }, '', window.location.pathname);
+
+                            // 승인 상태 확인
+                            await handleApprovalRedirect(user.id, user.email);
+                            resolve(true);
+                            return;
+                        }
+
+                        if (elapsed >= maxWaitTime) {
+                            console.warn('[Web OAuth] 세션 대기 시간 초과');
+                            hideSplashScreen();
+                            showLoginScreen();
+                            resolve(false);
+                            return;
+                        }
+
+                        // 계속 대기
+                        setTimeout(checkSession, checkInterval);
+                    } catch (e) {
+                        console.error('[Web OAuth] 세션 확인 에러:', e);
+                        hideSplashScreen();
+                        showLoginScreen();
+                        resolve(false);
+                    }
+                };
+
+                checkSession();
             });
-
-            // 타임아웃 (30초)
-            setTimeout(() => {
-                subscription.unsubscribe();
-                const mainScreen = document.getElementById('main-screen');
-                if (!mainScreen || !mainScreen.classList.contains('active')) {
-                    console.warn('[Web OAuth] 타임아웃 - 로그인 화면으로 이동');
-                    hideSplashScreen();
-                    showLoginScreen();
-                }
-            }, 30000);
         }
 
         // 인앱 알림 표시 함수
