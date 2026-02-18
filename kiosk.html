@@ -1257,13 +1257,13 @@
             }
         });
 
-        // ===== FCM 알림 전송 함수 =====
+        // ===== 알림 전송 함수 (Web Push + FCM 지원) =====
         // 등원 알림 전송
         async function sendCheckInNotification(studentId, studentName, timeStr) {
-            try {
-                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
-                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+            const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
 
+            try {
                 // 학부모 ID 가져오기
                 const parentResponse = await fetch(
                     `${SUPABASE_URL}/rest/v1/students?id=eq.${studentId}&select=parent_id`,
@@ -1277,19 +1277,70 @@
                 );
 
                 if (!parentResponse.ok) {
-                    console.error('[FCM] 학부모 조회 실패');
+                    console.error('[알림] 학부모 조회 실패');
                     return;
                 }
 
                 const parentData = await parentResponse.json();
                 if (!parentData || parentData.length === 0 || !parentData[0].parent_id) {
-                    console.log('[FCM] 연결된 학부모 없음');
+                    console.log('[알림] 연결된 학부모 없음');
                     return;
                 }
 
                 const parentId = parentData[0].parent_id;
 
-                // Edge Function 호출하여 FCM 전송
+                // Web Push 알림 전송 (기존 방식 - 웹 브라우저용)
+                sendWebPushNotification(studentId, parentId, 'check_in', studentName);
+
+                // FCM 알림 전송 (새 방식 - 모바일 앱용)
+                sendFCMNotification(parentId, 'attendance_check_in', `${studentName}님이 등원했습니다`, `${timeStr}에 등원 완료`, {
+                    student_id: studentId,
+                    student_name: studentName,
+                    check_in_time: new Date().toISOString()
+                });
+
+            } catch (error) {
+                console.error('[알림] 등원 알림 전송 오류:', error);
+            }
+        }
+
+        // Web Push 알림 전송 (기존 방식)
+        async function sendWebPushNotification(studentId, parentId, type, studentName) {
+            const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+            const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/send-web-push-notification`;
+
+            try {
+                const response = await fetch(edgeFunctionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        student_id: studentId,
+                        parent_id: parentId,
+                        type: type,
+                        student_name: studentName
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('[Web Push] 알림 전송 성공:', result);
+                } else {
+                    console.log('[Web Push] 알림 전송 응답:', await response.text());
+                }
+            } catch (error) {
+                console.error('[Web Push] 알림 전송 오류:', error);
+            }
+        }
+
+        // FCM 알림 전송 (새 방식 - 모바일 앱용)
+        async function sendFCMNotification(parentId, type, title, body, data) {
+            const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+
+            try {
                 const { data: { session } } = await supabase.auth.getSession();
                 const fcmResponse = await fetch(
                     `${SUPABASE_URL}/functions/v1/fcm-send-notification`,
@@ -1301,14 +1352,10 @@
                         },
                         body: JSON.stringify({
                             recipient_id: parentId,
-                            type: 'attendance_check_in',
-                            title: `${studentName}님이 등원했습니다`,
-                            body: `${timeStr}에 등원 완료`,
-                            data: {
-                                student_id: studentId,
-                                student_name: studentName,
-                                check_in_time: new Date().toISOString()
-                            },
+                            type: type,
+                            title: title,
+                            body: body,
+                            data: data,
                             priority: 'high',
                             target_type: 'parent'
                         })
@@ -1317,18 +1364,26 @@
 
                 if (fcmResponse.ok) {
                     const result = await fcmResponse.json();
-                    console.log('[FCM] 등원 알림 전송 성공:', result);
+                    console.log('[FCM] 알림 전송 성공:', result);
                 } else {
-                    console.error('[FCM] 등원 알림 전송 실패:', await fcmResponse.text());
+                    const errorText = await fcmResponse.text();
+                    // FCM이 설정되지 않은 경우는 무시 (선택적 기능)
+                    if (fcmResponse.status === 404 || fcmResponse.status === 500) {
+                        console.log('[FCM] FCM Edge Function을 찾을 수 없거나 설정되지 않음 (무시)');
+                    } else {
+                        console.log('[FCM] 알림 전송 응답:', errorText);
+                    }
                 }
             } catch (error) {
-                console.error('[FCM] 등원 알림 전송 오류:', error);
+                console.log('[FCM] 알림 전송 오류 (무시):', error.message);
             }
         }
 
         // 하원 알림 전송
         async function sendCheckOutNotification(studentId, studentName, timeStr) {
             try {
+                // Web Push 알림 전송 (기존 방식 - 웹 브라우저용)
+                // 학부모 ID 가져오기는 Web Push 함수 내에서 처리
                 const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
                 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
 
@@ -1345,52 +1400,30 @@
                 );
 
                 if (!parentResponse.ok) {
-                    console.error('[FCM] 학부모 조회 실패');
+                    console.error('[알림] 학부모 조회 실패');
                     return;
                 }
 
                 const parentData = await parentResponse.json();
                 if (!parentData || parentData.length === 0 || !parentData[0].parent_id) {
-                    console.log('[FCM] 연결된 학부모 없음');
+                    console.log('[알림] 연결된 학부모 없음');
                     return;
                 }
 
                 const parentId = parentData[0].parent_id;
 
-                // Edge Function 호출하여 FCM 전송
-                const { data: { session } } = await supabase.auth.getSession();
-                const fcmResponse = await fetch(
-                    `${SUPABASE_URL}/functions/v1/fcm-send-notification`,
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            recipient_id: parentId,
-                            type: 'attendance_check_out',
-                            title: `${studentName}님이 하원했습니다`,
-                            body: `${timeStr}에 하원 완료`,
-                            data: {
-                                student_id: studentId,
-                                student_name: studentName,
-                                check_out_time: new Date().toISOString()
-                            },
-                            priority: 'high',
-                            target_type: 'parent'
-                        })
-                    }
-                );
+                // Web Push 알림 전송 (기존 방식 - 웹 브라우저용)
+                sendWebPushNotification(studentId, parentId, 'check_out', studentName);
 
-                if (fcmResponse.ok) {
-                    const result = await fcmResponse.json();
-                    console.log('[FCM] 하원 알림 전송 성공:', result);
-                } else {
-                    console.error('[FCM] 하원 알림 전송 실패:', await fcmResponse.text());
-                }
+                // FCM 알림 전송 (새 방식 - 모바일 앱용)
+                sendFCMNotification(parentId, 'attendance_check_out', `${studentName}님이 하원했습니다`, `${timeStr}에 하원 완료`, {
+                    student_id: studentId,
+                    student_name: studentName,
+                    check_out_time: new Date().toISOString()
+                });
+
             } catch (error) {
-                console.error('[FCM] 하원 알림 전송 오류:', error);
+                console.error('[알림] 하원 알림 전송 오류:', error);
             }
         }
     </script>
