@@ -832,7 +832,24 @@
             document.getElementById('main-screen').classList.add('active');
             // 기본 사용자 정보 표시
             updateUserInfo();
+
+            // 웹 환경에서는 뒤로가기 버튼 처리 (히스토리 조작)
+            if (!isCapacitorApp()) {
+                // 현재 히스토리 상태를 admin-main으로 교체
+                window.history.replaceState({ isAdminMain: true }, '', window.location.pathname);
+            }
         }
+
+        // 뒤로가기 버튼 이벤트 처리
+        window.addEventListener('popstate', function(event) {
+            // 관리자 메인 화면에서 뒤로가기 방지
+            const mainScreen = document.getElementById('main-screen');
+            if (mainScreen && mainScreen.classList.contains('active')) {
+                // 다시 히스토리 상태를 설정하여 뒤로가기 무효화
+                window.history.pushState({ isAdminMain: true }, '', window.location.pathname);
+                console.log('[Back Button] 관리자 메인 화면에서 뒤로가기 차단됨');
+            }
+        });
 
         function updateUserInfo() {
             const userName = localStorage.getItem('userName') || '관리자님';
