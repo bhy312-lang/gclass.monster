@@ -921,57 +921,51 @@
             }, 1500);
         });
 
-        // 웹 환경 OAuth 콜백 처리 (간소화)
+        // 웹 환경 OAuth 콜백 처리
+        let oauthCallbackHandled = false;
         async function handleWebOAuthCallback() {
             console.log('[Web OAuth] 콜백 처리 시작');
 
-            // 스플래시 화면 유지
-            let resolved = false;
+            if (oauthCallbackHandled) {
+                console.log('[Web OAuth] 이미 처리됨, 무시');
+                return;
+            }
+            oauthCallbackHandled = true;
 
-            const checkSession = async () => {
-                if (resolved) return;
-                try {
-                    const { data: { session }, error } = await window.supabase.auth.getSession();
-                    if (error) {
-                        console.error('[Web OAuth] getSession error:', error);
-                        return;
-                    }
-                    if (session?.user) {
-                        resolved = true;
-                        const user = session.user;
-                        localStorage.setItem('isLoggedIn', 'true');
-                        localStorage.setItem('userId', user.id);
-                        localStorage.setItem('userName', user.user_metadata?.full_name || user.user_metadata?.name || '관리자님');
-                        localStorage.setItem('userEmail', user.email || '');
-                        localStorage.setItem('userPhoto', user.user_metadata?.avatar_url || user.user_metadata?.picture || '');
+            // onAuthStateChange로 세션 감지 (Lock 에러 방지)
+            const { data: { subscription } } = window.supabase.auth.onAuthStateChange(async (event, session) => {
+                console.log('[Web OAuth] Auth state changed:', event, session?.user?.id);
 
-                        // URL 정리 및 히스토리 설정
-                        window.history.replaceState({ isAdminMain: true }, '', window.location.pathname);
-                        window.history.pushState({ isAdminMain: true }, '', window.location.pathname);
+                if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+                    const user = session.user;
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('userId', user.id);
+                    localStorage.setItem('userName', user.user_metadata?.full_name || user.user_metadata?.name || '관리자님');
+                    localStorage.setItem('userEmail', user.email || '');
+                    localStorage.setItem('userPhoto', user.user_metadata?.avatar_url || user.user_metadata?.picture || '');
 
-                        // 승인 상태 확인
-                        await handleApprovalRedirect(user.id, user.email);
-                    }
-                } catch (e) {
-                    console.error('[Web OAuth] 세션 확인 에러:', e);
+                    // URL 정리 및 히스토리 설정
+                    window.history.replaceState({ isAdminMain: true }, '', window.location.pathname);
+                    window.history.pushState({ isAdminMain: true }, '', window.location.pathname);
+
+                    // 리스너 제거
+                    subscription.unsubscribe();
+
+                    // 승인 상태 확인
+                    await handleApprovalRedirect(user.id, user.email);
                 }
-            };
+            });
 
-            // Supabase가 URL을 처리할 시간을 준 후 세션 확인
-            await new Promise(r => setTimeout(r, 2000));
-            await checkSession();
-
-            // 주기적으로 재시도 (최대 10초)
-            for (let i = 0; i < 5 && !resolved; i++) {
-                await new Promise(r => setTimeout(r, 2000));
-                await checkSession();
-            }
-
-            if (!resolved) {
-                console.warn('[Web OAuth] 타임아웃 - 세션을 찾을 수 없음');
-                hideSplashScreen();
-                showLoginScreen();
-            }
+            // 타임아웃 (30초)
+            setTimeout(() => {
+                subscription.unsubscribe();
+                const mainScreen = document.getElementById('main-screen');
+                if (!mainScreen || !mainScreen.classList.contains('active')) {
+                    console.warn('[Web OAuth] 타임아웃 - 로그인 화면으로 이동');
+                    hideSplashScreen();
+                    showLoginScreen();
+                }
+            }, 30000);
         }
 
         // 인앱 알림 표시 함수
