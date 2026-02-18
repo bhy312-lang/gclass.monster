@@ -560,6 +560,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
 
+    <!-- FCM Service -->
+    <script src="js/fcm-service.js"></script>
+
     <script>
         // 로그인 상태 확인
         async function checkLoginStatus() {
@@ -832,53 +835,14 @@
             };
         }
 
-        // 푸시 알림 초기화
+        // 푸시 알림 초기화 (새로운 FCM Service 사용)
         async function initPushNotifications() {
             try {
-                const { PushNotifications } = window.Capacitor.Plugins;
-
-                if (!PushNotifications) {
-                    console.log('PushNotifications 플러그인을 찾을 수 없습니다');
-                    return;
+                if (window.fcmService && !window.fcmService.isInitialized) {
+                    await window.fcmService.initialize();
+                    window.fcmService.startAckRetryMonitor();
+                    console.log('[FCM] FCM Service 초기화 완료');
                 }
-
-                const permission = await PushNotifications.requestPermissions();
-
-                if (permission.receive === 'granted') {
-                    await PushNotifications.register();
-                }
-
-                PushNotifications.addListener('registration', async (token) => {
-                    console.log('FCM 토큰:', token.value);
-                    localStorage.setItem('fcmToken', token.value);
-
-                    const phoneNumber = localStorage.getItem('userPhone');
-                    if (phoneNumber && window.supabase) {
-                        await saveFcmToken(phoneNumber);
-                    }
-                });
-
-                PushNotifications.addListener('registrationError', (error) => {
-                    console.error('푸시 등록 실패:', error);
-                });
-
-                PushNotifications.addListener('pushNotificationReceived', (notification) => {
-                    showInAppNotification(
-                        notification.title || notification.data?.title || '알림',
-                        notification.body || notification.data?.body || ''
-                    );
-                });
-
-                PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-                    const notification = action.notification;
-                    if (notification) {
-                        showInAppNotification(
-                            notification.title || notification.data?.title || '알림',
-                            notification.body || notification.data?.body || ''
-                        );
-                    }
-                });
-
             } catch (error) {
                 console.error('푸시 초기화 실패:', error);
             }

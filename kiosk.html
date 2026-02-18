@@ -83,7 +83,7 @@
 
         <!-- 메인으로 돌아가기 -->
         <div class="mt-8 text-center">
-            <a href="index.html" class="inline-flex items-center gap-2 px-6 py-3 bg-white/60 text-gray-400 font-semibold rounded-xl hover:bg-white/80 transition-all duration-150">
+            <a href="admin-main.html" class="inline-flex items-center gap-2 px-6 py-3 bg-white/60 text-gray-400 font-semibold rounded-xl hover:bg-white/80 transition-all duration-150">
                 <span class="material-symbols-outlined">home</span>
                 메인으로 돌아가기
             </a>
@@ -424,6 +424,9 @@
                     const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
                     const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
+                    // FCM 알림 전송
+                    sendCheckInNotification(selectedStudent.id, selectedStudent.name, timeStr);
+
                     // 보강시간이 있으면 메시지에 표시
                     const makeupMsg = makeupMinutes > 0 ? `\n(보강 +${makeupMinutes}분 적용)` : '';
                     showAlert('success', '등원 완료',
@@ -527,6 +530,9 @@
                 if (fetchResult.success) {
                     const checkOutTime = new Date();
                     const timeStr = checkOutTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+                    // FCM 알림 전송
+                    sendCheckOutNotification(selectedStudent.id, selectedStudent.name, timeStr);
 
                     showAlert('success', '하원 완료',
                         `${selectedStudent.name}님, 하원 완료되었습니다!\n안녕히 가세요!\n\n하원시간: ${timeStr}`);
@@ -1250,6 +1256,143 @@
                 closeStudentSelectModal();
             }
         });
+
+        // ===== FCM 알림 전송 함수 =====
+        // 등원 알림 전송
+        async function sendCheckInNotification(studentId, studentName, timeStr) {
+            try {
+                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+
+                // 학부모 ID 가져오기
+                const parentResponse = await fetch(
+                    `${SUPABASE_URL}/rest/v1/students?id=eq.${studentId}&select=parent_id`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        }
+                    }
+                );
+
+                if (!parentResponse.ok) {
+                    console.error('[FCM] 학부모 조회 실패');
+                    return;
+                }
+
+                const parentData = await parentResponse.json();
+                if (!parentData || parentData.length === 0 || !parentData[0].parent_id) {
+                    console.log('[FCM] 연결된 학부모 없음');
+                    return;
+                }
+
+                const parentId = parentData[0].parent_id;
+
+                // Edge Function 호출하여 FCM 전송
+                const { data: { session } } = await supabase.auth.getSession();
+                const fcmResponse = await fetch(
+                    `${SUPABASE_URL}/functions/v1/fcm-send-notification`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            recipient_id: parentId,
+                            type: 'attendance_check_in',
+                            title: `${studentName}님이 등원했습니다`,
+                            body: `${timeStr}에 등원 완료`,
+                            data: {
+                                student_id: studentId,
+                                student_name: studentName,
+                                check_in_time: new Date().toISOString()
+                            },
+                            priority: 'high',
+                            target_type: 'parent'
+                        })
+                    }
+                );
+
+                if (fcmResponse.ok) {
+                    const result = await fcmResponse.json();
+                    console.log('[FCM] 등원 알림 전송 성공:', result);
+                } else {
+                    console.error('[FCM] 등원 알림 전송 실패:', await fcmResponse.text());
+                }
+            } catch (error) {
+                console.error('[FCM] 등원 알림 전송 오류:', error);
+            }
+        }
+
+        // 하원 알림 전송
+        async function sendCheckOutNotification(studentId, studentName, timeStr) {
+            try {
+                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+
+                // 학부모 ID 가져오기
+                const parentResponse = await fetch(
+                    `${SUPABASE_URL}/rest/v1/students?id=eq.${studentId}&select=parent_id`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        }
+                    }
+                );
+
+                if (!parentResponse.ok) {
+                    console.error('[FCM] 학부모 조회 실패');
+                    return;
+                }
+
+                const parentData = await parentResponse.json();
+                if (!parentData || parentData.length === 0 || !parentData[0].parent_id) {
+                    console.log('[FCM] 연결된 학부모 없음');
+                    return;
+                }
+
+                const parentId = parentData[0].parent_id;
+
+                // Edge Function 호출하여 FCM 전송
+                const { data: { session } } = await supabase.auth.getSession();
+                const fcmResponse = await fetch(
+                    `${SUPABASE_URL}/functions/v1/fcm-send-notification`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            recipient_id: parentId,
+                            type: 'attendance_check_out',
+                            title: `${studentName}님이 하원했습니다`,
+                            body: `${timeStr}에 하원 완료`,
+                            data: {
+                                student_id: studentId,
+                                student_name: studentName,
+                                check_out_time: new Date().toISOString()
+                            },
+                            priority: 'high',
+                            target_type: 'parent'
+                        })
+                    }
+                );
+
+                if (fcmResponse.ok) {
+                    const result = await fcmResponse.json();
+                    console.log('[FCM] 하원 알림 전송 성공:', result);
+                } else {
+                    console.error('[FCM] 하원 알림 전송 실패:', await fcmResponse.text());
+                }
+            } catch (error) {
+                console.error('[FCM] 하원 알림 전송 오류:', error);
+            }
+        }
     </script>
 </body>
 </html>
