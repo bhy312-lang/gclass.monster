@@ -4,26 +4,25 @@
 const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co'; // 예: https://xxxxx.supabase.co
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo'; // 예: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-// 앱 환경인지 웹 환경인지 확인
-function isCapacitorApp() {
+// 앱 환경인지 확인
+function isCapacitorApp_Config() {
     return window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() !== 'web';
 }
 
 // OAuth 콜백 URL인지 확인
-function hasOAuthCallback() {
-    return window.location.hash.includes('access_token=') ||
-           window.location.hash.includes('code=') ||
-           window.location.search.includes('access_token=') ||
-           window.location.search.includes('code=');
+function hasOAuthCallback_Config() {
+    const hash = window.location.hash;
+    const search = window.location.search;
+    return hash.includes('access_token=') || hash.includes('code=') ||
+           search.includes('access_token=') || search.includes('code=');
 }
+
+// 웹 환경이면 항상 detectSessionInUrl 활성화 (앱에서만 비활성화)
+const detectSessionInUrl = !isCapacitorApp_Config();
 
 // Supabase 클라이언트 생성 및 전역 노출 (즉시 실행)
 (function() {
-    // supabase 라이브러리 참조 저장
     const supabaseLib = window.supabase;
-
-    // 웹 환경에서 OAuth 콜백이 있으면 자동 감지, 앱에서는 수동 처리
-    const detectSessionInUrl = !isCapacitorApp() && hasOAuthCallback();
 
     const supabaseClient = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         db: {
