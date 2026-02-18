@@ -580,7 +580,7 @@
                 // 웹과 앱에 따라 다른 redirect URL 사용
                 const redirectTo = isCapacitorApp()
                     ? 'inclassadmin://auth'
-                    : window.location.origin + window.location.pathname;
+                    : 'https://www.gclass.monster/admin-main.html';
 
                 console.log(`[${provider} Login] redirect URL:`, redirectTo);
 
