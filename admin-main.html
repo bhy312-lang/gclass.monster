@@ -835,13 +835,16 @@
 
             // 웹 환경에서는 뒤로가기 버튼 처리 (히스토리 조작)
             if (!isCapacitorApp()) {
-                // 현재 히스토리 상태를 admin-main으로 교체
+                // 현재 히스토리 상태를 admin-main으로 교체 후 추가 엔트리 생성
                 window.history.replaceState({ isAdminMain: true }, '', window.location.pathname);
+                window.history.pushState({ isAdminMain: true }, '', window.location.pathname);
             }
         }
 
         // 뒤로가기 버튼 이벤트 처리
         window.addEventListener('popstate', function(event) {
+            console.log('[popstate] 이벤트 발생, 상태:', event.state, 'URL:', window.location.pathname);
+
             // 관리자 메인 화면에서 뒤로가기 방지
             const mainScreen = document.getElementById('main-screen');
             if (mainScreen && mainScreen.classList.contains('active')) {
@@ -942,8 +945,9 @@
                         localStorage.setItem('userEmail', user.email || '');
                         localStorage.setItem('userPhoto', user.user_metadata?.avatar_url || user.user_metadata?.picture || '');
 
-                        // URL 정리
-                        window.history.replaceState({}, document.title, window.location.pathname);
+                        // URL 정리 및 히스토리 설정
+                        window.history.replaceState({ isAdminMain: true }, '', window.location.pathname);
+                        window.history.pushState({ isAdminMain: true }, '', window.location.pathname);
 
                         // 승인 상태 확인
                         await handleApprovalRedirect(user.id, user.email);
