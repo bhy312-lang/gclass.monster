@@ -9,20 +9,13 @@ function isCapacitorApp_Config() {
     return window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() !== 'web';
 }
 
-// OAuth 콜백 URL인지 확인
-function hasOAuthCallback_Config() {
-    const hash = window.location.hash;
-    const search = window.location.search;
-    return hash.includes('access_token=') || hash.includes('code=') ||
-           search.includes('access_token=') || search.includes('code=');
-}
-
-// 웹 환경이면 항상 detectSessionInUrl 활성화 (앱에서만 비활성화)
-const detectSessionInUrl = !isCapacitorApp_Config();
-
 // Supabase 클라이언트 생성 및 전역 노출 (즉시 실행)
 (function() {
     const supabaseLib = window.supabase;
+
+    // 웹 환경에서는 항상 detectSessionInUrl 활성화 (OAuth 콜백 처리)
+    // 앱 환경에서는 비활성화 (수동 처리)
+    const detectSessionInUrl = !isCapacitorApp_Config();
 
     const supabaseClient = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         db: {
