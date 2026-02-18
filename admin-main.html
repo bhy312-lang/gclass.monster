@@ -900,56 +900,30 @@
             }, 1500);
         });
 
-        // 웹 환경 OAuth 콜백 처리
+        // 웹 환경 OAuth 콜백 처리 (Supabase 자동 처리 후 세션 확인)
         async function handleWebOAuthCallback() {
             console.log('[Web OAuth] 콜백 처리 시작');
 
+            // Supabase가 자동으로 세션을 처리하도록 잠시 대기
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             try {
-                // URL에서 토큰 추출
-                const hashParams = window.location.hash.substring(1);
-                const searchParams = window.location.search.substring(1);
+                const { data: { session } } = await window.supabase.auth.getSession();
 
-                const getParam = (str, name) => {
-                    if (!str) return null;
-                    const params = new URLSearchParams(str);
-                    return params.get(name);
-                };
+                if (session?.user) {
+                    const user = session.user;
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('userId', user.id);
+                    localStorage.setItem('userName', user.user_metadata?.full_name || user.user_metadata?.name || '관리자님');
+                    localStorage.setItem('userEmail', user.email || '');
+                    localStorage.setItem('userPhoto', user.user_metadata?.avatar_url || user.user_metadata?.picture || '');
 
-                const accessToken = getParam(hashParams, 'access_token') || getParam(searchParams, 'access_token');
-                const refreshToken = getParam(hashParams, 'refresh_token') || getParam(searchParams, 'refresh_token');
-                const expiresIn = getParam(hashParams, 'expires_in') || getParam(searchParams, 'expires_in');
-                const tokenType = getParam(hashParams, 'token_type') || getParam(searchParams, 'token_type');
+                    // URL 정리 (해시 제거)
+                    window.history.replaceState({}, document.title, window.location.pathname);
 
-                console.log('[Web OAuth] 토큰 추출:', { hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken });
-
-                if (accessToken && typeof window.supabase !== 'undefined') {
-                    await window.supabase.auth.setSession({
-                        access_token: accessToken,
-                        refresh_token: refreshToken || '',
-                        expires_in: expiresIn ? parseInt(expiresIn) : undefined,
-                        token_type: tokenType || 'bearer'
-                    });
-                    console.log('[Web OAuth] 세션 설정 완료');
-
-                    // 세션 확인
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    const { data: { session } } = await window.supabase.auth.getSession();
-
-                    if (session?.user) {
-                        const user = session.user;
-                        localStorage.setItem('isLoggedIn', 'true');
-                        localStorage.setItem('userId', user.id);
-                        localStorage.setItem('userName', user.user_metadata?.full_name || user.user_metadata?.name || '관리자님');
-                        localStorage.setItem('userEmail', user.email || '');
-                        localStorage.setItem('userPhoto', user.user_metadata?.avatar_url || user.user_metadata?.picture || '');
-
-                        // URL 정리 (해시 제거)
-                        window.history.replaceState({}, document.title, window.location.pathname);
-
-                        // 승인 상태 확인 후 페이지 이동
-                        await handleApprovalRedirect(user.id, user.email);
-                        return;
-                    }
+                    // 승인 상태 확인 후 페이지 이동
+                    await handleApprovalRedirect(user.id, user.email);
+                    return;
                 }
             } catch (e) {
                 console.error('[Web OAuth] 콜백 처리 에러:', e);
