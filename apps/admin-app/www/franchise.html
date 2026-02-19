@@ -4454,18 +4454,20 @@
                 }
 
                 if (dragPendingX !== null && dragPendingY !== null) {
-                    // left, top을 먼저 설정 (transform 제거 전에)
+                    // left, top을 먼저 설정
                     seatElement.style.left = dragPendingX + 'px';
                     seatElement.style.top = dragPendingY + 'px';
-                    // 다음 프레임에서 transform 제거 (깜빡임 방지)
-                    requestAnimationFrame(() => {
-                        seatElement.style.transform = '';
-                    });
+                    // transform 제거
+                    seatElement.style.transform = '';
+                    // 브라우저 reflow 강제 (레이아웃 안정화)
+                    void seatElement.offsetHeight;
+                    // 그 다음에 dragging 클래스 제거 (트랜지션 활성화)
+                    seatElement.classList.remove('seat-dragging');
                 } else {
                     seatElement.style.transform = '';
+                    seatElement.classList.remove('seat-dragging');
                 }
 
-                seatElement.classList.remove('seat-dragging');
                 seatElement.style.willChange = '';
 
                 const seat = seats.find(s => s.id === dragState.seatId);
