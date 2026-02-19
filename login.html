@@ -198,6 +198,25 @@
             return defaultUrl;
         }
 
+        // 현재 페이지의 기본 URL 경로 가져오기 (예: /gclass.monster/ 또는 /)
+        function getBasePath() {
+            const pathname = window.location.pathname;
+            // login.html이 포함된 경로에서 기본 경로 추출
+            // 예: /gclass.monster/login.html -> /gclass.monster/
+            // 예: /login.html -> /
+            const lastSlashIndex = pathname.lastIndexOf('/');
+            if (lastSlashIndex > 0) {
+                return pathname.substring(0, lastSlashIndex + 1);
+            }
+            return '/';
+        }
+
+        // 전체 redirect URL 생성
+        function getFullRedirectUrl(path) {
+            const basePath = getBasePath();
+            return window.location.origin + basePath + path;
+        }
+
         // 이미 로그인된 경우 리다이렉트
         async function checkAuth() {
             const { data: { session } } = await supabase.auth.getSession();
@@ -224,7 +243,7 @@
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: window.location.origin + `/${redirectUrl}`
+                    redirectTo: getFullRedirectUrl(redirectUrl)
                 }
             });
 
@@ -246,7 +265,7 @@
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'kakao',
                 options: {
-                    redirectTo: window.location.origin + `/${redirectUrl}`
+                    redirectTo: getFullRedirectUrl(redirectUrl)
                 }
             });
 

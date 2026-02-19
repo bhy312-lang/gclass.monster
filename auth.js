@@ -44,35 +44,43 @@ async function checkAuthAndRedirect() {
 
 // 인증 상태 변경 리스너
 supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log('Auth state changed:', event);
+    console.log('Auth state changed:', event, 'user:', session?.user?.email || 'none');
 
-    if (session?.user) {
-        currentUser = session.user;
-        await loadUserProfile();
-        updateAuthUI();
+    try {
+        if (session?.user) {
+            currentUser = session.user;
+            // UI를 먼저 업데이트 (프로필 로드를 기다리지 않음)
+            updateAuthUI();
+            // 프로필 로드는 백그라운드에서 실행
+            loadUserProfile().catch(err => console.error('[Auth] 프로필 로드 에러:', err));
 
-        // DataService 초기화 (가맹점 데이터 로드)
-        if (typeof DataService !== 'undefined') {
-            try {
-                await DataService.initializeData();
-                console.log('[Auth] DataService 초기화 완료');
-                // 페이지별 데이터 새로고침 함수가 있으면 호출
-                if (typeof refreshPageData === 'function') {
-                    refreshPageData();
+            // DataService 초기화 (가맹점 데이터 로드)
+            if (typeof DataService !== 'undefined') {
+                try {
+                    await DataService.initializeData();
+                    console.log('[Auth] DataService 초기화 완료');
+                    // 페이지별 데이터 새로고침 함수가 있으면 호출
+                    if (typeof refreshPageData === 'function') {
+                        refreshPageData();
+                    }
+                } catch (e) {
+                    console.error('[Auth] DataService 초기화 실패:', e);
                 }
-            } catch (e) {
-                console.error('[Auth] DataService 초기화 실패:', e);
+            }
+        } else {
+            currentUser = null;
+            currentProfile = null;
+            updateAuthUI();
+
+            // DataService 캐시 클리어
+            if (typeof DataService !== 'undefined') {
+                DataService.clearCache();
             }
         }
-    } else {
-        currentUser = null;
-        currentProfile = null;
+    } catch (error) {
+        console.error('[Auth] onAuthStateChange 에러:', error);
+        // 에러가 발생해도 UI 업데이트 시도
         updateAuthUI();
-
-        // DataService 캐시 클리어
-        if (typeof DataService !== 'undefined') {
-            DataService.clearCache();
-        }
     }
 });
 
@@ -159,17 +167,52 @@ async function signInWithKakao(redirectUrl = null) {
 
 // 로그아웃
 async function signOut() {
-    const { error } = await supabase.auth.signOut();
+    console.log('[Auth] 로그아웃 시도...');
 
-    if (error) {
-        console.error('로그아웃 실패:', error);
-        showAlert('로그아웃에 실패했습니다.', 'error');
+    // Supabase 로그아웃 시도 (타임아웃)
+    const timeout = setTimeout(() => {
+        console.log('[Auth] 로그아웃 타임아웃, localStorage 삭제');
+        // localStorage의 Supabase 세션 삭제
+        Object.keys(localStorage).forEach(key => {
+            if (key.includes('supabase') || key.includes('sb-')) {
+                localStorage.removeItem(key);
+                console.log('[Auth] 삭제된 키:', key);
+            }
+        });
+        window.location.reload();
+    }, 2000);
+
+    try {
+        const { error } = await supabase.auth.signOut();
+        clearTimeout(timeout);
+
+        if (error) {
+            console.error('[Auth] 로그아웃 실패:', error);
+            // 에러가 있어도 localStorage는 지우고 시도
+            Object.keys(localStorage).forEach(key => {
+                if (key.includes('supabase') || key.includes('sb-')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            window.location.reload();
+            return false;
+        }
+
+        console.log('[Auth] 로그아웃 성공, 페이지 새로고침');
+        window.location.reload();
+        return true;
+    } catch (e) {
+        clearTimeout(timeout);
+        console.error('[Auth] 로그아웃 예외:', e);
+        // 예외가 발생해도 localStorage는 지움
+        Object.keys(localStorage).forEach(key => {
+            if (key.includes('supabase') || key.includes('sb-')) {
+                localStorage.removeItem(key);
+            }
+        });
+        window.location.reload();
         return false;
     }
-
-    // 현재 페이지에서 새로고침 (로그인 필수 페이지가 아니면 그대로 유지)
-    window.location.reload();
-    return true;
 }
 
 // 프로필 업데이트 (전화번호, 이름)
@@ -295,22 +338,10 @@ function updateAuthUI() {
 
         // 로그아웃 버튼
         if (logoutBtn) {
-            logoutBtn.onclick = signOut;
+            // logoutBtn은 HTML에서 onclick="signOut()"으로 설정됨
         }
 
-        // 프로필 버튼 클릭 시 드롭다운 토글
-        if (profileBtn) {
-            // 기존 리스너 제거
-            const newProfileBtn = profileBtn.cloneNode(true);
-            profileBtn.parentNode.replaceChild(newProfileBtn, profileBtn);
-
-            newProfileBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                if (profileDropdown) {
-                    profileDropdown.classList.toggle('hidden');
-                }
-            });
-        }
+        // 프로필 버튼 클릭 이벤트는 HTML onclick으로 처리됨
     } else {
         // 로그아웃 상태
         if (loginBtn) {
