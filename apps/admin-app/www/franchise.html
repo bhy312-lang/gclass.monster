@@ -4454,9 +4454,13 @@
                 }
 
                 if (dragPendingX !== null && dragPendingY !== null) {
-                    seatElement.style.transform = '';
+                    // left, top을 먼저 설정 (transform 제거 전에)
                     seatElement.style.left = dragPendingX + 'px';
                     seatElement.style.top = dragPendingY + 'px';
+                    // 다음 프레임에서 transform 제거 (깜빡임 방지)
+                    requestAnimationFrame(() => {
+                        seatElement.style.transform = '';
+                    });
                 } else {
                     seatElement.style.transform = '';
                 }
@@ -5356,7 +5360,7 @@
                 .map(s => s.innerText)
                 .join('\n\n');
 
-            zip.file("index.html", htmlContent);
+            zip.file("admin-main.html", htmlContent);
             zip.file("style.css", cssContent);
             zip.file("script.js", jsContent);
 
