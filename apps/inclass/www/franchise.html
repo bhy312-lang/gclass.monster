@@ -207,7 +207,7 @@
  SPDX-License-Identifier: Apache-2.0
 */
             var Ja = this || self; function Ka(a, b) { a: { var c = ["CLOSURE_FLAGS"]; for (var d = Ja, e = 0; e < c.length; e++)if (d = d[c[e]], d == null) { c = null; break a } c = d } a = c && c[a]; return a != null ? a : b } function La(a) { var b = typeof a; return b != "object" ? b : a ? Array.isArray(a) ? "array" : b : "null" } function Ma(a, b, c) { return a.call.apply(a.bind, arguments) }
-            function Na(a, b, c) { if (!a) throw Error(); if (arguments.length > 2) { var d = Array.prototype.slice.call(arguments, 2); return function () { var e = Array.prototype.slice.call(arguments); Array.prototype.unshift.apply(e, d); return a.apply(b, e) } } return function () { return a.apply(b, arguments) } } function x(a, b, c) { x = Function.prototype.bind && Function.prototype.bind.toString().indexOf("native code") != -1 ? Ma : Na; return x.apply(null, arguments) }
+            function Na(a, b, c) { if (!a) throw Error(); if (arguments.length > 2) { var d = Array.prototype.slice.call(arguments, 2); return function () { var e = Array.prototype.slice.call(arguments); Array.prototype.unshift.apply(e, d); return a.apply(b, e) } } return function () { return a.apply(b, arguments) } } function x(a, b, c) { x = Function.prototype.bind && Function.prototype.bind.toString && Function.prototype.bind.toString().indexOf("native code") != -1 ? Ma : Na; return x.apply(null, arguments) }
             function Oa(a, b) { function c() { } c.prototype = b.prototype; a.L = b.prototype; a.prototype = new c; a.prototype.constructor = a; a.Ma = function (d, e, h) { for (var f = Array(arguments.length - 2), g = 2; g < arguments.length; g++)f[g - 2] = arguments[g]; return b.prototype[e].apply(d, f) } }; function Pa(a) { Ja.setTimeout(function () { throw a; }, 0) }; var Qa = Ka(748402147, !0), Ra = Ka(824656860, Ka(1, !0)); function Sa(a, b) { a.__closure__error__context__984382 || (a.__closure__error__context__984382 = {}); a.__closure__error__context__984382.severity = b }; var Ta = void 0; function Ua(a) { a = Error(a); Sa(a, "warning"); return a }; function Va() { return typeof BigInt === "function" }; var Wa = typeof Symbol === "function" && typeof Symbol() === "symbol"; function Xa(a, b, c) { return typeof Symbol === "function" && typeof Symbol() === "symbol" ? (c === void 0 ? 0 : c) && Symbol.for && a ? Symbol.for(a) : a != null ? Symbol(a) : Symbol() : b } var ab = Xa("jas", void 0, !0), bb = Xa(void 0, "1oa"), cb = Xa(void 0, "0actk"), db = Xa("m_m", "Oa", !0); var eb = { Aa: { value: 0, configurable: !0, writable: !0, enumerable: !1 } }, fb = Object.defineProperties, y = Wa ? ab : "Aa"; function gb(a, b) { Wa || y in a || fb(a, eb); a[y] |= b } function hb(a, b) { Wa || y in a || fb(a, eb); a[y] = b }; var ib = {}; function jb(a, b) { return b === void 0 ? a.A !== kb && !!(2 & (a.J[y] | 0)) : !!(2 & b) && a.A !== kb } var kb = {}; function lb(a) { a.Na = !0; return a }; var mb = lb(function (a) { return typeof a === "number" }), nb = lb(function (a) { return typeof a === "string" }), ob = lb(function (a) { return typeof a === "boolean" }); var pb = typeof Ja.BigInt === "function" && typeof Ja.BigInt(0) === "bigint"; function z(a) { var b = a; if (nb(b)) { if (!/^\s*(?:-?[1-9]\d*|0)?\s*$/.test(b)) throw Error(String(b)); } else if (mb(b) && !Number.isSafeInteger(b)) throw Error(String(b)); return pb ? BigInt(a) : a = ob(a) ? a ? "1" : "0" : nb(a) ? a.trim() || "0" : String(a) } var xb = lb(function (a) { return pb ? a >= qb && a <= rb : a[0] === "-" ? sb(a, tb) : sb(a, ub) }), tb = Number.MIN_SAFE_INTEGER.toString(), qb = pb ? BigInt(Number.MIN_SAFE_INTEGER) : void 0, ub = Number.MAX_SAFE_INTEGER.toString(), rb = pb ? BigInt(Number.MAX_SAFE_INTEGER) : void 0;
             function sb(a, b) { if (a.length > b.length) return !1; if (a.length < b.length || a === b) return !0; for (var c = 0; c < a.length; c++) { var d = a[c], e = b[c]; if (d > e) return !1; if (d < e) return !0 } }; var D = 0, F = 0; function yb(a) { var b = a >>> 0; D = b; F = (a - b) / 4294967296 >>> 0 } function zb(a) { if (a < 0) { yb(-a); var b = u(Ab(D, F)); a = b.next().value; b = b.next().value; D = a >>> 0; F = b >>> 0 } else yb(a) } function Bb(a, b) { var c = b * 4294967296 + (a >>> 0); return Number.isSafeInteger(c) ? c : Cb(a, b) }
             function Cb(a, b) { b >>>= 0; a >>>= 0; if (b <= 2097151) var c = "" + (4294967296 * b + a); else Va() ? c = "" + (BigInt(b) << BigInt(32) | BigInt(a)) : (c = (a >>> 24 | b << 8) & 16777215, b = b >> 16 & 65535, a = (a & 16777215) + c * 6777216 + b * 6710656, c += b * 8147497, b *= 2, a >= 1E7 && (c += a / 1E7 >>> 0, a %= 1E7), c >= 1E7 && (b += c / 1E7 >>> 0, c %= 1E7), c = b + Db(c) + Db(a)); return c } function Db(a) { a = String(a); return "0000000".slice(a.length) + a }
@@ -2135,7 +2135,7 @@
     <header class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200" style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; width: 100% !important; z-index: 9999 !important;">
         <nav class="max-w-5xl mx-auto flex items-center justify-between h-16">
             <div class="flex items-center gap-3">
-                <a href="admin-main.html" class="flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
+                <a href="index.html" class="flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
                     <span class="material-symbols-outlined text-gray-600">arrow_back</span>
                 </a>
                 <div class="flex items-center gap-2 cursor-pointer" onclick="switchTab('home')">
@@ -2169,7 +2169,7 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <a href="admin-main.html" class="text-xs font-bold text-[#58d3d3] bg-teal-50 px-3 py-1.5 rounded-full hover:bg-teal-100 transition">메인페이지</a>
+                <a href="index.html" class="text-xs font-bold text-[#58d3d3] bg-teal-50 px-3 py-1.5 rounded-full hover:bg-teal-100 transition">메인페이지</a>
                 <button id="login-btn" onclick="window.location.href='login.html?redirect=' + encodeURIComponent(window.location.pathname)" class="text-xs font-bold text-pink-500 bg-pink-50 px-3 py-1.5 rounded-full hover:bg-pink-100 transition">LOGIN</button>
 
                 <!-- 프로필 아이콘과 드롭다운 메뉴 -->
@@ -4453,24 +4453,18 @@
                     dragAnimationId = null;
                 }
 
+                // 트랜지션 비활성화 (흔들림 방지)
+                seatElement.style.transition = 'none';
+
                 if (dragPendingX !== null && dragPendingY !== null) {
-                    // left, top을 먼저 설정
+                    seatElement.style.transform = '';
                     seatElement.style.left = dragPendingX + 'px';
                     seatElement.style.top = dragPendingY + 'px';
-                    // transform 제거 (트랜지션 없이 즉시 적용)
-                    seatElement.style.transition = 'none';
-                    seatElement.style.transform = '';
-                    // 브라우저 reflow 강제 (레이아웃 안정화)
-                    void seatElement.offsetHeight;
-                    // 그 다음에 dragging 클래스 제거
-                    seatElement.classList.remove('seat-dragging');
                 } else {
-                    seatElement.style.transition = 'none';
                     seatElement.style.transform = '';
-                    void seatElement.offsetHeight;
-                    seatElement.classList.remove('seat-dragging');
                 }
 
+                seatElement.classList.remove('seat-dragging');
                 seatElement.style.willChange = '';
 
                 const seat = seats.find(s => s.id === dragState.seatId);
@@ -5365,7 +5359,7 @@
                 .map(s => s.innerText)
                 .join('\n\n');
 
-            zip.file("admin-main.html", htmlContent);
+            zip.file("index.html", htmlContent);
             zip.file("style.css", cssContent);
             zip.file("script.js", jsContent);
 
@@ -6444,7 +6438,7 @@
     <!-- Android 뒤로가기 버튼 처리 -->
     <script>
         document.addEventListener('hardwareBackButton', function() {
-            window.location.href = './admin-main.html';
+            window.location.href = './index.html';
         });
     </script>
 </body>
