@@ -6436,16 +6436,50 @@
     <script>
         // 페이지 로드 후 OAuth 콜백 처리 및 세션 확인
         document.addEventListener('DOMContentLoaded', async function() {
-            // URL에 code 파라미터가 있으면 OAuth 콜백
+            // **조건 없이 먼저 URL 상태 로그 출력 (PKCE origin 불일치 검증)**
+            console.log('[OAuth Debug] franchise.html 진입:');
+            console.log('  - href:', window.location.href);
+            console.log('  - origin:', window.location.origin);
+            console.log('  - search:', window.location.search);
+            console.log('  - hash:', window.location.hash);
+
+            // URL에서 code 파라미터가 있으면 OAuth 콜백
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('code') || urlParams.has('access_token') || urlParams.has('refresh_token')) {
-                console.log('[OAuth] 콜백 감지, 세션 확인 중...');
+            const code = urlParams.get('code');
+            const accessToken = urlParams.get('access_token');
+            const refreshToken = urlParams.get('refresh_token');
 
-                // Supabase가 세션을 처리할 시간을 줌
-                await new Promise(resolve => setTimeout(resolve, 500));
+            // hash에서도 access_token 추출 (#access_token=... 방식 지원)
+            let hashAccessToken = null;
+            let hashRefreshToken = null;
+            if (window.location.hash) {
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                hashAccessToken = hashParams.get('access_token');
+                hashRefreshToken = hashParams.get('refresh_token');
+            }
 
-                // 세션 확인
-                const { data: { session }, error } = await window.supabase.auth.getSession();
+            const finalAccessToken = accessToken || hashAccessToken;
+            const finalRefreshToken = refreshToken || hashRefreshToken;
+
+            if (code || finalAccessToken || finalRefreshToken) {
+                console.log('[OAuth] 콜백 감지:', { code: !!code, accessToken: !!finalAccessToken, refreshToken: !!finalRefreshToken });
+
+                let session, error;
+
+                // code가 있으면 명시적으로 exchangeCodeForSession 호출
+                if (code) {
+                    console.log('[OAuth] exchangeCodeForSession 호출 시도...');
+                    const result = await window.supabase.auth.exchangeCodeForSession(code);
+                    session = result.data.session;
+                    error = result.error;
+                    console.log('[OAuth] exchangeCodeForSession 결과:', { session: !!session, error: error?.message });
+                } else {
+                    // access_token 또는 refresh_token이 있으면 getSession으로 확인
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    const result = await window.supabase.auth.getSession();
+                    session = result.data.session;
+                    error = result.error;
+                }
 
                 if (error) {
                     console.error('[OAuth] 세션 확인 실패:', error);

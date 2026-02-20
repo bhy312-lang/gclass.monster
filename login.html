@@ -219,11 +219,28 @@
                 return;
             }
 
+            // **강제 로그 출력 (PKCE origin 불일치 검증)**
+            const currentOrigin = window.location.origin;
+            console.log('[OAuth Debug] login.html - OAuth 호출 시작:');
+            console.log('  - currentOrigin:', currentOrigin);
+
+            // redirect 파라미터 기반으로 콜백 URL 결정 (www/non-www 일치 보장)
+            const redirectPath = getRedirectUrl('franchise.html');
+            const redirectTo = new URL(redirectPath, window.location.origin).href;
+            const redirectOrigin = new URL(redirectTo).origin;
+
+            console.log('  - redirectTo:', redirectTo);
+            console.log('  - redirectOrigin:', redirectOrigin);
+            console.log('  - origin 일치 여부:', currentOrigin === redirectOrigin ? '✅ 일치' : '❌ 불일치');
+
+            if (currentOrigin !== redirectOrigin) {
+                console.error('[OAuth] 주의: 시작 origin과 콜백 origin이 다릅니다! PKCE 교환 실패 가능성 높음.');
+            }
+
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: provider,
                 options: {
-                    // OAuth 콜백은 franchise.html로 직접 (login.html 깜빡임 방지)
-                    redirectTo: window.location.origin + '/franchise.html'
+                    redirectTo: redirectTo
                 }
             });
 
