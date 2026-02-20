@@ -1,0 +1,28 @@
+{
+  "appId": "com.inclass.app",
+  "appName": "inCLASS",
+  "webDir": "www-build",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true,
+    "allowNavigation": [
+      "https://localhost",
+      "http://localhost"
+    ]
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#ec4899",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "overlapsWebView": true,
+      "style": "LIGHT",
+      "backgroundColor": "#00000000"
+    },
+    "Browser": {
+      "prefersEphemeralSession": false
+    }
+  }
+}

@@ -443,3 +443,42 @@ function handleInputFocus(e) {
         }
     }, 350); // 키보드가 열리는 시간을 고려한 지연
 }
+
+// =====================================================
+// 로그아웃 관련 함수
+// =====================================================
+function clearAuthStorage() {
+    const authKeys = ['isLoggedIn', 'userId', 'userName', 'userEmail',
+                      'userPhoto', 'isSuperAdmin', 'userPhone', 'selectedRole'];
+    authKeys.forEach(key => localStorage.removeItem(key));
+
+    // Supabase 세션 키 제거
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.match(/(^sb-.*-auth-token$)|code-verifier|^supabase\./)) {
+            keysToRemove.push(key);
+        }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+}
+
+async function performLogout() {
+    if (!window.supabase?.auth) {
+        clearAuthStorage();
+        return;
+    }
+    try {
+        await window.supabase.auth.signOut({ scope: 'local' });
+    } catch (e) {
+        console.error('Logout error:', e);
+    } finally {
+        clearAuthStorage();
+    }
+}
+
+// 홈으로 돌아가기 (로그아웃 후 로그인 화면으로)
+async function handleGoHome() {
+    await performLogout();
+    window.location.href = './index.html?logout=true';
+}

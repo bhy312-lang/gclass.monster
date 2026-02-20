@@ -23,28 +23,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- OAuth 콜백을 위한 Deep Link (HTTPS localhost) -->
+            <!-- OAuth 콜백을 위한 Deep Link (유니크한 커스텀 스킴만 사용) -->
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="localhost" android:path="/auth" />
-            </intent-filter>
-
-            <!-- OAuth 콜백을 위한 Deep Link (HTTPS com.inclass.admin) -->
-            <intent-filter android:autoVerify="false">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="com.inclass.admin" />
-            </intent-filter>
-
-            <!-- 커스텀 스킴을 위한 Deep Link (host 명시) -->
-            <intent-filter android:autoVerify="false">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="inclassadmin" android:host="auth" />
+                <data android:scheme="com.inclass.admin.oauth" android:host="callback" />
             </intent-filter>
 
         </activity>

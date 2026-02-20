@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">inCLASS</string>
+    <string name="title_activity_main">inCLASS</string>
+    <string name="package_name">com.inclass.app</string>
+    <string name="custom_url_scheme">inclass</string>
+</resources>

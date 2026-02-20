@@ -4,9 +4,13 @@
 const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co'; // 예: https://xxxxx.supabase.co
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo'; // 예: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
+// 앱 환경인지 확인
+function isCapacitorApp_Config() {
+    return window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() !== 'web';
+}
+
 // Supabase 클라이언트 생성 및 전역 노출 (즉시 실행)
 (function() {
-    // supabase 라이브러리 참조 저장
     const supabaseLib = window.supabase;
 
     const supabaseClient = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -16,9 +20,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
         auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: false,  // 수동 처리 (appUrlOpen + exchangeCodeForSession)
-            flowType: 'pkce',
-            storage: window.localStorage
+            detectSessionInUrl: true,  // 웹/앱 모두 true (Supabase v2가 자동 처리)
+            flowType: 'pkce',  // PKCE 플로우 사용 (implicit보다 OAuth 상태 관리에 안정적)
+            storage: window.localStorage  // 명시적으로 localStorage 사용
         },
         realtime: {
             params: {
@@ -29,7 +33,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     window.supabaseClient = supabaseClient;
     window.supabase = supabaseClient;
 
-    console.log('[Supabase Config] 클라이언트 초기화 완료');
+    console.log('[Supabase Config] 클라이언트 초기화 완료 (detectSessionInUrl: true)');
 })();
 
 // 설정이 완료되었는지 확인

@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>자녀 등록 - inCLASS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+    <style>
+        * { font-family: 'Noto Sans KR', sans-serif; }
+
+        body {
+            background: #f9fafb;
+            min-height: 100vh;
+            padding-bottom: calc(env(safe-area-inset-bottom, 34px) + 20px);
+        }
+
+        .header {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 16px;
+            padding-top: calc(env(safe-area-inset-top, 20px) + 16px);
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #1f2937;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .content {
+            padding: 24px 16px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .info-box h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #be185d;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-box p {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .form-label .required {
+            color: #ec4899;
+            margin-left: 2px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 16px;
+            color: #1f2937;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: #ec4899;
+        }
+
+        .form-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 14px 16px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 16px;
+            color: #1f2937;
+            outline: none;
+            transition: border-color 0.2s;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 20px;
+        }
+
+        .form-select:focus {
+            border-color: #ec4899;
+        }
+
+        .phone-input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .phone-input-group .form-input {
+            flex: 1;
+            text-align: center;
+        }
+
+        .phone-separator {
+            display: flex;
+            align-items: center;
+            color: #9ca3af;
+            font-size: 18px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 32px;
+        }
+
+        .submit-btn:hover {
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4);
+        }
+
+        .submit-btn:disabled {
+            background: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .children-list {
+            margin-top: 32px;
+        }
+
+        .children-list h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 16px;
+        }
+
+        .child-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .child-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .child-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .child-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .status-approved {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .child-info {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-state .material-symbols-outlined {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <button class="back-btn" onclick="history.back()">
+            <span class="material-symbols-outlined">arrow_back</span>
+        </button>
+        <h1 class="header-title">자녀 등록</h1>
+    </header>
+
+    <div class="content">
+        <div class="info-box">
+            <h2>
+                <span class="material-symbols-outlined">info</span>
+                등록 안내
+            </h2>
+            <p>
+                자녀 정보를 입력하시면 관리자 승인 후 출결 관리 서비스를 이용하실 수 있습니다.
+                전화번호 뒷 4자리는 키오스크 출결 체크에 사용됩니다.
+            </p>
+        </div>
+
+        <form id="register-form" onsubmit="submitRegistration(event)">
+            <div class="form-group">
+                <label class="form-label">
+                    자녀 이름<span class="required">*</span>
+                </label>
+                <input type="text" id="child-name" class="form-input" placeholder="예: 김민준" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    학년<span class="required">*</span>
+                </label>
+                <select id="child-grade" class="form-select" required>
+                    <option value="">선택하세요</option>
+                    <optgroup label="초등학교">
+                        <option value="초1">초등학교 1학년</option>
+                        <option value="초2">초등학교 2학년</option>
+                        <option value="초3">초등학교 3학년</option>
+                        <option value="초4">초등학교 4학년</option>
+                        <option value="초5">초등학교 5학년</option>
+                        <option value="초6">초등학교 6학년</option>
+                    </optgroup>
+                    <optgroup label="중학교">
+                        <option value="중1">중학교 1학년</option>
+                        <option value="중2">중학교 2학년</option>
+                        <option value="중3">중학교 3학년</option>
+                    </optgroup>
+                    <optgroup label="고등학교">
+                        <option value="고1">고등학교 1학년</option>
+                        <option value="고2">고등학교 2학년</option>
+                        <option value="고3">고등학교 3학년</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    학교명
+                </label>
+                <input type="text" id="child-school" class="form-input" placeholder="예: ○○초등학교">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    전화번호<span class="required">*</span>
+                </label>
+                <div class="phone-input-group">
+                    <input type="tel" id="phone1" class="form-input" value="010" readonly style="flex: 0.8;">
+                    <span class="phone-separator">-</span>
+                    <input type="tel" id="phone2" class="form-input" placeholder="0000" maxlength="4" inputmode="numeric" required>
+                    <span class="phone-separator">-</span>
+                    <input type="tel" id="phone3" class="form-input" placeholder="0000" maxlength="4" inputmode="numeric" required>
+                </div>
+            </div>
+
+            <button type="submit" id="submit-btn" class="submit-btn">
+                등록 신청하기
+            </button>
+        </form>
+
+        <!-- 등록된 자녀 목록 -->
+        <div class="children-list">
+            <h3>등록된 자녀</h3>
+            <div id="children-container">
+                <div class="empty-state">
+                    <span class="material-symbols-outlined">child_care</span>
+                    <p>등록된 자녀가 없습니다.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script>
+        // 관리자에게 푸시 알림 전송
+        async function notifyAdminNewRegistration(childName, grade) {
+            try {
+                // 관리자 FCM 토큰 조회
+                const { data: adminTokens, error: tokenError } = await supabase
+                    .from('admin_fcm_tokens')
+                    .select('fcm_token');
+
+                if (tokenError) {
+                    console.error('관리자 토큰 조회 실패:', tokenError);
+                    return;
+                }
+
+                if (!adminTokens || adminTokens.length === 0) {
+                    console.log('등록된 관리자 토큰이 없습니다.');
+                    return;
+                }
+
+                // Supabase Edge Function을 통해 푸시 알림 전송
+                const { data, error } = await supabase.functions.invoke('send-push-notification', {
+                    body: {
+                        tokens: adminTokens.map(t => t.fcm_token),
+                        title: '새로운 자녀 등록 신청',
+                        body: `${childName} (${grade}) 학생의 등록 신청이 접수되었습니다.`,
+                        data: {
+                            type: 'new_registration',
+                            childName: childName,
+                            grade: grade
+                        }
+                    }
+                });
+
+                if (error) {
+                    console.error('푸시 알림 전송 실패:', error);
+                } else {
+                    console.log('관리자 푸시 알림 전송 완료');
+                }
+            } catch (error) {
+                console.error('알림 전송 중 오류:', error);
+            }
+        }
+
+        // 전화번호 입력 시 숫자만 허용
+        document.getElementById('phone2').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            if (this.value.length === 4) {
+                document.getElementById('phone3').focus();
+            }
+        });
+
+        document.getElementById('phone3').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        // 페이지 로드 시 등록된 자녀 목록 불러오기
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadChildren();
+        });
+
+        // 자녀 목록 불러오기
+        async function loadChildren() {
+            const container = document.getElementById('children-container');
+
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session?.user) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <span class="material-symbols-outlined">login</span>
+                            <p>로그인이 필요합니다.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const { data: children, error } = await supabase
+                    .from('students')
+                    .select('*')
+                    .eq('parent_id', session.user.id)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (!children || children.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <span class="material-symbols-outlined">child_care</span>
+                            <p>등록된 자녀가 없습니다.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = children.map(child => `
+                    <div class="child-card">
+                        <div class="child-card-header">
+                            <span class="child-name">${child.name}</span>
+                            <span class="child-status ${getStatusClass(child.status)}">
+                                ${getStatusText(child.status)}
+                            </span>
+                        </div>
+                        <div class="child-info">
+                            ${child.grade} · ${child.school || '학교 미입력'} · ${formatPhone(child.phone)}
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('자녀 목록 로드 실패:', error);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">error</span>
+                        <p>목록을 불러오는데 실패했습니다.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function getStatusClass(status) {
+            switch (status) {
+                case 'approved': return 'status-approved';
+                case 'rejected': return 'status-rejected';
+                default: return 'status-pending';
+            }
+        }
+
+        function getStatusText(status) {
+            switch (status) {
+                case 'approved': return '승인됨';
+                case 'rejected': return '거절됨';
+                default: return '승인대기';
+            }
+        }
+
+        function formatPhone(phone) {
+            if (!phone) return '';
+            const cleaned = phone.replace(/[^0-9]/g, '');
+            if (cleaned.length === 11) {
+                return cleaned.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+            }
+            return phone;
+        }
+
+        // 등록 신청
+        async function submitRegistration(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submit-btn');
+            const name = document.getElementById('child-name').value.trim();
+            const grade = document.getElementById('child-grade').value;
+            const school = document.getElementById('child-school').value.trim();
+            const phone1 = document.getElementById('phone1').value;
+            const phone2 = document.getElementById('phone2').value;
+            const phone3 = document.getElementById('phone3').value;
+
+            if (!name || !grade || !phone2 || !phone3) {
+                alert('필수 항목을 모두 입력해주세요.');
+                return;
+            }
+
+            if (phone2.length !== 4 || phone3.length !== 4) {
+                alert('전화번호를 정확히 입력해주세요.');
+                return;
+            }
+
+            const phone = phone1 + phone2 + phone3; // 01012345678 형태로 저장
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = '등록 중...';
+
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session?.user) {
+                    alert('로그인이 필요합니다.');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const { error } = await supabase.from('students').insert({
+                    name: name,
+                    grade: grade,
+                    school: school || null,
+                    phone: phone,
+                    parent_id: session.user.id,
+                    status: 'pending'
+                });
+
+                if (error) throw error;
+
+                // 관리자에게 푸시 알림 전송
+                await notifyAdminNewRegistration(name, grade);
+
+                alert('자녀 등록 신청이 완료되었습니다.\n관리자 승인 후 서비스 이용이 가능합니다.');
+
+                // 폼 초기화
+                document.getElementById('register-form').reset();
+                document.getElementById('phone1').value = '010';
+
+                // 목록 새로고침
+                await loadChildren();
+
+            } catch (error) {
+                console.error('등록 실패:', error);
+                alert('등록에 실패했습니다.\n' + (error.message || '잠시 후 다시 시도해주세요.'));
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '등록 신청하기';
+            }
+        }
+    </script>
+</body>
+</html>

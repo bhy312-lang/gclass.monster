@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>피드백 관리 - 꿈터공부방</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Symbols+Outlined" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="gemini-config.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .nav-tab {
+            padding: 12px 24px;
+            border-radius: 999px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .nav-tab.active {
+            background-color: #4285f4;
+            color: white;
+        }
+        .nav-tab:not(.active) {
+            background-color: transparent;
+            color: #6b7280;
+        }
+        .nav-tab:not(.active):hover {
+            background-color: #f3f4f6;
+        }
+        .section-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .input-group {
+            margin-bottom: 16px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+        .input-group input,
+        .input-group textarea,
+        .input-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-group input:focus,
+        .input-group textarea:focus,
+        .input-group select:focus {
+            border-color: #4285f4;
+        }
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .subject-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        .subject-row input[type="text"] {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        .subject-row input[type="number"] {
+            width: 80px;
+            padding: 10px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .subject-row input:focus {
+            border-color: #4285f4;
+            outline: none;
+        }
+        .btn-remove {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: #fee2e2;
+            color: #dc2626;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .btn-remove:hover {
+            background: #dc2626;
+            color: white;
+        }
+        .btn-add {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: #e0e7ff;
+            color: #4338ca;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-add:hover {
+            background: #4338ca;
+            color: white;
+        }
+        .btn-primary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            background: #f3f4f6;
+            color: #374151;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        .btn-send {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(52, 211, 153, 0.4);
+        }
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 211, 153, 0.5);
+        }
+        .btn-send:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .generated-message-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 16px;
+        }
+        .generated-message-box textarea {
+            background: white;
+            border: none;
+            border-radius: 12px;
+            width: 100%;
+            min-height: 200px;
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.7;
+            resize: vertical;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .grade-select {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .grade-option {
+            padding: 10px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .grade-option:hover {
+            border-color: #4285f4;
+        }
+        .grade-option.selected {
+            background: #4285f4;
+            border-color: #4285f4;
+            color: white;
+        }
+        .feedback-history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .feedback-history-item:hover {
+            background: #f3f4f6;
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .status-sent {
+            background: #d1fae5;
+            color: #059669;
+        }
+        .status-scheduled {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+        .send-type-option {
+            padding: 12px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+        .send-type-option:hover {
+            border-color: #4285f4;
+        }
+        .send-type-option.selected {
+            border-color: #4285f4;
+            background-color: #eff6ff;
+        }
+        .btn-schedule {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+        .btn-schedule:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-white fixed top-0 left-0 right-0 z-50 border-b border-gray-200">
+        <div class="max-w-4xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <a href="franchise.html" class="flex items-center justify-center w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
+                        <span class="material-symbols-outlined text-gray-600">arrow_back</span>
+                    </a>
+                    <h1 class="text-xl font-bold text-gray-800">피드백 관리</h1>
+                </div>
+                <button onclick="toggleHistory()" class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full text-sm font-medium transition-colors">
+                    <span class="material-symbols-outlined text-lg">history</span>
+                    전송 기록
+                </button>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex gap-2 bg-gray-100 p-1 rounded-full overflow-x-auto">
+                <button class="nav-tab" onclick="window.location.href='franchise.html'">홈</button>
+                <button class="nav-tab" onclick="window.location.href='franchise.html#attendance'">출결관리</button>
+                <button class="nav-tab" onclick="window.location.href='franchise.html#students'">학생관리</button>
+                <button class="nav-tab active">피드백관리</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 py-6" style="margin-top: 140px;">
+
+        <!-- Student Selection -->
+        <section class="section-card">
+            <h2 class="section-title">
+                <span class="material-symbols-outlined text-blue-500">person</span>
+                학생 선택
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="input-group">
+                    <label>학생</label>
+                    <select id="student-select">
+                        <option value="">학생을 선택하세요</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>피드백 기간</label>
+                    <input type="text" id="feedback-period" placeholder="예: 2026년 2월, 1학기">
+                </div>
+            </div>
+        </section>
+
+        <!-- Subject Scores -->
+        <section class="section-card">
+            <h2 class="section-title">
+                <span class="material-symbols-outlined text-green-500">grade</span>
+                성적 입력
+            </h2>
+            <div id="subject-list">
+                <!-- Dynamic subject rows will be added here -->
+            </div>
+            <button class="btn-add" onclick="addSubject()">
+                <span class="material-symbols-outlined">add</span>
+                과목 추가
+            </button>
+
+            <div class="input-group mt-6">
+                <label>종합 등급</label>
+                <div class="grade-select" id="grade-select">
+                    <div class="grade-option" data-grade="상" onclick="selectGrade('상')">상</div>
+                    <div class="grade-option" data-grade="중상" onclick="selectGrade('중상')">중상</div>
+                    <div class="grade-option" data-grade="중" onclick="selectGrade('중')">중</div>
+                    <div class="grade-option" data-grade="중하" onclick="selectGrade('중하')">중하</div>
+                    <div class="grade-option" data-grade="하" onclick="selectGrade('하')">하</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Feedback Content -->
+        <section class="section-card">
+            <h2 class="section-title">
+                <span class="material-symbols-outlined text-purple-500">edit_note</span>
+                피드백 내용
+            </h2>
+            <div class="input-group">
+                <label>학습 태도</label>
+                <textarea id="study-attitude" placeholder="수업 집중도, 과제 수행, 참여도 등"></textarea>
+            </div>
+            <div class="input-group">
+                <label>잘하는 점 (강점)</label>
+                <textarea id="strengths" placeholder="학생의 강점, 잘하는 부분"></textarea>
+            </div>
+            <div class="input-group">
+                <label>개선 필요 사항</label>
+                <textarea id="improvements" placeholder="보완이 필요한 부분, 앞으로의 과제"></textarea>
+            </div>
+            <div class="input-group">
+                <label>특이사항 (선택)</label>
+                <textarea id="special-notes" placeholder="기타 특이사항"></textarea>
+            </div>
+            <div class="input-group">
+                <label>선생님 코멘트</label>
+                <textarea id="teacher-comment" placeholder="학부모님께 전달하고 싶은 말씀"></textarea>
+            </div>
+        </section>
+
+        <!-- AI Message Generation -->
+        <section class="section-card">
+            <h2 class="section-title">
+                <span class="material-symbols-outlined text-amber-500">auto_awesome</span>
+                AI 메시지 생성
+            </h2>
+            <p class="text-sm text-gray-500 mb-4">
+                위에 입력한 내용을 바탕으로 학부모님께 보낼 메시지를 AI가 자동으로 작성합니다.
+            </p>
+            <button id="generate-btn" class="btn-primary" onclick="generateMessage()">
+                <span class="material-symbols-outlined">auto_awesome</span>
+                AI로 메시지 생성
+            </button>
+
+            <div id="generated-message-container" class="generated-message-box hidden">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-semibold text-amber-800">생성된 메시지</span>
+                    <span class="text-xs text-amber-600">수정 가능</span>
+                </div>
+                <textarea id="generated-message" placeholder="AI가 생성한 메시지가 여기에 표시됩니다..."></textarea>
+            </div>
+        </section>
+
+        <!-- Send Section -->
+        <section class="section-card">
+            <h2 class="section-title">
+                <span class="material-symbols-outlined text-teal-500">send</span>
+                학부모 전송
+            </h2>
+
+            <!-- 전송 방식 선택 -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-600 mb-3">전송 방식</label>
+                <div class="flex gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer send-type-option selected" data-type="immediate">
+                        <input type="radio" name="send-type" value="immediate" checked class="w-4 h-4">
+                        <span class="material-symbols-outlined text-green-500">bolt</span>
+                        <span class="text-sm font-medium">즉시 전송</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer send-type-option" data-type="scheduled">
+                        <input type="radio" name="send-type" value="scheduled" class="w-4 h-4">
+                        <span class="material-symbols-outlined text-blue-500">schedule_send</span>
+                        <span class="text-sm font-medium">예약 전송</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 예약 전송 날짜/시간 선택 (기본 숨김) -->
+            <div id="scheduled-options" class="mb-6 hidden">
+                <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="material-symbols-outlined text-blue-500">calendar_month</span>
+                        <span class="text-sm font-medium text-blue-700">예약 일시 설정</span>
+                    </div>
+                    <div class="flex gap-3">
+                        <input type="date" id="scheduled-date" class="flex-1 px-4 py-3 border-2 border-blue-200 rounded-lg focus:border-blue-500 focus:outline-none">
+                        <input type="time" id="scheduled-time" value="09:00" class="px-4 py-3 border-2 border-blue-200 rounded-lg focus:border-blue-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4 mb-6">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="send-push" checked class="w-5 h-5 rounded">
+                    <span class="text-sm">Push 알림으로 전송</span>
+                </label>
+            </div>
+            <div class="flex gap-3">
+                <button class="btn-secondary" onclick="saveDraft()">
+                    <span class="material-symbols-outlined">save</span>
+                    임시 저장
+                </button>
+                <button id="send-btn" class="btn-send" onclick="openSendConfirmModal()" disabled>
+                    <span class="material-symbols-outlined">send</span>
+                    <span id="send-btn-text">학부모에게 전송</span>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- History Sidebar (hidden by default) -->
+    <div id="history-sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl transform translate-x-full transition-transform duration-300 z-50">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold">전송 기록</h3>
+                <button onclick="toggleHistory()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div id="history-list">
+                <!-- History items will be loaded here -->
+            </div>
+        </div>
+    </div>
+    <div id="history-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40" onclick="toggleHistory()"></div>
+
+    <!-- Send Confirm Modal -->
+    <div id="send-confirm-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closeSendConfirmModal()"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md">
+            <div class="bg-white rounded-2xl shadow-2xl overflow-hidden mx-4">
+                <div class="p-6">
+                    <div class="flex items-center justify-center mb-4">
+                        <div class="w-16 h-16 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center">
+                            <span class="material-symbols-outlined text-white text-3xl" id="modal-icon">send</span>
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-bold text-center text-gray-800 mb-2" id="modal-title">피드백 전송 확인</h3>
+                    <p class="text-center text-gray-600 mb-4" id="modal-description">
+                        선택한 학생의 학부모에게 피드백을 전송합니다.
+                    </p>
+
+                    <!-- 전송 정보 요약 -->
+                    <div class="bg-gray-50 rounded-xl p-4 mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-gray-500">학생</span>
+                            <span class="text-sm font-medium text-gray-800" id="modal-student-name">-</span>
+                        </div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-gray-500">전송 방식</span>
+                            <span class="text-sm font-medium" id="modal-send-type">즉시 전송</span>
+                        </div>
+                        <div class="flex justify-between items-center" id="modal-schedule-row" style="display:none;">
+                            <span class="text-sm text-gray-500">예약 일시</span>
+                            <span class="text-sm font-medium text-blue-600" id="modal-schedule-time">-</span>
+                        </div>
+                    </div>
+
+                    <!-- 메시지 미리보기 -->
+                    <div class="border-2 border-gray-200 rounded-xl p-4 mb-6 max-h-40 overflow-y-auto">
+                        <p class="text-xs text-gray-500 mb-2">메시지 미리보기</p>
+                        <p class="text-sm text-gray-700 leading-relaxed" id="modal-message-preview">-</p>
+                    </div>
+                </div>
+                <div class="flex border-t border-gray-200">
+                    <button onclick="closeSendConfirmModal()" class="flex-1 py-4 text-gray-600 font-medium hover:bg-gray-50 transition-colors">
+                        취소
+                    </button>
+                    <button onclick="confirmSend()" class="flex-1 py-4 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-medium hover:from-teal-600 hover:to-teal-700 transition-colors" id="modal-confirm-btn">
+                        <span class="material-symbols-outlined align-middle mr-1" style="font-size: 18px;">send</span>
+                        전송하기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="feedback.js"></script>
+</body>
+</html>

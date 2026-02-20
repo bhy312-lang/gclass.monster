@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 처리 중...</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #fce7f3, #bae6fd);
+        }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #ec4899;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .message {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #374151;
+        }
+    </style>
+</head>
+<body>
+    <div class="spinner"></div>
+    <p class="message">로그인 처리 중...</p>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="native-bridge.js"></script>
+    <script>
+        const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+
+        // Supabase 클라이언트 생성
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                flowType: 'pkce',
+                storage: window.localStorage
+            }
+        });
+
+        async function handleCallback() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
+                const error = urlParams.get('error');
+                const errorDescription = urlParams.get('error_description');
+
+                console.log('[Auth Callback] Handling callback:', { code, error });
+
+                if (error) {
+                    console.error('[Auth Callback] Error:', error, errorDescription);
+                    alert('로그인 오류: ' + (errorDescription || error));
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                if (code) {
+                    console.log('[Auth Callback] Exchanging code for session...');
+                    const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+
+                    if (exchangeError) {
+                        console.error('[Auth Callback] Exchange error:', exchangeError);
+                        alert('로그인 실패: ' + exchangeError.message);
+                        window.location.href = 'index.html';
+                        return;
+                    }
+
+                    console.log('[Auth Callback] Login success:', data.user?.email);
+
+                    // 사용자 정보 저장
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('userId', data.user.id);
+                    localStorage.setItem('userName', data.user.user_metadata?.full_name || data.user.user_metadata?.name || '사용자님');
+                    localStorage.setItem('userEmail', data.user.email || '');
+                    localStorage.setItem('userPhoto', data.user.user_metadata?.avatar_url || data.user.user_metadata?.picture || '');
+
+                    // index.html로 이동
+                    window.location.href = 'index.html';
+                } else {
+                    console.log('[Auth Callback] No code found, redirecting to index');
+                    window.location.href = 'index.html';
+                }
+            } catch (e) {
+                console.error('[Auth Callback] Exception:', e);
+                alert('로그인 처리 중 오류가 발생했습니다.');
+                window.location.href = 'index.html';
+            }
+        }
+
+        handleCallback();
+    </script>
+</body>
+</html>

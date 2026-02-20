@@ -409,6 +409,8 @@
             }
         }
     </style>
+    <!-- 인증 유틸리티 -->
+    <script src="js/auth-utils.js"></script>
 </head>
 <body>
     <!-- 스플래시/로딩 화면 -->
@@ -589,6 +591,24 @@
     <script>
         // 로그인 상태 확인
         async function checkLoginStatus() {
+            // 로그아웃 파라미터가 있으면 자동 리다이렉트 방지
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('logout') === 'true') {
+                // URL에서 파라미터 제거 (깔끔한 URL 유지)
+                window.history.replaceState({}, document.title, window.location.pathname);
+
+                // 확실하게 로그아웃 (local scope로 충분)
+                try {
+                    await window.supabase?.auth?.signOut({ scope: 'local' });
+                } catch (e) {}
+
+                // 인증 스토리지 정리
+                clearAuthStorage();
+                // 로그인 화면 표시
+                showLoginScreen();
+                return;
+            }
+
             // Supabase 세션 확인 (모든 인증의 기본)
             if (isSupabaseConfigured()) {
                 try {

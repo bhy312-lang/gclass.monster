@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>inCLASS</title>
+    <!-- Supabase CDN (가장 먼저 로드) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Supabase 클라이언트 바로 생성
+        const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+
+        // 앱 환경인지 확인
+        function isCapacitorApp_Config() {
+            return window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() !== 'web';
+        }
+
+        // Supabase 클라이언트 생성
+        window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            db: {
+                schema: 'public'
+            },
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true,
+                flowType: 'pkce',
+                storage: window.localStorage
+            },
+            realtime: {
+                params: {
+                    eventsPerSecond: 2
+                }
+            }
+        });
+
+        window.supabaseClient = window.supabase;
+        window.isCapacitorApp_Config = isCapacitorApp_Config;
+
+        console.log('[Supabase] 클라이언트 초기화 완료 (isApp:', isCapacitorApp_Config(), ')');
+    </script>
+
+    <!-- Capacitor Native Bridge -->
+    <script src="native-bridge.js"></script>
+    <script>
+        // 전역 에러 핸들러 - 더 자세한 정보 출력
+        window.addEventListener('error', function(e) {
+            console.error('[Global Error]', {
+                message: e.message,
+                filename: e.filename,
+                lineno: e.lineno,
+                colno: e.colno,
+                error: e.error,
+                errorName: e.error?.name,
+                errorMessage: e.error?.message,
+                errorStack: e.error?.stack
+            });
+            e.preventDefault();
+        }, true);
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('[Unhandled Rejection]', {
+                reason: e.reason,
+                reasonString: String(e.reason),
+                reasonStack: e.reason?.stack
+            });
+            e.preventDefault();
+        }, true);
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+    <style>
+        * { font-family: 'Noto Sans KR', sans-serif; }
+
+        /* 역할 선택 화면 */
+        .role-selection-screen {
+            min-height: 100vh;
+            background: linear-gradient(180deg, #ffffff 0%, #f0f9ff 50%, #fdf2f8 100%);
+            display: flex;
+            flex-direction: column;
+            padding: 0 24px;
+            padding-top: calc(env(safe-area-inset-top, 40px) + 60px);
+            padding-bottom: calc(env(safe-area-inset-bottom, 34px) + 40px);
+        }
+
+        .role-selection-screen.hidden {
+            display: none;
+        }
+
+        .role-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 340px;
+            margin: 0 auto;
+            margin-top: 60px;
+        }
+
+        .role-card {
+            background: white;
+            border-radius: 24px;
+            padding: 32px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .role-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .role-card:active {
+            transform: scale(0.98);
+        }
+
+        .role-card.parent {
+            border: 2px solid #fce7f3;
+        }
+
+        .role-card.parent:hover {
+            border-color: #ec4899;
+            box-shadow: 0 12px 40px rgba(236, 72, 153, 0.25);
+        }
+
+        .role-card.admin {
+            border: 2px solid #bae6fd;
+        }
+
+        .role-card.admin:hover {
+            border-color: #0ea5e9;
+            box-shadow: 0 12px 40px rgba(14, 165, 233, 0.25);
+        }
+
+        .role-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .role-card.parent .role-icon {
+            background: linear-gradient(135deg, #fce7f3, #fbcfe8);
+        }
+
+        .role-card.admin .role-icon {
+            background: linear-gradient(135deg, #bae6fd, #7dd3fc);
+        }
+
+        .role-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .role-card.parent h3 {
+            color: #db2777;
+        }
+
+        .role-card.admin h3 {
+            color: #0369a1;
+        }
+
+        .role-card p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        /* 로그인 화면 - 학부모용 */
+        .login-screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 0 24px;
+            padding-bottom: 48px;
+        }
+
+        .login-screen.parent-theme {
+            background: linear-gradient(180deg, #ffffff 0%, #fdf2f8 50%, #fce7f3 100%);
+        }
+
+        .login-screen.admin-theme {
+            background: linear-gradient(180deg, #ffffff 0%, #e0f2fe 50%, #bae6fd 100%);
+        }
+
+        .login-screen.hidden {
+            display: none;
+        }
+
+        .login-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: calc(env(safe-area-inset-top, 40px) + 80px);
+            padding-bottom: calc(env(safe-area-inset-bottom, 34px) + 40px);
+        }
+
+        .role-badge {
+            position: absolute;
+            top: calc(env(safe-area-inset-top, 20px) + 16px);
+            right: 16px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .role-badge.parent {
+            background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+            color: white;
+        }
+
+        .role-badge.admin {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: calc(env(safe-area-inset-top, 20px) + 16px);
+            left: 16px;
+            background: rgba(255,255,255,0.8);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .logo-title-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .app-description {
+            text-align: center;
+            color: #6b7280;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-top: 40px;
+        }
+
+        .app-description strong {
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .login-bottom-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logo-container {
+            margin-bottom: 16px;
+        }
+
+        .logo-image {
+            width: 200px;
+            height: auto;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .logo-image.parent-theme {
+            filter: drop-shadow(0 10px 20px rgba(236, 72, 153, 0.3));
+        }
+
+        .logo-image.admin-theme {
+            filter: drop-shadow(0 10px 20px rgba(14, 165, 233, 0.3));
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .app-title {
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+
+        .app-title.parent-theme {
+            background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .app-title.admin-theme {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .app-subtitle {
+            font-size: 14px;
+            color: #9ca3af;
+            margin-bottom: 40px;
+        }
+
+        .login-buttons {
+            width: 100%;
+            max-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .login-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 16px 24px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            width: 100%;
+        }
+
+        .login-btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-kakao {
+            background: #FEE500;
+            color: #191919;
+        }
+
+        .btn-kakao:hover {
+            background: #F5DC00;
+            box-shadow: 0 8px 24px rgba(254, 229, 0, 0.4);
+        }
+
+        .btn-google {
+            background: #ffffff;
+            color: #374151;
+            border: 2px solid #e5e7eb;
+        }
+
+        .btn-google:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .kakao-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .google-icon {
+            width: 22px;
+            height: 22px;
+        }
+
+        /* 메인 화면 */
+        .main-screen {
+            display: none;
+            min-height: 100vh;
+            padding: 16px;
+            padding-top: calc(env(safe-area-inset-top, 20px) + 16px);
+            padding-bottom: calc(80px + 48px);
+        }
+
+        .main-screen.parent-theme {
+            background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+        }
+
+        .main-screen.admin-theme {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+        }
+
+        .main-screen.active {
+            display: block;
+        }
+
+        .menu-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .menu-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        .menu-card:active {
+            transform: scale(0.98);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 34px;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #f3f4f6;
+            padding: 8px 0 12px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            color: #9ca3af;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .nav-item.active, .nav-item:hover {
+            color: #ec4899;
+        }
+
+        .nav-item.active.admin-theme, .nav-item.admin-theme:hover {
+            color: #0ea5e9;
+        }
+
+        .nav-item span:first-child {
+            font-size: 24px;
+        }
+
+        .nav-item span:last-child {
+            font-size: 11px;
+            margin-top: 2px;
+        }
+
+        /* 유저 프로필 헤더 */
+        .user-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-avatar.parent-theme {
+            background: linear-gradient(135deg, #ec4899, #db2777);
+        }
+
+        .user-avatar.admin-theme {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 700;
+            color: #1f2937;
+            font-size: 16px;
+        }
+
+        .user-email {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        /* 인앱 푸시 알림 토스트 */
+        .push-toast {
+            position: fixed;
+            top: 60px;
+            left: 16px;
+            right: 16px;
+            color: white;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+            transform: translateY(-120%);
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            display: none;
+        }
+
+        .push-toast.parent-theme {
+            background: linear-gradient(135deg, #ec4899, #db2777);
+        }
+
+        .push-toast.admin-theme {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+        }
+
+        .push-toast.show {
+            transform: translateY(0);
+            display: block;
+        }
+
+        .push-toast-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .push-toast-body {
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        /* 스플래시/로딩 화면 */
+        .splash-screen {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+        }
+
+        .splash-screen.parent-theme {
+            background: linear-gradient(180deg, #ffffff 0%, #fdf2f8 50%, #fce7f3 100%);
+        }
+
+        .splash-screen.admin-theme {
+            background: linear-gradient(180deg, #ffffff 0%, #e0f2fe 50%, #bae6fd 100%);
+        }
+
+        .splash-screen.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .splash-logo {
+            width: 160px;
+            height: auto;
+            animation: floatSplash 2s ease-in-out infinite;
+        }
+
+        .splash-logo.parent-theme {
+            filter: drop-shadow(0 15px 30px rgba(236, 72, 153, 0.25));
+        }
+
+        .splash-logo.admin-theme {
+            filter: drop-shadow(0 15px 30px rgba(14, 165, 233, 0.25));
+        }
+
+        @keyframes floatSplash {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .splash-dots {
+            display: flex;
+            gap: 8px;
+            margin-top: 24px;
+        }
+
+        .splash-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: dotPulse 1.4s ease-in-out infinite;
+        }
+
+        .splash-dot.parent-theme {
+            background: #ec4899;
+        }
+
+        .splash-dot.admin-theme {
+            background: #0ea5e9;
+        }
+
+        .splash-dot:nth-child(2) { animation-delay: 0.2s; }
+        .splash-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotPulse {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        /* 관리자 메뉴 스타일 */
+        .admin-menu-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .admin-menu-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+        }
+
+        .admin-menu-card:active {
+            transform: scale(0.98);
+        }
+    </style>
+    <!-- 인증 유틸리티 -->
+    <script src="js/auth-utils.js"></script>
+</head>
+<body>
+    <!-- 스플래시/로딩 화면 -->
+    <div id="splash-screen" class="splash-screen parent-theme">
+        <img src="/assets/Logo.png" alt="inCLASS" class="splash-logo parent-theme">
+        <div class="splash-dots">
+            <div class="splash-dot parent-theme"></div>
+            <div class="splash-dot parent-theme"></div>
+            <div class="splash-dot parent-theme"></div>
+        </div>
+    </div>
+
+    <!-- 역할 선택 화면 -->
+    <div id="role-selection-screen" class="role-selection-screen hidden">
+        <button class="back-btn" onclick="showRoleSelection()">
+            <span class="material-symbols-outlined text-gray-600">refresh</span>
+        </button>
+
+        <div class="text-center mb-8">
+            <img src="/assets/Logo.png" alt="inCLASS" style="width: 120px; margin-bottom: 24px;">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">inCLASS에 오신 것을 환영합니다</h1>
+            <p class="text-gray-500 text-sm">사용자 유형을 선택해주세요</p>
+        </div>
+
+        <div class="role-cards">
+            <div class="role-card parent" onclick="selectRole('parent')">
+                <div class="role-icon">
+                    <span class="material-symbols-outlined text-3xl" style="color: #db2777;">family_restroom</span>
+                </div>
+                <h3>학부모</h3>
+                <p>자녀의 학습 현황을 확인하고<br>수강을 관리합니다</p>
+            </div>
+
+            <div class="role-card admin" onclick="selectRole('admin')">
+                <div class="role-icon">
+                    <span class="material-symbols-outlined text-3xl" style="color: #0369a1;">business</span>
+                </div>
+                <h3>관리자</h3>
+                <p>학생, 좌석, 수업을 관리하고<br>원장님 업무를 처리합니다</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로그인 화면 -->
+    <div id="login-screen" class="login-screen parent-theme">
+        <button class="back-btn" onclick="showRoleSelection()">
+            <span class="material-symbols-outlined text-gray-600">arrow_back</span>
+        </button>
+
+        <div class="role-badge parent" id="role-badge">학부모용</div>
+
+        <div class="login-content">
+            <div class="logo-title-wrapper">
+                <div class="logo-container">
+                    <img src="/assets/Logo.png" alt="inCLASS" class="logo-image parent-theme" id="logo-image">
+                </div>
+                <h1 class="app-title parent-theme" id="app-title">inCLASS</h1>
+                <p class="app-subtitle" id="app-subtitle">공부방 & 학원 관리</p>
+                <p class="app-description" id="app-description">
+                    학부모를 위한<br>
+                    <strong>스마트</strong> 공부방, 학원관리 앱
+                </p>
+            </div>
+
+            <div class="login-bottom-section">
+                <div class="login-buttons">
+                    <button class="login-btn btn-kakao" onclick="loginWithKakao()">
+                        <svg class="kakao-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 3C6.48 3 2 6.58 2 11c0 2.83 1.88 5.31 4.68 6.73l-.95 3.53c-.08.29.25.54.51.38l4.2-2.77c.51.07 1.03.11 1.56.11 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
+                        </svg>
+                        카카오로 시작하기
+                    </button>
+
+                    <button class="login-btn btn-google" onclick="loginWithGoogle()">
+                        <svg class="google-icon" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        Google로 시작하기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 학부모 메인 화면 -->
+    <div id="parent-main-screen" class="main-screen parent-theme">
+        <div id="push-toast" class="push-toast parent-theme" style="display:none !important;">
+            <div class="push-toast-title" id="push-toast-title"></div>
+            <div class="push-toast-body" id="push-toast-body"></div>
+        </div>
+
+        <div class="max-w-md mx-auto">
+            <div class="user-header">
+                <div class="user-avatar parent-theme" id="user-avatar-parent">
+                    <span class="material-symbols-outlined text-white text-2xl">person</span>
+                </div>
+                <div class="user-info">
+                    <div class="user-name" id="user-name-parent">학부모님</div>
+                    <div class="user-email" id="user-email-parent">환영합니다</div>
+                </div>
+                <button onclick="logout()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <span class="material-symbols-outlined text-gray-400">logout</span>
+                </button>
+            </div>
+
+            <div class="text-center mb-6">
+                <h1 class="text-xl font-bold text-gray-800 mb-1">우리 아이 학습 관리</h1>
+                <p class="text-pink-400 text-sm">inCLASS 학부모</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <a href="course-registration.html" class="menu-card">
+                    <div class="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-xl flex items-center justify-center mb-3 shadow-md shadow-emerald-200">
+                        <span class="material-symbols-outlined text-white text-2xl">edit_calendar</span>
+                    </div>
+                    <h3 class="font-bold text-gray-800 mb-1">수강신청</h3>
+                    <p class="text-xs text-gray-400">강좌 신청하기</p>
+                </a>
+
+                <a href="attendance.html" class="menu-card">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-500 rounded-xl flex items-center justify-center mb-3 shadow-md shadow-blue-200">
+                        <span class="material-symbols-outlined text-white text-2xl">fact_check</span>
+                    </div>
+                    <h3 class="font-bold text-gray-800 mb-1">출결 확인</h3>
+                    <p class="text-xs text-gray-400">출석 기록 조회</p>
+                </a>
+
+                <a href="feedback.html" class="menu-card">
+                    <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-500 rounded-xl flex items-center justify-center mb-3 shadow-md shadow-purple-200">
+                        <span class="material-symbols-outlined text-white text-2xl">chat</span>
+                    </div>
+                    <h3 class="font-bold text-gray-800 mb-1">피드백</h3>
+                    <p class="text-xs text-gray-400">선생님 코멘트</p>
+                </a>
+
+                <a href="register-child.html" class="menu-card">
+                    <div class="w-12 h-12 bg-gradient-to-br from-pink-400 to-pink-500 rounded-xl flex items-center justify-center mb-3 shadow-md shadow-pink-200">
+                        <span class="material-symbols-outlined text-white text-2xl">person_add</span>
+                    </div>
+                    <h3 class="font-bold text-gray-800 mb-1">자녀 등록</h3>
+                    <p class="text-xs text-gray-400">학생 정보 등록</p>
+                </a>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <div class="max-w-md mx-auto flex justify-around">
+                <a href="index.html" class="nav-item active">
+                    <span class="material-symbols-outlined">home</span>
+                    <span>홈</span>
+                </a>
+                <a href="course-registration.html" class="nav-item">
+                    <span class="material-symbols-outlined">edit_calendar</span>
+                    <span>수강신청</span>
+                </a>
+                <a href="attendance.html" class="nav-item">
+                    <span class="material-symbols-outlined">fact_check</span>
+                    <span>출결</span>
+                </a>
+                <a href="feedback.html" class="nav-item">
+                    <span class="material-symbols-outlined">chat</span>
+                    <span>피드백</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- 관리자 메인 화면 -->
+    <div id="admin-main-screen" class="main-screen admin-theme">
+        <div id="push-toast-admin" class="push-toast admin-theme" style="display:none !important;">
+            <div class="push-toast-title" id="push-toast-title-admin"></div>
+            <div class="push-toast-body" id="push-toast-body-admin"></div>
+        </div>
+
+        <div class="max-w-md mx-auto">
+            <div class="user-header">
+                <div class="user-avatar admin-theme" id="user-avatar-admin">
+                    <span class="material-symbols-outlined text-white text-2xl">person</span>
+                </div>
+                <div class="user-info">
+                    <div class="user-name" id="user-name-admin">관리자님</div>
+                    <div class="user-email" id="user-email-admin">환영합니다</div>
+                </div>
+                <button onclick="logout()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <span class="material-symbols-outlined text-gray-400">logout</span>
+                </button>
+            </div>
+
+            <div class="text-center mb-6">
+                <h1 class="text-xl font-bold text-gray-800 mb-1">공부방 관리 시스템</h1>
+                <p class="text-sky-500 text-sm">inCLASS 관리자</p>
+            </div>
+
+            <div class="space-y-4" id="admin-menu-container">
+                <a href="franchise.html" class="admin-menu-card block">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-white text-3xl">store</span>
+                        </div>
+                        <div class="text-left flex-1">
+                            <h3 class="text-lg font-bold text-gray-800">프랜차이즈 관리</h3>
+                            <p class="text-sm text-gray-500">학생, 좌석, 수업 관리</p>
+                        </div>
+                        <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                    </div>
+                </a>
+
+                <a href="course-registration-admin.html" class="admin-menu-card block">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-white text-3xl">edit_calendar</span>
+                        </div>
+                        <div class="text-left flex-1">
+                            <h3 class="text-lg font-bold text-gray-800">수강신청 관리</h3>
+                            <p class="text-sm text-gray-500">강좌 개설 및 신청 현황</p>
+                        </div>
+                        <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                    </div>
+                </a>
+
+                <a href="kiosk.html" class="admin-menu-card block">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-white text-3xl">touch_app</span>
+                        </div>
+                        <div class="text-left flex-1">
+                            <h3 class="text-lg font-bold text-gray-800">키오스크</h3>
+                            <p class="text-sm text-gray-500">학생 등원/하원 체크</p>
+                        </div>
+                        <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                    </div>
+                </a>
+            </div>
+
+            <div class="text-center mt-10 text-sky-600 text-sm">
+                <p>v2.0.0 (Unified)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FCM Service -->
+    <script src="js/fcm-service.js"></script>
+
+    <!-- Capacitor Browser Plugin (IIFE) -->
+    <script>
+        (function() {
+            window.CapacitorBrowser = {
+                open: async function(options) {
+                    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+                        return await window.Capacitor.Plugins.Browser.open(options);
+                    } else {
+                        return new Promise((resolve, reject) => {
+                            const existing = document.getElementById('oauth-iframe');
+                            if (existing) existing.remove();
+
+                            const iframe = document.createElement('iframe');
+                            iframe.id = 'oauth-iframe';
+                            iframe.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;background:white;border:none;';
+
+                            const closeBtn = document.createElement('button');
+                            closeBtn.textContent = '✕ 닫기';
+                            closeBtn.style.cssText = 'position:absolute;top:10px;right:10px;z-index:10;padding:10px 20px;background:#000;color:#fff;border:none;border-radius:5px;font-size:16px;';
+                            closeBtn.onclick = function() {
+                                document.body.removeChild(iframe);
+                                resolve();
+                            };
+
+                            const container = document.createElement('div');
+                            container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:99998;background:white;';
+
+                            window.oauthCallback = function(url) {
+                                console.log('[OAuth Callback] URL:', url);
+                                document.body.removeChild(container);
+                                resolve({ url: url });
+                            };
+
+                            container.appendChild(closeBtn);
+                            container.appendChild(iframe);
+                            document.body.appendChild(container);
+
+                            iframe.src = options.url;
+                        });
+                    }
+                },
+                close: async function() {
+                    const container = document.getElementById('oauth-iframe');
+                    if (container) {
+                        document.body.removeChild(container);
+                    }
+                    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+                        return await window.Capacitor.Plugins.Browser.close();
+                    }
+                }
+            };
+            console.log('[Capacitor Browser] Plugin wrapper loaded');
+        })();
+    </script>
+
+    <script>
+        // 전역 에러 핸들러 - 앱 시작 시 오류 방지
+        window.addEventListener('error', function(e) {
+            console.error('[Global Error]', e.message, e.filename, e.lineno);
+            e.preventDefault();
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('[Unhandled Rejection]', e.reason);
+            e.preventDefault();
+        }, true);
+
+        console.log('[Init] Script loading started');
+
+        // 현재 선택된 역할
+        let currentRole = localStorage.getItem('selectedRole') || null;
+
+        // OAuth 진행 중 플래그
+        let isOAuthInProgress = false;
+
+        // 강제 로그아웃 가드 플래그 (OAuth 리스너 실행 차단)
+        let isForcedLogout = false;
+
+        // =====================================================
+        // 역할 선택 관련 함수
+        // =====================================================
+        function showRoleSelection() {
+            // 가드 해제 제거 (방어적: 자동 진입 시 가드 유지)
+            document.getElementById('splash-screen').classList.add('fade-out');
+            document.getElementById('role-selection-screen').classList.remove('hidden');
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('parent-main-screen').classList.remove('active');
+            document.getElementById('admin-main-screen').classList.remove('active');
+        }
+
+        function selectRole(role) {
+            currentRole = role;
+            localStorage.setItem('selectedRole', role);
+            applyRoleTheme();
+            showLoginScreen();
+        }
+
+        function applyRoleTheme() {
+            const isParent = currentRole === 'parent';
+
+            // 스플래시 화면 테마
+            const splash = document.getElementById('splash-screen');
+            splash.className = 'splash-screen ' + (isParent ? 'parent-theme' : 'admin-theme');
+            const splashLogo = splash.querySelector('.splash-logo');
+            if (splashLogo) {
+                splashLogo.className = 'splash-logo ' + (isParent ? 'parent-theme' : 'admin-theme');
+            }
+            const dots = splash.querySelectorAll('.splash-dot');
+            dots.forEach(dot => {
+                dot.className = 'splash-dot ' + (isParent ? 'parent-theme' : 'admin-theme');
+            });
+
+            // 로그인 화면 테마
+            const loginScreen = document.getElementById('login-screen');
+            loginScreen.className = 'login-screen ' + (isParent ? 'parent-theme' : 'admin-theme');
+
+            document.getElementById('role-badge').className = 'role-badge ' + (isParent ? 'parent' : 'admin');
+            document.getElementById('role-badge').textContent = isParent ? '학부모용' : '관리자용';
+
+            document.getElementById('logo-image').className = 'logo-image ' + (isParent ? 'parent-theme' : 'admin-theme');
+            document.getElementById('app-title').className = 'app-title ' + (isParent ? 'parent-theme' : 'admin-theme');
+
+            // 로그인 화면 텍스트 업데이트
+            const appDescription = document.getElementById('app-description');
+            if (isParent) {
+                appDescription.innerHTML = '학부모를 위한<br><strong>스마트</strong> 공부방, 학원관리 앱';
+            } else {
+                appDescription.innerHTML = '<strong>원장님</strong>을 위한<br>스마트한 관리 서비스';
+            }
+
+            // 메인 화면 테마
+            document.getElementById('parent-main-screen').className = 'main-screen ' + (isParent ? 'parent-theme active' : 'parent-theme');
+            document.getElementById('admin-main-screen').className = 'main-screen ' + (isParent ? 'admin-theme' : 'admin-theme active');
+
+            // 네비게이션 테마
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.className = 'nav-item' + (isParent ? '' : ' admin-theme');
+            });
+        }
+
+        // =====================================================
+        // 화면 표시 함수
+        // =====================================================
+        function showLoginScreen() {
+            // 가드 해제 제거 - 로그인 버튼 클릭 시에만 해제
+            document.getElementById('splash-screen').classList.add('fade-out');
+            document.getElementById('role-selection-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('parent-main-screen').classList.remove('active');
+            document.getElementById('admin-main-screen').classList.remove('active');
+        }
+
+        function showParentMainScreen() {
+            document.getElementById('splash-screen').classList.add('fade-out');
+            document.getElementById('role-selection-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('parent-main-screen').classList.add('active');
+            document.getElementById('admin-main-screen').classList.remove('active');
+        }
+
+        function showAdminMainScreen() {
+            document.getElementById('splash-screen').classList.add('fade-out');
+            document.getElementById('role-selection-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('parent-main-screen').classList.remove('active');
+            document.getElementById('admin-main-screen').classList.add('active');
+        }
+
+        // =====================================================
+        // Capacitor 플러그인 로드 대기 및 초기화
+        // =====================================================
+        async function waitForCapacitor() {
+            const maxWait = 10000;
+            const startTime = Date.now();
+            let lastCheck = '';
+
+            while ((Date.now() - startTime) < maxWait) {
+                const hasCap = !!window.Capacitor;
+                const hasPlugins = !!(window.Capacitor && window.Capacitor.Plugins);
+                const currentStatus = `${hasCap}-${hasPlugins}`;
+
+                if (lastCheck !== currentStatus) {
+                    console.log(`[Capacitor] 상태: Capacitor=${hasCap}, Plugins=${hasPlugins}`);
+                    lastCheck = currentStatus;
+                }
+
+                if (hasCap && hasPlugins) {
+                    try {
+                        const pluginKeys = Object.keys(window.Capacitor.Plugins || {});
+                        console.log('[Capacitor] Plugins loaded:', pluginKeys);
+                    } catch (e) {
+                        console.log('[Capacitor] Plugins loaded (no keys)');
+                    }
+                    return true;
+                }
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            console.warn('[Capacitor] Plugins not loaded after timeout');
+            return false;
+        }
+
+        // =====================================================
+        // OAuth 리스너 설정
+        // =====================================================
+        function setupOAuthListener() {
+            console.log('[setupOAuthListener] 호출됨');
+
+            if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+                console.log('[setupOAuthListener] appUrlOpen 리스너 등록 시작...');
+
+                window.Capacitor.Plugins.App.addListener('appUrlOpen', async (data) => {
+                    console.log('[App URL Open] data:', data);
+
+                    // URL이 없으면 처리 중단
+                    if (!data || !data.url) {
+                        console.log('[App URL Open] No URL found, skipping');
+                        return;
+                    }
+
+                    try {
+                        if (window.Capacitor.Plugins.Browser) {
+                            await window.Capacitor.Plugins.Browser.close();
+                        }
+                    } catch (e) {
+                        console.log('[Browser] Close error:', e);
+                    }
+                    if (window.CapacitorBrowser) {
+                        window.CapacitorBrowser.close();
+                    }
+
+                    // PKCE flow: code 파라미터가 있으면 exchangeCodeForSession 호출
+                    if (data.url.includes('auth/callback')) {
+                        // URL 파싱 (inclass:// 스킴 지원)
+                        let code = null;
+                        let error = null;
+                        let errorDescription = null;
+
+                        try {
+                            // 쿼리 파라미터 추출
+                            const queryString = data.url.split('?')[1];
+                            if (queryString) {
+                                const params = new URLSearchParams(queryString);
+                                code = params.get('code');
+                                error = params.get('error');
+                                errorDescription = params.get('error_description');
+                            }
+                        } catch (e) {
+                            console.error('[OAuth] URL parsing error:', e);
+                        }
+
+                        console.log('[OAuth Callback] url:', data.url, 'code:', code, 'error:', error);
+
+                        if (error) {
+                            console.error('[OAuth] Error:', error, errorDescription);
+                            alert('로그인 오류: ' + (errorDescription || error));
+                            isOAuthInProgress = false;
+                            return;
+                        }
+
+                        if (code) {
+                            console.log('[OAuth] Code received, exchanging for session...');
+                            try {
+                                const { data: sessionData, error: exchangeError } =
+                                    await window.supabase.auth.exchangeCodeForSession(code);
+
+                                if (exchangeError) {
+                                    console.error('[OAuth] Session exchange error:', exchangeError);
+                                    alert('로그인 실패: ' + exchangeError.message);
+                                } else {
+                                    console.log('[OAuth] Login success:', sessionData.user?.email);
+                                    await handleOAuthSessionInternal(sessionData.user);
+                                }
+                            } catch (e) {
+                                console.error('[OAuth] Exchange exception:', e);
+                            }
+                            isOAuthInProgress = false;
+                            return;
+                        }
+                    }
+
+                    // Fallback: 세션 확인
+                    await checkOAuthSession();
+                });
+
+                window.Capacitor.Plugins.App.addListener('appStateChange', async (state) => {
+                    console.log('[App State Change]', state);
+
+                    if (state.isActive && isOAuthInProgress) {
+                        console.log('[App State Change] 앱이 foreground로 돌아옴, OAuth 세션 확인 시작...');
+                        isOAuthInProgress = false;
+                        await checkOAuthSession();
+                    }
+                });
+
+                console.log('[App URL Listener] 리스너 등록 완료');
+            } else {
+                console.warn('[App URL Listener] Capacitor.App 플러그인을 찾을 수 없음');
+            }
+        }
+
+        // OAuth 세션 확인 함수
+        async function checkOAuthSession() {
+            // 강제 로그아웃 중인지 확인
+            if (isForcedLogout) return;
+            if (window.__forceLogoutLock) return;  // 하드락 체크
+
+            if (typeof window.supabase === 'undefined') return;
+
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // 강제 로그아웃 중인지 재확인 (Race Condition 방지)
+            if (isForcedLogout) return;
+
+            const { data: { session }, error } = await window.supabase.auth.getSession();
+            console.log('[OAuth Check] Session:', session?.user ? 'Found - ' + session.user.email : 'Not found');
+
+            if (session?.user) {
+                await handleOAuthSessionInternal(session.user);
+                return true;
+            }
+
+            return false;
+        }
+
+        // 내부 세션 처리 함수
+        async function handleOAuthSessionInternal(user) {
+            // 강제 로그아웃 중인지 확인
+            if (isForcedLogout) return;
+            if (window.__forceLogoutLock) return;  // 하드락 체크
+
+            console.log('[OAuth] 로그인 성공, 사용자:', user.email);
+
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('userId', user.id);
+            localStorage.setItem('userName', user.user_metadata?.full_name || user.user_metadata?.name || '사용자님');
+            localStorage.setItem('userEmail', user.email || '');
+            localStorage.setItem('userPhoto', user.user_metadata?.avatar_url || user.user_metadata?.picture || '');
+
+            if (user.phone) {
+                localStorage.setItem('userPhone', user.phone);
+            }
+
+            // 역할에 따른 분기
+            if (currentRole === 'parent') {
+                await handleParentApprovalRedirect(user.id);
+            } else {
+                await handleAdminApprovalRedirect(user.id, user.email);
+            }
+        }
+
+        // 페이지 로드 시 리스너 설정
+        async function initOAuthListener() {
+            console.log('[OAuth Listener] 초기화 시작...');
+            await waitForCapacitor();
+            setupOAuthListener();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initOAuthListener);
+        } else {
+            initOAuthListener();
+        }
+
+        // =====================================================
+        // PKCE 헬퍼 함수
+        // =====================================================
+        function generateCodeVerifier() {
+            const array = new Uint8Array(32);
+            crypto.getRandomValues(array);
+            return base64URLEncode(array);
+        }
+
+        async function generateCodeChallenge(verifier) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(verifier);
+            const digest = await crypto.subtle.digest('SHA-256', data);
+            return base64URLEncode(digest);
+        }
+
+        function base64URLEncode(buffer) {
+            let str = String.fromCharCode.apply(null, new Uint8Array(buffer));
+            return btoa(str)
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+        }
+
+        // =====================================================
+        // OAuth 로그인 처리 함수
+        // =====================================================
+        async function openOAuthLogin(provider) {
+            console.log(`[${provider} Login] 버튼 클릭됨`);
+
+            if (typeof window.supabase === 'undefined') {
+                alert('서버 연결에 실패했습니다.\n잠시 후 다시 시도해주세요.');
+                return;
+            }
+
+            await waitForCapacitor();
+
+            try {
+                console.log(`[${provider} Login] OAuth 요청 시작...`);
+
+                // 앱/웹 환경 확인
+                const isApp = window.Capacitor && window.Capacitor.getPlatform() !== 'web';
+                // Custom scheme 사용 (메일 앱 문제 해결)
+                const redirectUrl = isApp ? 'inclass://auth' : window.location.origin + '/auth/callback';
+                console.log(`[${provider} Login] redirectTo:`, redirectUrl, `(isApp: ${isApp})`);
+
+                const { data, error } = await window.supabase.auth.signInWithOAuth({
+                    provider: provider,
+                    options: {
+                        redirectTo: redirectUrl
+                    }
+                });
+
+                if (error) {
+                    console.error(`[${provider} Login] OAuth 실패:`, error);
+                    alert('로그인에 실패했습니다: ' + error.message);
+                    return;
+                }
+
+                console.log(`[${provider} Login] OAuth URL:`, data.url);
+                isOAuthInProgress = true;
+
+                // 앱에서는 Capacitor Browser로 열기 (Chrome Custom Tab)
+                if (isApp && window.CapacitorBrowser) {
+                    await window.CapacitorBrowser.open({ url: data.url });
+                } else {
+                    // 웹에서는 그대로 이동
+                    window.location.href = data.url;
+                }
+
+            } catch (e) {
+                console.error(`[${provider} Login] 예외 발생:`, e);
+                alert('로그인 중 오류가 발생했습니다: ' + e.message);
+            }
+        }
+
+        // 전역 함수로 등록
+        window.loginWithKakao = function() {
+            // 가드 해제 (로그인 진입)
+            window.__forceLogoutLock = false;
+            isForcedLogout = false;
+            openOAuthLogin('kakao');
+        };
+
+        window.loginWithGoogle = function() {
+            // 가드 해제 (로그인 진입)
+            window.__forceLogoutLock = false;
+            isForcedLogout = false;
+            openOAuthLogin('google');
+        };
+
+        console.log('[OAuth] Login functions registered');
+
+        // =====================================================
+        // 슈퍼관리자 이메일 확인
+        // =====================================================
+        function isSuperAdminEmail(email) {
+            return email === 'bhy312@gmail.com';
+        }
+
+        // 슈퍼관리자 메뉴 추가
+        function addSuperAdminMenu() {
+            const menuContainer = document.getElementById('admin-menu-container');
+            if (!menuContainer) return;
+
+            if (document.getElementById('super-admin-menu')) return;
+
+            const superAdminMenu = document.createElement('a');
+            superAdminMenu.id = 'super-admin-menu';
+            superAdminMenu.href = 'super-admin.html';
+            superAdminMenu.className = 'admin-menu-card block';
+            superAdminMenu.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-white text-3xl">shield</span>
+                    </div>
+                    <div class="text-left flex-1">
+                        <h3 class="text-lg font-bold text-gray-800">슈퍼관리자</h3>
+                        <p class="text-sm text-gray-500">가입 승인 관리</p>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                </div>
+            `;
+
+            menuContainer.insertBefore(superAdminMenu, menuContainer.firstChild);
+        }
+
+        // =====================================================
+        // 학부모 승인 상태에 따른 페이지 분기
+        // =====================================================
+        async function handleParentApprovalRedirect(userId) {
+            try {
+                const { data: children, error } = await supabase
+                    .from('students')
+                    .select('approval_status')
+                    .eq('parent_id', userId);
+
+                if (error) {
+                    console.error('자녀 조회 실패:', error);
+                    showLoginScreen();
+                    return;
+                }
+
+                if (!children || children.length === 0) {
+                    window.location.href = 'parent-join.html';
+                    return;
+                }
+
+                const hasApprovedChild = children.some(c => c.approval_status === 'approved');
+                if (hasApprovedChild) {
+                    showParentMainScreen();
+                    updateParentUserInfo();
+
+                    if (window.Capacitor && window.Capacitor.Plugins) {
+                        initPushNotifications();
+                    }
+                    return;
+                }
+
+                window.location.href = 'parent-status.html';
+            } catch (error) {
+                console.error('승인 상태 확인 에러:', error);
+                showLoginScreen();
+            }
+        }
+
+        // =====================================================
+        // 관리자 승인 상태에 따른 페이지 분기
+        // =====================================================
+        async function handleAdminApprovalRedirect(userId, userEmail) {
+            // 강제 로그아웃 중인지 확인
+            if (isForcedLogout) return;
+            if (window.__forceLogoutLock) return;  // 하드락 체크
+
+            try {
+                // 슈퍼관리자 이메일인 경우
+                if (isSuperAdminEmail(userEmail)) {
+                    localStorage.setItem('isSuperAdmin', 'true');
+                    showAdminMainScreen();
+                    updateAdminUserInfo();
+                    addSuperAdminMenu();
+                    if (window.Capacitor && window.Capacitor.Plugins) {
+                        initPushNotifications();
+                    }
+                    return;
+                }
+
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+
+                if (error || !profile) {
+                    debugLog('REDIRECT:no_profile', { isForcedLogout, __forceLogoutLock: window.__forceLogoutLock });
+                    window.location.href = 'admin-join.html';
+                    return;
+                }
+
+                // 슈퍼관리자인 경우
+                if (profile.is_super_admin) {
+                    localStorage.setItem('isSuperAdmin', 'true');
+                    showAdminMainScreen();
+                    updateAdminUserInfo();
+                    addSuperAdminMenu();
+                    if (window.Capacitor && window.Capacitor.Plugins) {
+                        initPushNotifications();
+                    }
+                    return;
+                }
+
+                // 가입 정보가 없는 경우
+                if (!profile.academy_name) {
+                    debugLog('REDIRECT:no_academy_name', { isForcedLogout, __forceLogoutLock: window.__forceLogoutLock });
+                    window.location.href = 'admin-join.html';
+                    return;
+                }
+
+                // 승인 대기 중
+                if (profile.approval_status === 'pending') {
+                    window.location.href = 'admin-status.html?status=pending';
+                    return;
+                }
+
+                // 거절됨
+                if (profile.approval_status === 'rejected') {
+                    window.location.href = 'admin-status.html?status=rejected&reason=' + encodeURIComponent(profile.rejection_reason || '');
+                    return;
+                }
+
+                // 승인 완료
+                if (profile.approval_status === 'approved' || !profile.approval_status) {
+                    showAdminMainScreen();
+                    updateAdminUserInfo();
+                    if (window.Capacitor && window.Capacitor.Plugins) {
+                        initPushNotifications();
+                    }
+                    return;
+                }
+
+                showAdminMainScreen();
+                updateAdminUserInfo();
+                if (window.Capacitor && window.Capacitor.Plugins) {
+                    initPushNotifications();
+                }
+            } catch (e) {
+                console.error('승인 상태 확인 에러:', e);
+                debugLog('REDIRECT:catch_error', { isForcedLogout, __forceLogoutLock: window.__forceLogoutLock, error: e.message });
+                window.location.href = 'admin-join.html';
+            }
+        }
+
+        // =====================================================
+        // 사용자 정보 업데이트
+        // =====================================================
+        function updateParentUserInfo() {
+            const userName = localStorage.getItem('userName') || '학부모님';
+            const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('userPhone') || '';
+            const userPhoto = localStorage.getItem('userPhoto');
+
+            document.getElementById('user-name-parent').textContent = userName;
+            document.getElementById('user-email-parent').textContent = userEmail;
+
+            if (userPhoto) {
+                const avatarEl = document.getElementById('user-avatar-parent');
+                avatarEl.innerHTML = `<img src="${userPhoto}" class="w-full h-full rounded-full object-cover" alt="프로필">`;
+            }
+        }
+
+        function updateAdminUserInfo() {
+            const userName = localStorage.getItem('userName') || '관리자님';
+            const userEmail = localStorage.getItem('userEmail') || '';
+            const userPhoto = localStorage.getItem('userPhoto');
+
+            document.getElementById('user-name-admin').textContent = userName;
+            document.getElementById('user-email-admin').textContent = userEmail;
+
+            if (userPhoto) {
+                const avatarEl = document.getElementById('user-avatar-admin');
+                avatarEl.innerHTML = `<img src="${userPhoto}" class="w-full h-full rounded-full object-cover" alt="프로필">`;
+            }
+        }
+
+        // =====================================================
+        // 로그인 상태 확인
+        // =====================================================
+        async function checkLoginStatus() {
+            // 강제 로그아웃 중인지 확인 (OAuth 리스너 실행 차단)
+            if (isForcedLogout) return;
+
+            // 로그아웃 파라미터가 있으면 자동 리다이렉트 방지
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('logout') === 'true') {
+                // URL에서 파라미터 제거 (깔끔한 URL 유지)
+                window.history.replaceState({}, document.title, window.location.pathname);
+
+                // 가드 활성화 (OAuth 리스너 실행 차단)
+                isForcedLogout = true;
+                window.__forceLogoutLock = true;  // 하드락 추가
+
+                // 확실하게 로그아웃 (local scope로 충분)
+                try {
+                    await window.supabase?.auth?.signOut({ scope: 'local' });
+                } catch (e) {}
+
+                // 인증 스토리지 정리
+                try {
+                    clearAuthStorage();
+                } catch (e) {
+                    console.error('clearAuthStorage error:', e);
+                    // 에러가 있어도 계속 진행 - UI 전환은 막지 않음
+                }
+                // 관리자 역할로 설정 후 로그인 화면 표시
+                currentRole = 'admin';
+                localStorage.setItem('selectedRole', 'admin');
+                applyRoleTheme();
+                // 직접 DOM 조작으로 로그인 화면 표시 (가드 유지)
+                document.getElementById('splash-screen').classList.add('fade-out');
+                document.getElementById('role-selection-screen').classList.add('hidden');
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('parent-main-screen').classList.remove('active');
+                document.getElementById('admin-main-screen').classList.remove('active');
+                return;
+            }
+
+            // 선택된 역할 확인
+            const savedRole = localStorage.getItem('selectedRole');
+            if (savedRole) {
+                currentRole = savedRole;
+                applyRoleTheme();
+            }
+
+            // Supabase 세션 확인
+            if (typeof supabase !== 'undefined') {
+                try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.user) {
+                        const user = session.user;
+                        localStorage.setItem('isLoggedIn', 'true');
+                        localStorage.setItem('userId', user.id);
+                        localStorage.setItem('userName', user.user_metadata?.full_name || user.user_metadata?.name || '사용자님');
+                        localStorage.setItem('userEmail', user.email || '');
+                        localStorage.setItem('userPhoto', user.user_metadata?.avatar_url || user.user_metadata?.picture || '');
+
+                        if (user.phone) {
+                            localStorage.setItem('userPhone', user.phone);
+                        }
+
+                        // 역할에 따른 분기
+                        if (currentRole === 'parent') {
+                            await handleParentApprovalRedirect(user.id);
+                        } else if (currentRole === 'admin') {
+                            await handleAdminApprovalRedirect(user.id, user.email);
+                        } else {
+                            // 역할이 없으면 역할 선택 화면으로
+                            showRoleSelection();
+                        }
+                        return;
+                    }
+                } catch (e) {
+                    console.error('세션 확인 오류:', e);
+                }
+            }
+
+            // localStorage만 있는 경우
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const userId = localStorage.getItem('userId');
+
+            if (isLoggedIn === 'true' && userId && currentRole) {
+                try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.user) {
+                        if (currentRole === 'parent') {
+                            await handleParentApprovalRedirect(userId);
+                        } else {
+                            await handleAdminApprovalRedirect(userId, session.user.email);
+                        }
+                        return;
+                    }
+                } catch (e) {
+                    console.error('세션 재확인 오류:', e);
+                }
+                localStorage.clear();
+                showRoleSelection();
+                return;
+            }
+
+            // 로그인 정보가 없으면 역할 선택 화면
+            showRoleSelection();
+        }
+
+        // =====================================================
+        // 로그아웃
+        // =====================================================
+        async function logout() {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                if (typeof supabase !== 'undefined') {
+                    try {
+                        await supabase.auth.signOut();
+                    } catch (e) {
+                        console.error('Supabase 로그아웃 오류:', e);
+                    }
+                }
+
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userEmail');
+                localStorage.removeItem('userPhoto');
+                localStorage.removeItem('isSuperAdmin');
+                // 역할은 유지 (편의성)
+                showLoginScreen();
+            }
+        }
+
+        // =====================================================
+        // 스플래시 화면 처리
+        // =====================================================
+        function hideSplashScreen() {
+            const splash = document.getElementById('splash-screen');
+            if (splash) {
+                splash.classList.add('fade-out');
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                }, 500);
+            }
+        }
+
+        // =====================================================
+        // 인앱 알림 표시 함수
+        // =====================================================
+        function showInAppNotification(title, body) {
+            const toastId = currentRole === 'parent' ? 'push-toast' : 'push-toast-admin';
+            const titleId = currentRole === 'parent' ? 'push-toast-title' : 'push-toast-title-admin';
+            const bodyId = currentRole === 'parent' ? 'push-toast-body' : 'push-toast-body-admin';
+
+            const toast = document.getElementById(toastId);
+            const toastTitle = document.getElementById(titleId);
+            const toastBody = document.getElementById(bodyId);
+
+            if (!toast || !toastTitle || !toastBody) return;
+
+            toastTitle.textContent = title;
+            toastBody.textContent = body;
+            toast.style.cssText = 'display: block !important;';
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.style.cssText = 'display: none !important;';
+            }, 5000);
+
+            toast.onclick = () => {
+                toast.classList.remove('show');
+                toast.style.cssText = 'display: none !important;';
+            };
+        }
+
+        // =====================================================
+        // 푸시 알림 초기화
+        // =====================================================
+        async function initPushNotifications() {
+            try {
+                if (window.fcmService && !window.fcmService.isInitialized) {
+                    await window.fcmService.initialize();
+                    window.fcmService.startAckRetryMonitor();
+                    console.log('[FCM] FCM Service 초기화 완료');
+                }
+            } catch (error) {
+                console.error('푸시 초기화 실패:', error);
+            }
+        }
+
+        // =====================================================
+        // 페이지 로드 시 초기화
+        // =====================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            // 세션 스토리지에 앱 초기화 여부 확인
+            const isAlreadyInitialized = sessionStorage.getItem('appInitialized');
+            const splashDelay = isAlreadyInitialized ? 0 : 1500;
+
+            if (!isAlreadyInitialized) {
+                sessionStorage.setItem('appInitialized', 'true');
+            }
+
+            setTimeout(() => {
+                hideSplashScreen();
+                checkLoginStatus();
+            }, splashDelay);
+
+            // Capacitor 푸시 알림 초기화
+            if (window.Capacitor && window.Capacitor.Plugins) {
+                initPushNotifications();
+            }
+        });
+    </script>
+
+    <!-- 디버그 로그 유틸 -->
+    <script>
+    function debugLog(tag, data) {
+        var msg = '[DEBUG ' + tag + '] ' + JSON.stringify(data);
+        console.error(msg);
+        // localStorage에도 저장 (페이지 이동 후 확인용)
+        var logs = JSON.parse(localStorage.getItem('__debugLogs') || '[]');
+        logs.push({ time: new Date().toISOString(), msg: msg });
+        localStorage.setItem('__debugLogs', JSON.stringify(logs.slice(-20)));
+    }
+    // 페이지 로드 시 저장된 로그 출력
+    window.addEventListener('DOMContentLoaded', function() {
+        var logs = JSON.parse(localStorage.getItem('__debugLogs') || '[]');
+        if (logs.length > 0) {
+            console.log('=== SAVED DEBUG LOGS ===');
+            logs.forEach(function(log) { console.log(log.time + ' ' + log.msg); });
+            console.log('========================');
+        }
+    });
+    </script>
+</body>
+</html>
