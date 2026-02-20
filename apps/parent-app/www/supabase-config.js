@@ -16,8 +16,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
         auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: false,
-            flowType: 'implicit'
+            detectSessionInUrl: false,  // 수동 처리 (appUrlOpen + exchangeCodeForSession)
+            flowType: 'pkce',
+            storage: window.localStorage
         },
         realtime: {
             params: {

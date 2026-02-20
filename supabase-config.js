@@ -13,10 +13,6 @@ function isCapacitorApp_Config() {
 (function() {
     const supabaseLib = window.supabase;
 
-    // 웹 환경에서는 항상 detectSessionInUrl 활성화 (OAuth 콜백 처리)
-    // 앱 환경에서는 비활성화 (수동 처리)
-    const detectSessionInUrl = !isCapacitorApp_Config();
-
     const supabaseClient = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         db: {
             schema: 'public'
@@ -24,7 +20,7 @@ function isCapacitorApp_Config() {
         auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: detectSessionInUrl,
+            detectSessionInUrl: true,  // 웹/앱 모두 true (Supabase v2가 자동 처리)
             flowType: 'pkce',  // PKCE 플로우 사용 (implicit보다 OAuth 상태 관리에 안정적)
             storage: window.localStorage  // 명시적으로 localStorage 사용
         },
@@ -37,7 +33,7 @@ function isCapacitorApp_Config() {
     window.supabaseClient = supabaseClient;
     window.supabase = supabaseClient;
 
-    console.log('[Supabase Config] 클라이언트 초기화 완료 (detectSessionInUrl:', detectSessionInUrl, ')');
+    console.log('[Supabase Config] 클라이언트 초기화 완료 (detectSessionInUrl: true)');
 })();
 
 // 설정이 완료되었는지 확인

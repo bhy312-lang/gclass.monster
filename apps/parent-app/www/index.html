@@ -560,6 +560,29 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
 
+    <!-- Capacitor Browser Plugin Wrapper -->
+    <script>
+        (function() {
+            window.CapacitorBrowser = {
+                open: async function(options) {
+                    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+                        return await window.Capacitor.Plugins.Browser.open(options);
+                    } else {
+                        // Fallback: window.location (웹에서 사용)
+                        window.location.href = options.url;
+                        return;
+                    }
+                },
+                close: async function() {
+                    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+                        return await window.Capacitor.Plugins.Browser.close();
+                    }
+                }
+            };
+            console.log('[Capacitor Browser] Plugin wrapper loaded');
+        })();
+    </script>
+
     <!-- FCM Service -->
     <script src="js/fcm-service.js"></script>
 
@@ -690,47 +713,47 @@
 
         // 카카오 로그인
         async function loginWithKakao() {
-            if (!isSupabaseConfigured()) {
-                alert('서버 연결에 실패했습니다.\n잠시 후 다시 시도해주세요.');
-                return;
-            }
-
-            try {
-                const { data, error } = await supabase.auth.signInWithOAuth({
-                    provider: 'kakao',
-                    options: {
-                        redirectTo: window.location.origin + window.location.pathname
-                    }
-                });
-
-                if (error) {
-                    console.error('카카오 로그인 실패:', error);
-                    alert('로그인에 실패했습니다: ' + error.message);
-                }
-            } catch (e) {
-                console.error('로그인 오류:', e);
-                alert('로그인 중 오류가 발생했습니다.');
-            }
+            await loginWithOAuth('kakao');
         }
 
         // 구글 로그인
         async function loginWithGoogle() {
+            await loginWithOAuth('google');
+        }
+
+        // OAuth 로그인 공통 함수
+        async function loginWithOAuth(provider) {
             if (!isSupabaseConfigured()) {
                 alert('서버 연결에 실패했습니다.\n잠시 후 다시 시도해주세요.');
                 return;
             }
 
             try {
+                // 앱/웹 환경 확인
+                const isApp = window.Capacitor && window.Capacitor.getPlatform() !== 'web';
+                // Custom scheme 사용 (메일 앱 문제 해결)
+                const redirectUrl = isApp ? 'inclassparent://auth' : window.location.origin + window.location.pathname;
+                console.log(`[${provider} Login] redirectTo:`, redirectUrl, `(isApp: ${isApp})`);
+
                 const { data, error } = await supabase.auth.signInWithOAuth({
-                    provider: 'google',
+                    provider: provider,
                     options: {
-                        redirectTo: window.location.origin + window.location.pathname
+                        redirectTo: redirectUrl
                     }
                 });
 
                 if (error) {
-                    console.error('구글 로그인 실패:', error);
+                    console.error(`${provider} 로그인 실패:`, error);
                     alert('로그인에 실패했습니다: ' + error.message);
+                    return;
+                }
+
+                // 앱에서는 Capacitor Browser로 열기
+                if (isApp && data.url) {
+                    await window.CapacitorBrowser.open({ url: data.url });
+                } else if (data.url) {
+                    // 웹에서는 그대로 이동
+                    window.location.href = data.url;
                 }
             } catch (e) {
                 console.error('로그인 오류:', e);
