@@ -886,6 +886,11 @@
                     return;
                 }
 
+                // ====== 슈퍼관리자가 아닌 모든 경우: 메뉴 및 상태 정리 ======
+                removeSuperAdminMenu();
+                localStorage.removeItem('isSuperAdmin');
+                // ===================================================
+
                 // 가입 정보가 없는 경우 (academy_name이 없음)
                 if (!profile.academy_name) {
                     hideLoginLoading();
@@ -960,7 +965,18 @@
             menuContainer.insertBefore(superAdminMenu, menuContainer.firstChild);
         }
 
+        // 슈퍼관리자 메뉴 제거
+        function removeSuperAdminMenu() {
+            const superAdminMenu = document.getElementById('super-admin-menu');
+            if (superAdminMenu) {
+                superAdminMenu.remove();
+            }
+        }
+
         function showLoginScreen() {
+            // 슈퍼관리자 메뉴 제거 (로그아웃 시 정리)
+            removeSuperAdminMenu();
+
             document.getElementById('login-screen').classList.remove('hidden');
             document.getElementById('main-screen').classList.remove('active');
         }
@@ -1032,6 +1048,9 @@
                         }
                     }
                 }
+
+                // 슈퍼관리자 메뉴 제거
+                removeSuperAdminMenu();
 
                 // 인증 스토리지 정리
                 clearAuthStorage();
