@@ -647,7 +647,7 @@
                 }
                 // plugin.signOut() 제거 - Firebase Credential 유지하여 네이티브 로그인 정상 작동
 
-                const res = await plugin.signInWithGoogle();
+                const res = await plugin.signInWithGoogle({ useCredentialManager: false });
                 const idToken = res?.credential?.idToken || res?.idToken || null;
 
                 if (!idToken) {

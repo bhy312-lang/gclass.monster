@@ -679,7 +679,7 @@
                     try { await window.supabase.auth.signOut(); } catch (_) {}
                 }
 
-                const res = await plugin.signInWithGoogle();
+                const res = await plugin.signInWithGoogle({ useCredentialManager: false });
                 const idToken = res?.credential?.idToken || res?.idToken || null;
 
                 if (!idToken) {
