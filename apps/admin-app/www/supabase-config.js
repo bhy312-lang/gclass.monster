@@ -16,9 +16,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
         auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: false,  // 수동 처리 (appUrlOpen + exchangeCodeForSession)
-            flowType: 'pkce',
-            storage: window.localStorage
+            detectSessionInUrl: true,
+            flowType: 'implicit',  // WebView OAuth에서는 implicit flow 사용
+            skipBrowserRedirect: false  // 브라우저 리다이렉트 사용
         },
         realtime: {
             params: {
