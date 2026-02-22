@@ -20,7 +20,7 @@ function isCapacitorApp_Config() {
         auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: true,  // 웹/앱 모두 true (Supabase v2가 자동 처리)
+            detectSessionInUrl: false,  // 수동 처리 (appUrlOpen + setSession)
             flowType: 'pkce',  // PKCE 플로우 사용 (implicit보다 OAuth 상태 관리에 안정적)
             storage: window.localStorage  // 명시적으로 localStorage 사용
         },
@@ -33,7 +33,7 @@ function isCapacitorApp_Config() {
     window.supabaseClient = supabaseClient;
     window.supabase = supabaseClient;
 
-    console.log('[Supabase Config] 클라이언트 초기화 완료 (detectSessionInUrl: true)');
+    console.log('[Supabase Config] 클라이언트 초기화 완료 (detectSessionInUrl: false)');
 })();
 
 // 설정이 완료되었는지 확인

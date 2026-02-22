@@ -408,6 +408,66 @@
                 opacity: 1;
             }
         }
+
+        /* 로그인 로딩 오버레이 */
+        .login-loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(180deg, #ffffff 0%, #fdf2f8 50%, #fce7f3 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+        }
+
+        .login-loading-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .login-loading-logo {
+            width: 120px;
+            height: auto;
+            animation: pulseLogo 2s ease-in-out infinite;
+            filter: drop-shadow(0 10px 25px rgba(236, 72, 153, 0.2));
+        }
+
+        @keyframes pulseLogo {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .login-loading-text {
+            margin-top: 32px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #374151;
+            text-align: center;
+        }
+
+        .login-loading-subtext {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .login-loading-spinner {
+            margin-top: 28px;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #ec4899;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
     <!-- 인증 유틸리티 -->
     <script src="js/auth-utils.js"></script>
@@ -426,6 +486,14 @@
             <div class="splash-dot"></div>
             <div class="splash-dot"></div>
         </div>
+    </div>
+
+    <!-- 로그인 로딩 오버레이 -->
+    <div id="login-loading-overlay" class="login-loading-overlay">
+        <img src="Logo.png" alt="inCLASS" class="login-loading-logo">
+        <p class="login-loading-text">로그인 중입니다</p>
+        <p class="login-loading-subtext">잠시만 기다려주세요...</p>
+        <div class="login-loading-spinner"></div>
     </div>
 
     <!-- 로그인 화면 -->
@@ -589,6 +657,66 @@
     <script src="js/fcm-service.js"></script>
 
     <script>
+        console.log('[Init] Script loading started');
+
+        // OAuth Promise 선언
+        window.oauthResolve = null;
+        window.oauthReject = null;
+
+        // Firebase Authentication Native Google Sign-In
+        async function loginWithGoogleNative() {
+            if (!window.Capacitor?.Plugins?.FirebaseAuthentication) {
+                throw new Error('FirebaseAuthentication plugin not available');
+            }
+
+            showLoginLoading();
+
+            try {
+                const plugin = window.Capacitor.Plugins.FirebaseAuthentication;
+
+                // 기존 세션 정리
+                if (window.supabase) {
+                    try { await window.supabase.auth.signOut(); } catch (_) {}
+                }
+
+                const res = await plugin.signInWithGoogle();
+                const idToken = res?.credential?.idToken || res?.idToken || null;
+
+                if (!idToken) {
+                    throw new Error('Google idToken not found');
+                }
+
+                const { data, error } = await window.supabase.auth.signInWithIdToken({
+                    provider: 'google',
+                    token: idToken
+                });
+
+                if (error) throw error;
+                if (!data?.session?.user) throw new Error('No session user');
+
+                const user = data.session.user;
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('userId', user.id);
+                localStorage.setItem('userName', user.user_metadata?.full_name || user.user_metadata?.name || '학부모님');
+                localStorage.setItem('userEmail', user.email || '');
+                localStorage.setItem('userPhoto', user.user_metadata?.avatar_url || user.user_metadata?.picture || '');
+
+                // 전화번호가 있으면 저장
+                if (user.phone) {
+                    localStorage.setItem('userPhone', user.phone);
+                }
+
+                await handleParentApprovalRedirect(user.id);
+            } catch (e) {
+                hideLoginLoading();
+                alert('Google 로그인 실패: ' + (e?.message || e));
+            }
+        }
+
+        console.log('[OAuth] Login functions loading...');
+    </script>
+
+    <script>
         // 로그인 상태 확인
         async function checkLoginStatus() {
             // 로그아웃 파라미터가 있으면 자동 리다이렉트 방지
@@ -712,6 +840,21 @@
             document.getElementById('main-screen').classList.add('active');
         }
 
+        // 로그인 로딩 오버레이 처리
+        function showLoginLoading() {
+            const overlay = document.getElementById('login-loading-overlay');
+            if (overlay) {
+                overlay.classList.add('show');
+            }
+        }
+
+        function hideLoginLoading() {
+            const overlay = document.getElementById('login-loading-overlay');
+            if (overlay) {
+                overlay.classList.remove('show');
+            }
+        }
+
         function updateUserInfo() {
             const userName = localStorage.getItem('userName') || '학부모님';
             const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('userPhone') || '';
@@ -736,22 +879,45 @@
             await loginWithOAuth('kakao');
         }
 
-        // 구글 로그인
+        // 구글 로그인 (Native + OAuth Fallback)
         async function loginWithGoogle() {
-            await loginWithOAuth('google');
+            const isApp = window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() !== 'web';
+
+            if (isApp) {
+                if (window.Capacitor.Plugins?.FirebaseAuthentication) {
+                    await loginWithGoogleNative();
+                } else {
+                    // Firebase 플러그인이 없으면 OAuth fallback
+                    console.log('[Login] Firebase plugin not available, using OAuth fallback');
+                    await loginWithOAuth('google');
+                }
+            } else {
+                // 웹에서는 OAuth
+                await loginWithOAuth('google');
+            }
         }
+
+        // 전역 함수로 등록 (HTML onclick에서 접근 가능하도록)
+        window.loginWithKakao = loginWithKakao;
+        window.loginWithGoogle = loginWithGoogle;
+
+        console.log('[OAuth] Login functions registered');
 
         // OAuth 로그인 공통 함수
         async function loginWithOAuth(provider) {
+            console.log(`[${provider} Login] 버튼 클릭됨`);
+
             if (!isSupabaseConfigured()) {
                 alert('서버 연결에 실패했습니다.\n잠시 후 다시 시도해주세요.');
                 return;
             }
 
             try {
+                console.log(`[${provider} Login] OAuth 요청 시작...`);
+
                 // 앱/웹 환경 확인
-                const isApp = window.Capacitor && window.Capacitor.getPlatform() !== 'web';
-                // Custom scheme 사용 (메일 앱 문제 해결)
+                const isApp = window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() !== 'web';
+                // Custom scheme 사용 (Deep link와 일치)
                 const redirectUrl = isApp ? 'inclassparent://auth' : window.location.origin + window.location.pathname;
                 console.log(`[${provider} Login] redirectTo:`, redirectUrl, `(isApp: ${isApp})`);
 
@@ -763,21 +929,51 @@
                 });
 
                 if (error) {
-                    console.error(`${provider} 로그인 실패:`, error);
+                    console.error(`[${provider} Login] OAuth 실패:`, error);
+                    hideLoginLoading();
                     alert('로그인에 실패했습니다: ' + error.message);
                     return;
                 }
 
-                // 앱에서는 Capacitor Browser로 열기
+                console.log(`[${provider} Login] OAuth URL:`, data.url);
+
+                // 로딩 오버레이 표시
+                showLoginLoading();
+
+                // 앱에서는 Promise 기반으로 처리
                 if (isApp && data.url) {
-                    await window.CapacitorBrowser.open({ url: data.url });
+                    const result = await new Promise((resolve, reject) => {
+                        window.oauthResolve = resolve;
+                        window.oauthReject = reject;
+
+                        // 타임아웃 (60초)
+                        setTimeout(() => {
+                            if (window.oauthResolve) {
+                                window.oauthResolve = null;
+                                window.oauthReject = null;
+                                resolve({ success: false, timeout: true });
+                            }
+                        }, 60000);
+
+                        // Browser로 OAuth 페이지 열기
+                        window.CapacitorBrowser.open({ url: data.url });
+                    });
+
+                    console.log('[OAuth] 브라우저 결과:', result);
+
+                    // 타임아웃 또는 실패 시 로딩 숨기기
+                    if (!result.success) {
+                        hideLoginLoading();
+                        alert('로그인에 실패했습니다. 다시 시도해주세요.');
+                    }
                 } else if (data.url) {
                     // 웹에서는 그대로 이동
                     window.location.href = data.url;
                 }
             } catch (e) {
-                console.error('로그인 오류:', e);
-                alert('로그인 중 오류가 발생했습니다.');
+                console.error(`[${provider} Login] 예외 발생:`, e);
+                hideLoginLoading();
+                alert('로그인 중 오류가 발생했습니다: ' + e.message);
             }
         }
 
@@ -889,6 +1085,151 @@
             } catch (error) {
                 console.error('푸시 초기화 실패:', error);
             }
+        }
+
+        // URL 파싱 헬퍼 함수 (new URL 기반 일원화)
+        function parseOAuthUrl(urlString) {
+            try {
+                const url = new URL(urlString);
+                const hashParams = new URLSearchParams(url.hash.slice(1)); // # 제거
+                const searchParams = url.searchParams;
+
+                const getParam = (name) => hashParams.get(name) || searchParams.get(name);
+
+                return {
+                    error: getParam('error'),
+                    errorDescription: getParam('error_description'),
+                    code: getParam('code'),
+                    accessToken: getParam('access_token'),
+                    refreshToken: getParam('refresh_token'),
+                    expiresIn: getParam('expires_in'),
+                    tokenType: getParam('token_type')
+                };
+            } catch (e) {
+                console.error('[OAuth] URL parsing failed:', e);
+                return null;
+            }
+        }
+
+        // OAuth 콜백 URL 처리 (Capacitor 앱이 열릴 때)
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+            window.Capacitor.Plugins.App.addListener('appUrlOpen', async (data) => {
+                console.log('[App URL Open] URL:', data.url);
+
+                // URL 파싱
+                const params = parseOAuthUrl(data.url);
+                if (!params) {
+                    if (window.oauthReject) {
+                        window.oauthReject(new Error('Invalid OAuth callback URL'));
+                        window.oauthReject = null;
+                    }
+                    return;
+                }
+
+                // ERROR 파라미터 우선 처리
+                if (params.error) {
+                    console.error('[OAuth Error]', params.error, params.errorDescription);
+                    hideLoginLoading();
+                    if (window.oauthReject) {
+                        window.oauthReject(new Error(params.error));
+                        window.oauthReject = null;
+                    }
+                    alert('로그인이 취소되었습니다.');
+                    return;
+                }
+
+                // Browser 닫기 (공통 경로)
+                try {
+                    if (window.Capacitor.Plugins.Browser) {
+                        await window.Capacitor.Plugins.Browser.close();
+                    }
+                    if (window.CapacitorBrowser) {
+                        window.CapacitorBrowser.close();
+                    }
+                } catch (e) {
+                    console.warn('[OAuth] Browser close warning:', e);
+                }
+
+                // PKCE code 우선 처리 (Supabase v2 권장)
+                if (params.code && typeof window.supabase !== 'undefined') {
+                    console.log('[OAuth] Code detected, exchanging for session...');
+                    try {
+                        const { data, error } = await window.supabase.auth.exchangeCodeForSession(params.code);
+                        if (error) throw error;
+                        console.log('[OAuth] Code exchanged successfully');
+                    } catch (e) {
+                        console.error('[OAuth] Code exchange failed:', e);
+                        hideLoginLoading();
+                        if (window.oauthReject) {
+                            window.oauthReject(e);
+                            window.oauthReject = null;
+                        }
+                        alert('로그인에 실패했습니다: ' + e.message);
+                        return;
+                    }
+                }
+                // 토큰 직접 파싱 (fallback)
+                else if (params.accessToken && typeof window.supabase !== 'undefined') {
+                    console.log('[OAuth] Token detected, setting session...');
+                    try {
+                        await window.supabase.auth.setSession({
+                            access_token: params.accessToken,
+                            refresh_token: params.refreshToken || '',
+                            expires_in: params.expiresIn ? parseInt(params.expiresIn) : undefined,
+                            token_type: params.tokenType || 'bearer'
+                        });
+                        console.log('[OAuth] Session set via tokens');
+                    } catch (e) {
+                        console.error('[OAuth] Set session failed:', e);
+                        hideLoginLoading();
+                        if (window.oauthReject) {
+                            window.oauthReject(e);
+                            window.oauthReject = null;
+                        }
+                        alert('로그인에 실패했습니다: ' + e.message);
+                        return;
+                    }
+                }
+
+                // 세션 확인 및 UI 업데이트
+                await new Promise(resolve => setTimeout(resolve, 500));
+                const { data: { session } } = await window.supabase.auth.getSession();
+                console.log('[OAuth] Session check:', session?.user ? '성공' : '실패');
+
+                if (session?.user) {
+                    const user = session.user;
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('userId', user.id);
+                    localStorage.setItem('userName', user.user_metadata?.full_name || user.user_metadata?.name || '학부모님');
+                    localStorage.setItem('userEmail', user.email || '');
+                    localStorage.setItem('userPhoto', user.user_metadata?.avatar_url || user.user_metadata?.picture || '');
+
+                    // 전화번호가 있으면 저장
+                    if (user.phone) {
+                        localStorage.setItem('userPhone', user.phone);
+                    }
+
+                    // OAuth Promise resolve
+                    if (window.oauthResolve) {
+                        window.oauthResolve({ success: true, session });
+                        window.oauthResolve = null;
+                        window.oauthReject = null;
+                    }
+
+                    // 학부모 승인 상태 확인
+                    await handleParentApprovalRedirect(user.id);
+                } else {
+                    console.warn('[OAuth] 세션이 없습니다');
+                    hideLoginLoading();
+                    if (window.oauthReject) {
+                        window.oauthReject(new Error('No session after OAuth'));
+                        window.oauthReject = null;
+                    }
+                    alert('로그인에 실패했습니다. 다시 시도해주세요.');
+                    showLoginScreen();
+                }
+            });
+            console.log('[App URL Listener] 리스너 등록 완료');
         }
     </script>
 </body>

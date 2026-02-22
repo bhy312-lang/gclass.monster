@@ -65,7 +65,7 @@ async function checkAuthStatus() {
                 .eq('id', session.user.id)
                 .single();
 
-            updateAuthUI(profile);
+            updateAppAuthUI(profile);
         }
     } catch (error) {
         console.error('인증 상태 확인 실패:', error);
@@ -73,7 +73,7 @@ async function checkAuthStatus() {
 }
 
 // 인증 UI 업데이트
-function updateAuthUI(profile) {
+function updateAppAuthUI(profile) {
     const loginBtn = document.getElementById('login-btn');
     const userInfo = document.getElementById('user-info');
     const userName = document.getElementById('user-name');

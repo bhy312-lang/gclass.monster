@@ -631,6 +631,51 @@
         window.onOAuthFailed = null;
         window.oauthResolve = null;
 
+        // Firebase Authentication Native Google Sign-In
+        async function loginWithGoogleNative() {
+            if (!window.Capacitor?.Plugins?.FirebaseAuthentication) {
+                throw new Error('FirebaseAuthentication plugin not available');
+            }
+
+            showLoginLoading();
+
+            try {
+                const plugin = window.Capacitor.Plugins.FirebaseAuthentication;
+
+                if (window.supabase) {
+                    try { await window.supabase.auth.signOut(); } catch (_) {}
+                }
+                // plugin.signOut() 제거 - Firebase Credential 유지하여 네이티브 로그인 정상 작동
+
+                const res = await plugin.signInWithGoogle();
+                const idToken = res?.credential?.idToken || res?.idToken || null;
+
+                if (!idToken) {
+                    throw new Error('Google idToken not found');
+                }
+
+                const { data, error } = await window.supabase.auth.signInWithIdToken({
+                    provider: 'google',
+                    token: idToken
+                });
+
+                if (error) throw error;
+                if (!data?.session?.user) throw new Error('No session user');
+
+                const user = data.session.user;
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('userId', user.id);
+                localStorage.setItem('userName', user.user_metadata?.full_name || user.user_metadata?.name || '관리자님');
+                localStorage.setItem('userEmail', user.email || '');
+                localStorage.setItem('userPhoto', user.user_metadata?.avatar_url || user.user_metadata?.picture || '');
+
+                await handleApprovalRedirect(user.id, user.email);
+            } catch (e) {
+                hideLoginLoading();
+                alert('Google 로그인 실패: ' + (e?.message || e));
+            }
+        }
+
         // OAuth 로그인 처리 함수
         async function openOAuthLogin(provider) {
             console.log(`[${provider} Login] 버튼 클릭됨`);
@@ -712,8 +757,19 @@
             openOAuthLogin('kakao');
         };
 
-        window.loginWithGoogle = function() {
-            openOAuthLogin('google');
+        window.loginWithGoogle = async function() {
+            const isApp = window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() !== 'web';
+
+            if (isApp) {
+                if (window.Capacitor.Plugins?.FirebaseAuthentication) {
+                    await loginWithGoogleNative();
+                } else {
+                    alert('Firebase Authentication plugin이 없습니다. 앱을 다시 설치해주세요.');
+                    console.error('[Login] FirebaseAuthentication plugin not available in app');
+                }
+            } else {
+                openOAuthLogin('google');
+            }
         };
 
         console.log('[OAuth] Login functions registered');
