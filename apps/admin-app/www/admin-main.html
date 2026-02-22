@@ -642,10 +642,17 @@
             try {
                 const plugin = window.Capacitor.Plugins.FirebaseAuthentication;
 
+                // 기존 Supabase 세션 정리
                 if (window.supabase) {
                     try { await window.supabase.auth.signOut(); } catch (_) {}
                 }
-                // plugin.signOut() 제거 - Firebase Credential 유지하여 네이티브 로그인 정상 작동
+
+                // Firebase 로그아웃 추가 (계정 선택 화면 보장)
+                try {
+                    await plugin.signOut();
+                } catch (_) {
+                    // signOut 실패해도 계속 진행 (이미 로그아웃 상태일 수 있음)
+                }
 
                 const res = await plugin.signInWithGoogle({ useCredentialManager: false });
                 const idToken = res?.credential?.idToken || res?.idToken || null;
@@ -688,11 +695,19 @@
             try {
                 console.log(`[${provider} Login] OAuth 요청 시작...`);
 
+                // provider별 prompt 파라미터 결정
+                // Google: select_account (계정 선택 화면 강제)
+                // Kakao: login (재인증 유도)
+                const promptParam = provider === 'google' ? 'select_account' : 'login';
+
                 // OAuth URL 생성 (커스텀 스킴 사용)
                 const { data, error } = await window.supabase.auth.signInWithOAuth({
                     provider: provider,
                     options: {
-                        redirectTo: 'inclassadmin://'
+                        redirectTo: 'inclassadmin://',
+                        queryParams: {
+                            prompt: promptParam
+                        }
                     }
                 });
 
@@ -973,24 +988,53 @@
             }
         }
 
+        // 인증 스토리지 정리 유틸 함수
+        function clearAuthStorage() {
+            // 앱 인증 키
+            const authKeys = ['isLoggedIn', 'userId', 'userName', 'userEmail',
+                              'userPhoto', 'isSuperAdmin'];
+            authKeys.forEach(key => localStorage.removeItem(key));
+
+            // Supabase 세션 키 제거
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key?.match(/(^sb-.*-auth-token$)|code-verifier|^supabase\./)) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+        }
+
         // 로그아웃
         async function logout() {
             if (confirm('로그아웃 하시겠습니까?')) {
-                // Supabase 로그아웃
+                // Firebase Authentication 로그아웃 (네이티브 앱)
+                if (window.Capacitor?.Plugins?.FirebaseAuthentication) {
+                    try {
+                        await window.Capacitor.Plugins.FirebaseAuthentication.signOut();
+                        console.log('[Logout] Firebase signOut completed');
+                    } catch (e) {
+                        console.error('[Logout] Firebase signOut 오류:', e);
+                    }
+                }
+
+                // Supabase 로그아웃 (global + local fallback)
                 if (typeof window.supabase !== 'undefined' && window.supabase !== null) {
                     try {
                         await supabase.auth.signOut();
                     } catch (e) {
-                        console.error('Supabase 로그아웃 오류:', e);
+                        console.warn('[Logout] Global signOut failed, trying local:', e);
+                        try {
+                            await supabase.auth.signOut({ scope: 'local' });
+                        } catch (e2) {
+                            console.error('[Logout] Local signOut also failed:', e2);
+                        }
                     }
                 }
 
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('userId');
-                localStorage.removeItem('userName');
-                localStorage.removeItem('userEmail');
-                localStorage.removeItem('userPhoto');
-                localStorage.removeItem('isSuperAdmin');
+                // 인증 스토리지 정리
+                clearAuthStorage();
                 showLoginScreen();
             }
         }

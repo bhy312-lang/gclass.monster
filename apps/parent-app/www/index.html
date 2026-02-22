@@ -679,6 +679,13 @@
                     try { await window.supabase.auth.signOut(); } catch (_) {}
                 }
 
+                // Firebase 로그아웃 추가 (계정 선택 화면 보장)
+                try {
+                    await plugin.signOut();
+                } catch (_) {
+                    // signOut 실패해도 계속 진행 (이미 로그아웃 상태일 수 있음)
+                }
+
                 const res = await plugin.signInWithGoogle({ useCredentialManager: false });
                 const idToken = res?.credential?.idToken || res?.idToken || null;
 
@@ -921,10 +928,18 @@
                 const redirectUrl = isApp ? 'inclassparent://auth' : window.location.origin + window.location.pathname;
                 console.log(`[${provider} Login] redirectTo:`, redirectUrl, `(isApp: ${isApp})`);
 
+                // provider별 prompt 파라미터 결정
+                // Google: select_account (계정 선택 화면 강제)
+                // Kakao: login (재인증 유도)
+                const promptParam = provider === 'google' ? 'select_account' : 'login';
+
                 const { data, error } = await supabase.auth.signInWithOAuth({
                     provider: provider,
                     options: {
-                        redirectTo: redirectUrl
+                        redirectTo: redirectUrl,
+                        queryParams: {
+                            prompt: promptParam
+                        }
                     }
                 });
 
@@ -1006,21 +1021,19 @@
         // 로그아웃
         async function logout() {
             if (confirm('로그아웃 하시겠습니까?')) {
-                // Supabase 로그아웃
-                if (isSupabaseConfigured()) {
+                // Firebase Authentication 로그아웃 (네이티브 앱)
+                if (window.Capacitor?.Plugins?.FirebaseAuthentication) {
                     try {
-                        await supabase.auth.signOut();
+                        await window.Capacitor.Plugins.FirebaseAuthentication.signOut();
+                        console.log('[Logout] Firebase signOut completed');
                     } catch (e) {
-                        console.error('Supabase 로그아웃 오류:', e);
+                        console.error('[Logout] Firebase signOut 오류:', e);
                     }
                 }
 
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('userId');
-                localStorage.removeItem('userName');
-                localStorage.removeItem('userEmail');
-                localStorage.removeItem('userPhoto');
-                // userPhone은 유지 (재로그인 시 편의)
+                // Supabase 로그아웃 + 스토리지 정리 (auth-utils.js 유틸 활용)
+                await performLogout();
+
                 showLoginScreen();
             }
         }
