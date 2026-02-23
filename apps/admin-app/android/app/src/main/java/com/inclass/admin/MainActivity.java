@@ -5,6 +5,8 @@ import android.graphics.Color;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebView;
+import android.os.Handler;
+import android.os.Looper;
 import androidx.activity.OnBackPressedCallback;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.ViewCompat;
@@ -13,9 +15,13 @@ import androidx.core.graphics.Insets;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // WebView textZoom 100% 강제 설정 (텍스트 점프 방지)
+        applyTextZoomSafely();
 
         // 상태바 색상 설정
         getWindow().setStatusBarColor(Color.parseColor("#1e3a8a"));
@@ -68,5 +74,33 @@ public class MainActivity extends BridgeActivity {
                 }
             }
         });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // 화면 복귀 시에도 textZoom 재적용
+        applyTextZoomSafely();
+    }
+
+    /**
+     * WebView textZoom 100% 강제 설정 (텍스트 점프 방지)
+     * WebView 준비 타이밍 이슈 방지를 위해 post + 지연 재시도 포함
+     */
+    private void applyTextZoomSafely() {
+        if (getBridge() == null || getBridge().getWebView() == null) return;
+        WebView webView = getBridge().getWebView();
+
+        Runnable apply = () -> {
+            try {
+                webView.getSettings().setTextZoom(100);
+                webView.getSettings().setLoadWithOverviewMode(false);
+                webView.getSettings().setUseWideViewPort(true);
+            } catch (Exception ignored) {}
+        };
+
+        webView.post(apply);
+        new Handler(Looper.getMainLooper()).postDelayed(apply, 120);
+        new Handler(Looper.getMainLooper()).postDelayed(apply, 350);
     }
 }

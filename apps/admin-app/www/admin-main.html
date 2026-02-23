@@ -1,11 +1,21 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="preinit">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <style>
+        html, body {
+            -webkit-text-size-adjust: 100% !important;
+            text-size-adjust: 100% !important;
+        }
+        .preinit body { opacity: 0; }
+        .ui-ready body { opacity: 1; transition: opacity .12s linear; }
+    </style>
     <base href=".">
     <title>inCLASS 관리자</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="./styles/admin-tailwind.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
     <style>
@@ -415,6 +425,62 @@
             to { transform: rotate(360deg); }
         }
     </style>
+    <script>
+    // 렌더링 계측 로그 함수
+    function logRenderStage(stage) {
+        const root = document.documentElement;
+        const title = document.querySelector('.menu-card h3');
+        const rs = getComputedStyle(root);
+        const ts = title ? getComputedStyle(title) : null;
+        console.log('[RENDER_STAGE]', stage, {
+            textSizeAdjust: rs.webkitTextSizeAdjust || rs.textSizeAdjust,
+            rootFontSize: rs.fontSize,
+            menuTitleFontSize: ts ? ts.fontSize : null,
+            time: performance.now()
+        });
+    }
+
+    // DOMContentLoaded 로그
+    document.addEventListener('DOMContentLoaded', () => logRenderStage('DOMContentLoaded'));
+
+    // 첫 프레임 로그
+    requestAnimationFrame(() => {
+        logRenderStage('firstRAF');
+        requestAnimationFrame(() => logRenderStage('secondRAF'));
+    });
+
+    // 폰트 로드 로그
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => logRenderStage('fontsReady'));
+    }
+
+    // 초기화 및 첫 페인트 렌더 가드
+    (function () {
+        const root = document.documentElement;
+        let done = false;
+        const show = () => {
+            if (done) return;
+            done = true;
+            logRenderStage('showContent');
+            root.classList.remove('preinit');
+            root.classList.add('ui-ready');
+        };
+
+        const raf2 = () => requestAnimationFrame(() => requestAnimationFrame(show));
+
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(raf2).catch(raf2);
+        } else {
+            raf2();
+        }
+
+        window.addEventListener('load', () => {
+            logRenderStage('windowLoad');
+            show();
+        }, { once: true });
+        setTimeout(show, 1200);
+    })();
+    </script>
 </head>
 <body>
     <!-- 스플래시/로딩 화면 -->
@@ -441,7 +507,7 @@
     </div>
 
     <!-- 로그인 화면 -->
-    <div id="login-screen" class="login-screen">
+    <div id="login-screen" class="login-screen hidden">
         <div class="admin-label">관리자용</div>
         <div class="login-content">
             <div class="logo-title-wrapper">
@@ -1146,8 +1212,8 @@
 
             // 스플래시 화면 후 로그인 상태 확인
             setTimeout(async () => {
-                hideSplashScreen();
                 await checkLoginStatus();
+                hideSplashScreen();
             }, splashDelay);
         });
 
