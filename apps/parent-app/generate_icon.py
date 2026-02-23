@@ -5,16 +5,12 @@ import sys
 # ============================================
 # 고정 디자인 값 (parent-app)
 # ============================================
-# 그라데이션 색상 (상단 → 하단)
-GRADIENT_TOP = (251, 207, 232)    # #fbcfe8 (light pink)
-GRADIENT_BOTTOM = (236, 72, 153)  # #ec4899 (pink)
+# 배경색 (흰색)
+BACKGROUND_COLOR = (255, 255, 255)  # #ffffff
 
 # 로고 최대 크기 비율
-LOGO_MAX_WIDTH_RATIO = 0.75
-LOGO_MAX_HEIGHT_RATIO = 0.75
-
-# foreground 투명 배경
-FOREGROUND_TRANSPARENT = True
+LOGO_MAX_WIDTH_RATIO = 0.80
+LOGO_MAX_HEIGHT_RATIO = 0.80
 
 # ============================================
 # 경로 설정
@@ -33,35 +29,18 @@ icon_sizes = {
 }
 
 
-def create_gradient_background(size, top_color, bottom_color):
-    """수직 그라데이션 배경 생성"""
-    img = Image.new('RGBA', (size, size), top_color + (255,))
-    draw = ImageDraw.Draw(img)
-
-    # 그라데이션 적용 (상단에서 하단으로)
-    for y in range(size):
-        ratio = y / size
-        r = int(top_color[0] * (1 - ratio) + bottom_color[0] * ratio)
-        g = int(top_color[1] * (1 - ratio) + bottom_color[1] * ratio)
-        b = int(top_color[2] * (1 - ratio) + bottom_color[2] * ratio)
-        draw.line([(0, y), (size, y)], fill=(r, g, b, 255))
-
-    return img
-
-
-def create_simple_icon(logo_img, size, is_foreground=False):
+def create_simple_icon(logo_img, size):
     """
-    로고만 있는 심플한 아이콘 생성 (그라데이션 배경)
+    로고만 있는 심플한 아이콘 생성 (흰색 배경)
     """
-
-    # 배경 생성 (foreground도 그라데이션 포함)
-    icon = create_gradient_background(size, GRADIENT_TOP, GRADIENT_BOTTOM)
+    # 흰색 배경 생성
+    icon = Image.new('RGBA', (size, size), BACKGROUND_COLOR + (255,))
 
     # 로고 크기 계산 (비율 유지)
     logo_max_width = int(size * LOGO_MAX_WIDTH_RATIO)
     logo_max_height = int(size * LOGO_MAX_HEIGHT_RATIO)
 
-    # 로고 리사이즈 (비율 유지)
+    # 로고 리사이즈 (최고 품질)
     logo_resized = logo_img.copy()
     logo_resized.thumbnail((logo_max_width, logo_max_height), Image.Resampling.LANCZOS)
 
@@ -69,7 +48,7 @@ def create_simple_icon(logo_img, size, is_foreground=False):
     logo_x = (size - logo_resized.width) // 2
     logo_y = (size - logo_resized.height) // 2
 
-    # 로고 붙여넣기
+    # 로고 붙여넣기 (알파 채널 유지)
     if logo_resized.mode == 'RGBA':
         icon.paste(logo_resized, (logo_x, logo_y), logo_resized)
     else:
@@ -78,14 +57,14 @@ def create_simple_icon(logo_img, size, is_foreground=False):
     return icon
 
 
-def create_round_icon(logo_img, size, top_color, bottom_color):
-    """원형 아이콘 생성 (그라데이션 배경)"""
+def create_round_icon(logo_img, size):
+    """원형 아이콘 생성"""
     mask = Image.new('L', (size, size), 0)
     draw = ImageDraw.Draw(mask)
     draw.ellipse([0, 0, size, size], fill=255)
 
-    # 그라데이션 배경
-    round_icon = create_gradient_background(size, top_color, bottom_color)
+    # 흰색 배경 원형
+    round_icon = Image.new('RGBA', (size, size), BACKGROUND_COLOR + (255,))
 
     # 로고 추가
     logo_max_width = int(size * LOGO_MAX_WIDTH_RATIO)
@@ -124,22 +103,36 @@ def main():
 
         # ic_launcher.png 생성
         launcher_size = sizes["launcher"]
-        launcher_icon = create_simple_icon(logo, launcher_size, is_foreground=False)
+        launcher_icon = create_simple_icon(logo, launcher_size)
         launcher_path = os.path.join(folder_path, "ic_launcher.png")
         launcher_icon.save(launcher_path, "PNG")
         print(f"생성 완료: {launcher_path}")
 
         # ic_launcher_round.png 생성
-        round_icon = create_round_icon(logo, launcher_size, GRADIENT_TOP, GRADIENT_BOTTOM)
+        round_icon = create_round_icon(logo, launcher_size)
         round_path = os.path.join(folder_path, "ic_launcher_round.png")
         round_icon.save(round_path, "PNG")
         print(f"생성 완료: {round_path}")
 
-        # ic_launcher_foreground.png 생성
+        # ic_launcher_foreground.png 생성 (투명 배경)
         foreground_size = sizes["foreground"]
-        foreground_icon = create_simple_icon(logo, foreground_size, is_foreground=True)
+
+        # foreground는 투명 배경 + 로고만
+        icon = Image.new('RGBA', (foreground_size, foreground_size), (0, 0, 0, 0))
+        logo_max_width = int(foreground_size * LOGO_MAX_WIDTH_RATIO)
+        logo_max_height = int(foreground_size * LOGO_MAX_HEIGHT_RATIO)
+        logo_resized = logo.copy()
+        logo_resized.thumbnail((logo_max_width, logo_max_height), Image.Resampling.LANCZOS)
+        logo_x = (foreground_size - logo_resized.width) // 2
+        logo_y = (foreground_size - logo_resized.height) // 2
+
+        if logo_resized.mode == 'RGBA':
+            icon.paste(logo_resized, (logo_x, logo_y), logo_resized)
+        else:
+            icon.paste(logo_resized, (logo_x, logo_y))
+
         foreground_path = os.path.join(folder_path, "ic_launcher_foreground.png")
-        foreground_icon.save(foreground_path, "PNG")
+        icon.save(foreground_path, "PNG")
         print(f"생성 완료: {foreground_path}")
 
     print("\n모든 아이콘 생성 완료!")
