@@ -9,9 +9,23 @@ function isCapacitorApp_Config() {
     return window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() !== 'web';
 }
 
+// 로컬 개발 환경인지 확인 (localhost, 127.0.0.1, 192.168.x.x 등)
+function isLocalDev() {
+    const hostname = window.location.hostname;
+    return hostname === 'localhost' ||
+           hostname === '127.0.0.1' ||
+           hostname.startsWith('192.168.') ||
+           hostname.startsWith('10.') ||
+           hostname.startsWith('172.');
+}
+
 // Supabase 클라이언트 생성 및 전역 노출 (즉시 실행)
 (function() {
     const supabaseLib = window.supabase;
+
+    // 로컬 개발 환경에서는 implicit, 프로덕션에서는 pkce 사용
+    const flowType = isLocalDev() ? 'implicit' : 'pkce';
+    console.log('[Supabase Config] 환경:', isLocalDev() ? '로컬 개발 (implicit)' : '프로덕션 (pkce)');
 
     const supabaseClient = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         db: {
@@ -20,8 +34,8 @@ function isCapacitorApp_Config() {
         auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: false,  // 수동 처리 (appUrlOpen + setSession)
-            flowType: 'pkce',  // PKCE 플로우 사용 (implicit보다 OAuth 상태 관리에 안정적)
+            detectSessionInUrl: true,  // 웹/앱 모두 true (Supabase v2가 자동 처리)
+            flowType: flowType,  // 로컬: implicit, 프로덕션: pkce
             storage: window.localStorage  // 명시적으로 localStorage 사용
         },
         realtime: {
@@ -33,7 +47,7 @@ function isCapacitorApp_Config() {
     window.supabaseClient = supabaseClient;
     window.supabase = supabaseClient;
 
-    console.log('[Supabase Config] 클라이언트 초기화 완료 (detectSessionInUrl: false)');
+    console.log('[Supabase Config] 클라이언트 초기화 완료 (flowType:', flowType + ')');
 })();
 
 // 설정이 완료되었는지 확인

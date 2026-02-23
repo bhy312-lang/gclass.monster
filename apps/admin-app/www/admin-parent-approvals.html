@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <base href=".">
+    <title>학부모 승인 관리 | inCLASS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+    <style>
+        * { font-family: 'Noto Sans KR', sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .dark-glass {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-pending {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .status-approved {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .status-rejected {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .request-card {
+            transition: all 0.3s ease;
+        }
+
+        .request-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .tab-btn {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            color: #0ea5e9;
+            font-weight: 700;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 3px;
+            background: #0ea5e9;
+            border-radius: 2px;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .request-item {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* 반응형 */
+        @media (min-width: 768px) {
+            .request-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .request-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- 헤더 -->
+    <header class="dark-glass sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <button onclick="window.location.href='admin-main.html'" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                        <span class="material-symbols-outlined text-gray-400">arrow_back</span>
+                    </button>
+                    <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-white">family_restroom</span>
+                    </div>
+                    <div>
+                        <h1 class="text-white font-bold text-lg">학부모 승인 관리</h1>
+                        <p class="text-gray-400 text-xs">inCLASS Admin</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="window.location.href='admin-main.html'" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                        <span class="material-symbols-outlined text-gray-400">home</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 탭 -->
+            <div class="flex gap-6 mt-4 border-b border-white/10">
+                <button class="tab-btn active py-3 text-sm" onclick="switchTab('pending')">
+                    학부모 신청 <span id="pending-count" class="ml-1 px-2 py-0.5 bg-amber-500 text-white text-xs rounded-full">0</span>
+                </button>
+                <button class="tab-btn py-3 text-gray-400 text-sm" onclick="switchTab('approved')">
+                    승인 완료
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        <!-- 학부모 신청 탭 -->
+        <div id="pending-tab" class="tab-content">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-white font-semibold">학부모 가입 신청</h2>
+                <button onclick="forceReload('pending')" class="text-sky-400 text-sm flex items-center gap-1 hover:text-sky-300">
+                    <span class="material-symbols-outlined text-sm">refresh</span>
+                    새로고침
+                </button>
+            </div>
+            <div id="pending-requests" class="request-grid space-y-4 md:space-y-0">
+                <!-- 요청 카드가 여기에 추가됨 -->
+            </div>
+        </div>
+
+        <!-- 승인 완료 탭 -->
+        <div id="approved-tab" class="tab-content hidden">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-white font-semibold">승인 완료 목록</h2>
+                <button onclick="forceReload('approved')" class="text-sky-400 text-sm flex items-center gap-1 hover:text-sky-300">
+                    <span class="material-symbols-outlined text-sm">refresh</span>
+                    새로고침
+                </button>
+            </div>
+            <div id="approved-list" class="request-grid space-y-4 md:space-y-0">
+                <!-- 승인 완료 카드가 여기에 추가됨 -->
+            </div>
+        </div>
+    </main>
+
+    <!-- 거절 사유 모달 -->
+    <div id="reject-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card rounded-2xl p-6 w-full max-w-md" onclick="event.stopPropagation()">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">거절 사유 입력</h3>
+            <textarea id="reject-reason" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-sky-500 focus:outline-none resize-none" rows="4" placeholder="거절 사유를 입력해주세요..."></textarea>
+            <div class="flex gap-3 mt-4">
+                <button onclick="closeRejectModal()" class="flex-1 py-3 border-2 border-gray-200 rounded-xl font-semibold text-gray-600 hover:bg-gray-50">취소</button>
+                <button onclick="confirmReject()" class="flex-1 py-3 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600">거절</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 스크립트 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script>
+        let currentTab = 'pending';
+        let selectedRequestId = null;
+        let adminId = null;
+
+        // 데이터 캐싱
+        const cachedData = {
+            pending: null,
+            approved: null
+        };
+
+        // ==================== 접근 권한 확인 ====================
+        async function checkAdminAccess() {
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+                if (userError || !user) {
+                    alert('로그인이 필요합니다.');
+                    window.location.href = 'admin-main.html';
+                    return false;
+                }
+
+                adminId = user.id;
+
+                // 프로필 조회
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('id, role, approval_status, is_super_admin, academy_name')
+                    .eq('id', adminId)
+                    .single();
+
+                if (profileError || !profile) {
+                    alert('사용자 정보를 찾을 수 없습니다.');
+                    window.location.href = 'admin-main.html';
+                    return false;
+                }
+
+                // 슈퍼관리자인 경우: 일반 관리자 페이지 접근 불가
+                if (profile.is_super_admin) {
+                    alert('슈퍼관리자는 이 페이지에 접근할 수 없습니다.\n슈퍼관리자 페이지를 이용해주세요.');
+                    window.location.href = 'admin-main.html';
+                    return false;
+                }
+
+                // 관리자 권한 체크 (대소문자 모두 지원)
+                if (profile.role !== 'Admin' && profile.role !== 'admin') {
+                    alert('관리자 권한이 필요합니다.');
+                    window.location.href = 'admin-main.html';
+                    return false;
+                }
+
+                // 승인 상태 체크
+                if (profile.approval_status !== 'approved') {
+                    alert('관리자 승인이 필요합니다.');
+                    window.location.href = 'admin-status.html?status=' + (profile.approval_status || 'pending');
+                    return false;
+                }
+
+                // 학원 정보 체크
+                if (!profile.academy_name) {
+                    alert('학원 정보가 필요합니다.');
+                    window.location.href = 'admin-join.html';
+                    return false;
+                }
+
+                // 모든 검증 통과
+                return true;
+            } catch (error) {
+                console.error('권한 확인 에러:', error);
+                alert('권한 확인 중 오류가 발생했습니다.');
+                window.location.href = 'admin-main.html';
+                return false;
+            }
+        }
+
+        // ==================== 데이터 로딩 ====================
+
+        // 대기 중인 학생 목록 로드
+        async function loadPendingStudents() {
+            try {
+                const { data, error } = await supabase
+                    .from('students')
+                    .select('*, profiles!parent_id(name, email)')
+                    .eq('academy_id', adminId)
+                    .eq('approval_status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const container = document.getElementById('pending-requests');
+                document.getElementById('pending-count').textContent = data?.length || 0;
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-span-full text-center py-12">
+                            <span class="material-symbols-outlined text-6xl text-gray-600">inbox</span>
+                            <p class="text-gray-400 mt-4">대기 중인 신청이 없습니다</p>
+                        </div>
+                    `;
+                    cachedData.pending = container.innerHTML;
+                    return;
+                }
+
+                container.innerHTML = data.map(req => createStudentCard(req)).join('');
+                cachedData.pending = container.innerHTML;
+            } catch (error) {
+                console.error('대기 중인 학생 로드 에러:', error);
+                showToast('데이터 로드에 실패했습니다.', 'error');
+            }
+        }
+
+        // 승인 완료 목록 로드
+        async function loadApprovedStudents() {
+            try {
+                const { data, error } = await supabase
+                    .from('students')
+                    .select('*, profiles!parent_id(name, email)')
+                    .eq('academy_id', adminId)
+                    .eq('approval_status', 'approved')
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                const container = document.getElementById('approved-list');
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-span-full text-center py-12">
+                            <span class="material-symbols-outlined text-6xl text-gray-600">inbox</span>
+                            <p class="text-gray-400 mt-4">승인 완료된 학생이 없습니다</p>
+                        </div>
+                    `;
+                    cachedData.approved = container.innerHTML;
+                    return;
+                }
+
+                container.innerHTML = data.map(req => createApprovedCard(req)).join('');
+                cachedData.approved = container.innerHTML;
+            } catch (error) {
+                console.error('승인 완료 목록 로드 에러:', error);
+                showToast('데이터 로드에 실패했습니다.', 'error');
+            }
+        }
+
+        // ==================== 카드 생성 ====================
+
+        function createStudentCard(req) {
+            return `
+                <div class="request-item glass-card rounded-2xl p-5 request-card">
+                    <div class="flex items-start justify-between mb-4">
+                        <span class="status-pending text-white text-xs px-3 py-1 rounded-full font-semibold">대기중</span>
+                        <span class="text-gray-400 text-xs">${new Date(req.created_at).toLocaleDateString('ko-KR')}</span>
+                    </div>
+                    <h3 class="font-bold text-gray-800 text-lg mb-3">${req.name || '-'}</h3>
+                    <div class="space-y-2 text-sm text-gray-600 mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">school</span>
+                            <span>${req.school_name || '-'} ${req.grade ? req.grade + '학년' : ''}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">cake</span>
+                            <span>${req.birth_date ? new Date(req.birth_date).toLocaleDateString('ko-KR') : '-'}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">phone</span>
+                            <span>${req.full_phone || '-'}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">family_restroom</span>
+                            <span>학부모: ${req.profiles?.name || '-'}</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="showRejectModal('${req.id}')" class="flex-1 py-2 border-2 border-red-200 text-red-500 rounded-lg font-semibold text-sm hover:bg-red-50">
+                            <span class="material-symbols-outlined text-sm align-middle">close</span>
+                            거절
+                        </button>
+                        <button onclick="approveStudent('${req.id}')" class="flex-1 py-2 bg-sky-500 text-white rounded-lg font-semibold text-sm hover:bg-sky-600">
+                            <span class="material-symbols-outlined text-sm align-middle">check</span>
+                            승인
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createApprovedCard(req) {
+            return `
+                <div class="glass-card rounded-2xl p-5 request-card">
+                    <div class="flex items-start justify-between mb-4">
+                        <span class="status-approved text-white text-xs px-3 py-1 rounded-full font-semibold">승인완료</span>
+                        <span class="text-gray-400 text-xs">${new Date(req.created_at).toLocaleDateString('ko-KR')}</span>
+                    </div>
+                    <h3 class="font-bold text-gray-800 text-lg mb-3">${req.name || '-'}</h3>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">school</span>
+                            <span>${req.school_name || '-'} ${req.grade ? req.grade + '학년' : ''}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">phone</span>
+                            <span>${req.full_phone || '-'}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">family_restroom</span>
+                            <span>학부모: ${req.profiles?.name || '-'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==================== 탭 전환 ====================
+
+        function switchTab(tab) {
+            currentTab = tab;
+
+            // 탭 버튼 스타일
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('text-gray-400');
+            });
+            event.target.classList.add('active');
+            event.target.classList.remove('text-gray-400');
+
+            // 컨텐츠 표시
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`${tab}-tab`).classList.remove('hidden');
+
+            // 캐시된 데이터가 없으면 로드
+            if (tab === 'pending' && !cachedData.pending) {
+                loadPendingStudents();
+            } else if (tab === 'approved' && !cachedData.approved) {
+                loadApprovedStudents();
+            }
+        }
+
+        // 데이터 강제 새로고침
+        function forceReload(tab) {
+            if (tab === 'pending') {
+                cachedData.pending = null;
+                loadPendingStudents();
+            } else if (tab === 'approved') {
+                cachedData.approved = null;
+                loadApprovedStudents();
+            }
+        }
+
+        // ==================== 승인/거절 ====================
+
+        // 학생 승인
+        async function approveStudent(studentId) {
+            if (!confirm('이 학부모를 승인하시겠습니까?')) return;
+
+            try {
+                // 소유권 검증
+                const { data: student, error: verifyError } = await supabase
+                    .from('students')
+                    .select('academy_id')
+                    .eq('id', studentId)
+                    .single();
+
+                if (verifyError || !student) {
+                    showToast('학생 정보를 찾을 수 없습니다.', 'error');
+                    return;
+                }
+
+                if (student.academy_id !== adminId) {
+                    showToast('권한이 없습니다.', 'error');
+                    console.error('Security: Attempted to approve student from different academy');
+                    return;
+                }
+
+                // 승인 처리
+                const { error } = await supabase
+                    .from('students')
+                    .update({ approval_status: 'approved' })
+                    .eq('id', studentId);
+
+                if (error) throw error;
+
+                // 알림 읽음 처리
+                await supabase
+                    .from('parent_registration_notifications')
+                    .update({ is_read: true })
+                    .eq('student_id', studentId);
+
+                showToast('승인이 완료되었습니다.', 'success');
+                cachedData.pending = null;
+                cachedData.approved = null;
+                loadPendingStudents();
+            } catch (error) {
+                console.error('승인 에러:', error);
+                showToast('승인에 실패했습니다.', 'error');
+            }
+        }
+
+        // 거절 모달 표시
+        function showRejectModal(studentId) {
+            selectedRequestId = studentId;
+            document.getElementById('reject-modal').classList.remove('hidden');
+            document.getElementById('reject-reason').value = '';
+            document.getElementById('reject-reason').focus();
+        }
+
+        // 거절 모달 닫기
+        function closeRejectModal() {
+            document.getElementById('reject-modal').classList.add('hidden');
+            selectedRequestId = null;
+        }
+
+        // 거절 확인
+        async function confirmReject() {
+            const reason = document.getElementById('reject-reason').value.trim();
+            if (!reason) {
+                alert('거절 사유를 입력해주세요.');
+                return;
+            }
+
+            if (!selectedRequestId) return;
+
+            try {
+                // 소유권 검증
+                const { data: student, error: verifyError } = await supabase
+                    .from('students')
+                    .select('academy_id')
+                    .eq('id', selectedRequestId)
+                    .single();
+
+                if (verifyError || !student || student.academy_id !== adminId) {
+                    showToast('권한이 없습니다.', 'error');
+                    return;
+                }
+
+                // 거절 처리
+                const { error } = await supabase
+                    .from('students')
+                    .update({
+                        approval_status: 'rejected',
+                        rejection_reason: reason
+                    })
+                    .eq('id', selectedRequestId);
+
+                if (error) throw error;
+
+                showToast('거절 처리가 완료되었습니다.', 'success');
+                closeRejectModal();
+                cachedData.pending = null;
+                loadPendingStudents();
+            } catch (error) {
+                console.error('거절 에러:', error);
+                showToast('거절에 실패했습니다.', 'error');
+            }
+        }
+
+        // ==================== 토스트 메시지 ====================
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-xl shadow-lg z-50 ${
+                type === 'success' ? 'bg-emerald-500' : 'bg-red-500'
+            } text-white font-semibold`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // ==================== 초기화 ====================
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 접근 권한 확인
+            const hasAccess = await checkAdminAccess();
+            if (!hasAccess) return;
+
+            // 초기 데이터 로드
+            await loadPendingStudents();
+        });
+    </script>
+</body>
+</html>

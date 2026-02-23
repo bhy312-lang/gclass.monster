@@ -912,10 +912,11 @@
                     return;
                 }
 
-                // 승인 완료
+                // 승인 완료 (일반 관리자)
                 if (profile.approval_status === 'approved' || !profile.approval_status) {
                     showMainScreen();
                     updateUserInfo();
+                    addParentApprovalMenu();  // 일반 관리자 메뉴 추가
                     if (window.Capacitor && window.Capacitor.Plugins) {
                         initAdminPushNotifications();
                     }
@@ -971,11 +972,56 @@
             if (superAdminMenu) {
                 superAdminMenu.remove();
             }
+            // 일반 관리자 메뉴도 함께 제거
+            removeParentApprovalMenu();
+        }
+
+        // 학부모 승인 관리 메뉴 추가 (일반 관리자용)
+        function addParentApprovalMenu() {
+            const menuContainer = document.querySelector('.space-y-4');
+            if (!menuContainer) return;
+
+            // 메뉴가 이미 있는지 확인
+            if (document.getElementById('parent-approval-menu')) return;
+
+            const parentApprovalMenu = document.createElement('a');
+            parentApprovalMenu.id = 'parent-approval-menu';
+            parentApprovalMenu.href = 'admin-parent-approvals.html';
+            parentApprovalMenu.className = 'menu-card block';
+            parentApprovalMenu.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-white text-3xl">family_restroom</span>
+                    </div>
+                    <div class="text-left flex-1">
+                        <h3 class="text-lg font-bold text-gray-800">학부모 승인 관리</h3>
+                        <p class="text-sm text-gray-500">우리 학원 학부모 신청 승인</p>
+                    </div>
+                    <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                </div>
+            `;
+
+            // 슈퍼관리자 메뉴 뒤에 추가, 없으면 첫 번째로 추가
+            const superAdminMenu = document.getElementById('super-admin-menu');
+            if (superAdminMenu) {
+                superAdminMenu.after(parentApprovalMenu);
+            } else {
+                menuContainer.insertBefore(parentApprovalMenu, menuContainer.firstChild);
+            }
+        }
+
+        // 학부모 승인 관리 메뉴 제거
+        function removeParentApprovalMenu() {
+            const parentApprovalMenu = document.getElementById('parent-approval-menu');
+            if (parentApprovalMenu) {
+                parentApprovalMenu.remove();
+            }
         }
 
         function showLoginScreen() {
             // 슈퍼관리자 메뉴 제거 (로그아웃 시 정리)
             removeSuperAdminMenu();
+            removeParentApprovalMenu();
 
             document.getElementById('login-screen').classList.remove('hidden');
             document.getElementById('main-screen').classList.remove('active');
@@ -1051,6 +1097,7 @@
 
                 // 슈퍼관리자 메뉴 제거
                 removeSuperAdminMenu();
+                removeParentApprovalMenu();  // 일반 관리자 메뉴도 제거
 
                 // 인증 스토리지 정리
                 clearAuthStorage();
