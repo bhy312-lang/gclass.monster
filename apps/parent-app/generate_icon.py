@@ -1,7 +1,24 @@
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import os
 
+# ============================================
+# 상수 설정 (로고 모양 보존을 위한 파라미터)
+# ============================================
+# 로고 스케일: 아이콘 크기 대비 로고 크기 비율 (비율 왜곡 방지)
+LOGO_SCALE = 0.75
+
+# 안전 여백 비율: adaptive icon safe area 고려 (중앙 66% 영역 보존)
+SAFE_PADDING_RATIO = 0.10
+
+# 배경색 (parent-app: 밝은 핑크색)
+BACKGROUND_COLOR = (251, 207, 232, 255)  # #fbcfe8 (pink-200)
+
+# foreground 투명 배경 여부
+FOREGROUND_TRANSPARENT = True
+
+# ============================================
 # 경로 설정
+# ============================================
 base_path = os.path.dirname(os.path.abspath(__file__))
 logo_path = os.path.join(base_path, "www", "Logo.png")
 res_path = os.path.join(base_path, "android", "app", "src", "main", "res")
@@ -15,88 +32,70 @@ icon_sizes = {
     "mipmap-xxxhdpi": {"launcher": 192, "foreground": 432},
 }
 
-def create_icon_with_label(logo_img, size, is_foreground=False):
-    """로고 이미지에 '학부모용' 라벨을 로고 아래에 추가한 아이콘 생성"""
 
-    # 새 이미지 생성 (투명 배경)
+def create_simple_icon(logo_img, size, is_foreground=False):
+    """
+    로고만 있는 심플한 아이콘 생성
+    - 로고 비율 왜곡 없음 (thumbnail 사용)
+    - 로고 중앙 정렬
+    - 안전 여백 확보
+    """
+
+    # 배경 생성
     if is_foreground:
+        # foreground는 투명 배경
         icon = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     else:
-        icon = Image.new('RGBA', (size, size), (255, 255, 255, 255))
+        # 일반 아이콘은 단색 배경
+        icon = Image.new('RGBA', (size, size), BACKGROUND_COLOR)
 
-    # 라벨 높이 계산 (더 크게)
-    label_height = int(size * 0.18)
-    label_margin = 0
+    # 로고 크기 계산 (비율 유지)
+    logo_target_size = int(size * LOGO_SCALE)
 
-    # 로고 크기 조정 (라벨 공간 확보)
-    logo_size = int(size * 0.55)
+    # 로고 리사이즈 (thumbnail은 비율 유지하며 축소)
     logo_resized = logo_img.copy()
-    logo_resized.thumbnail((logo_size, logo_size), Image.Resampling.LANCZOS)
+    logo_resized.thumbnail((logo_target_size, logo_target_size), Image.Resampling.LANCZOS)
 
-    # 로고와 라벨을 합친 전체 높이 계산
-    total_height = logo_resized.height + label_margin + label_height
-    start_y = (size - total_height) // 2 - int(size * 0.05)  # 전체를 위로 올림
-
-    # 로고 위치 (중앙 상단)
+    # 로고 중앙 위치 계산
     logo_x = (size - logo_resized.width) // 2
-    logo_y = start_y
+    logo_y = (size - logo_resized.height) // 2
 
-    # 로고 붙여넣기
-    icon.paste(logo_resized, (logo_x, logo_y), logo_resized if logo_resized.mode == 'RGBA' else None)
-
-    # 라벨 그리기
-    draw = ImageDraw.Draw(icon)
-
-    # 라벨 크기 및 위치 계산 (더 넓게)
-    label_width = int(size * 0.65)
-    label_x = (size - label_width) // 2
-    label_y = logo_y + logo_resized.height - int(size * 0.06)  # 로고에 더 겹치게
-
-    # 라벨 배경색 (핑크색)
-    label_color = (236, 72, 153)  # #ec4899
-
-    # 둥근 모서리 라벨 그리기
-    corner_radius = int(label_height * 0.4)
-
-    draw.rounded_rectangle(
-        [label_x, label_y, label_x + label_width, label_y + label_height],
-        radius=corner_radius,
-        fill=label_color
-    )
-
-    # 폰트 설정 (더 큰 글자)
-    font_size = int(label_height * 0.65)
-    try:
-        font = ImageFont.truetype("malgun.ttf", font_size)
-    except:
-        try:
-            font = ImageFont.truetype("NanumGothic.ttf", font_size)
-        except:
-            font = ImageFont.load_default()
-
-    # 텍스트 그리기
-    text = "학부모용"
-    bbox = draw.textbbox((0, 0), text, font=font)
-    text_width = bbox[2] - bbox[0]
-    text_height = bbox[3] - bbox[1]
-
-    text_x = label_x + (label_width - text_width) // 2
-    text_y = label_y + (label_height - text_height) // 2 - 2
-
-    draw.text((text_x, text_y), text, fill=(255, 255, 255), font=font)
+    # 로고 붙여넣기 (RGBA 로고의 투명도 유지)
+    if logo_resized.mode == 'RGBA':
+        icon.paste(logo_resized, (logo_x, logo_y), logo_resized)
+    else:
+        icon.paste(logo_resized, (logo_x, logo_y))
 
     return icon
 
 
-def create_round_icon(icon_img, size):
-    """원형 아이콘 생성"""
+def create_round_icon(icon_img, size, bg_color):
+    """
+    원형 아이콘 생성
+    - 배경색 포함
+    - 로고 잘림 방지
+    """
     mask = Image.new('L', (size, size), 0)
     draw = ImageDraw.Draw(mask)
     draw.ellipse([0, 0, size, size], fill=255)
 
-    round_icon = Image.new('RGBA', (size, size), (255, 255, 255, 255))
-    round_icon.paste(icon_img, (0, 0))
+    # 배경색 원형 이미지
+    round_icon = Image.new('RGBA', (size, size), bg_color)
 
+    # 로고 중앙에 배치
+    logo_target_size = int(size * LOGO_SCALE)
+    logo_resized = icon_img.copy()
+    logo_resized.thumbnail((logo_target_size, logo_target_size), Image.Resampling.LANCZOS)
+
+    logo_x = (size - logo_resized.width) // 2
+    logo_y = (size - logo_resized.height) // 2
+
+    if logo_resized.mode == 'RGBA':
+        round_icon.paste(logo_resized, (logo_x, logo_y), logo_resized)
+    else:
+        round_icon.paste(logo_resized, (logo_x, logo_y))
+
+    # 원형 마스크 적용
     output = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     output.paste(round_icon, (0, 0), mask)
 
@@ -111,7 +110,7 @@ def main():
         return
 
     logo = Image.open(logo_path).convert('RGBA')
-    print(f"로고 로드 완료: {logo.size}")
+    print(f"로고 로드 완료: {logo.size[0]}x{logo.size[1]}")
 
     for folder, sizes in icon_sizes.items():
         folder_path = os.path.join(res_path, folder)
@@ -119,20 +118,20 @@ def main():
 
         # ic_launcher.png 생성
         launcher_size = sizes["launcher"]
-        launcher_icon = create_icon_with_label(logo, launcher_size, is_foreground=False)
+        launcher_icon = create_simple_icon(logo, launcher_size, is_foreground=False)
         launcher_path = os.path.join(folder_path, "ic_launcher.png")
         launcher_icon.save(launcher_path, "PNG")
         print(f"생성 완료: {launcher_path}")
 
         # ic_launcher_round.png 생성
-        round_icon = create_round_icon(launcher_icon, launcher_size)
+        round_icon = create_round_icon(logo, launcher_size, BACKGROUND_COLOR)
         round_path = os.path.join(folder_path, "ic_launcher_round.png")
         round_icon.save(round_path, "PNG")
         print(f"생성 완료: {round_path}")
 
-        # ic_launcher_foreground.png 생성
+        # ic_launcher_foreground.png 생성 (투명 배경)
         foreground_size = sizes["foreground"]
-        foreground_icon = create_icon_with_label(logo, foreground_size, is_foreground=True)
+        foreground_icon = create_simple_icon(logo, foreground_size, is_foreground=True)
         foreground_path = os.path.join(folder_path, "ic_launcher_foreground.png")
         foreground_icon.save(foreground_path, "PNG")
         print(f"생성 완료: {foreground_path}")
