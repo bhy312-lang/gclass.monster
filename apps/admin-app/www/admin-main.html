@@ -21,6 +21,21 @@
     <style>
         * { font-family: 'Noto Sans KR', sans-serif; }
 
+        /* 메뉴 카드 디자인 토큰 - 강화된 3D 효과 */
+        :root {
+            --menu-radius: 22px;
+            --menu-border: rgba(255,255,255,0.42);
+            --menu-bg-top: rgba(255,255,255,0.82);
+            --menu-bg-bottom: rgba(255,255,255,0.58);
+            /* 강화된 그림자 (1.5-2x) */
+            --menu-shadow-1: 0 18px 40px rgba(15,23,42,0.22);
+            --menu-shadow-2: 0 35px 60px rgba(14,116,144,0.32);
+            --menu-inset: inset 0 1px 0 rgba(255,255,255,0.75), inset 0 -1px 0 rgba(255,255,255,0.18);
+            --menu-text: #0f172a;
+            --menu-subtext: #475569;
+            --menu-chevron: #64748b;
+        }
+
         /* 로그인 화면 */
         .login-screen {
             min-height: 100vh;
@@ -189,20 +204,195 @@
             display: none;
         }
 
+        /* 메뉴 카드 - 프리미엄 3D 글래스 스타일 */
         .menu-card {
-            background: white;
-            border-radius: 20px;
-            padding: 24px;
-            text-align: center;
-            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative !important;
+            overflow: hidden !important;
+            isolation: isolate;
+            background: linear-gradient(160deg, var(--menu-bg-top), var(--menu-bg-bottom)) !important;
+            border: 1px solid var(--menu-border) !important;
+            border-radius: var(--menu-radius) !important;
+            padding: 24px !important;
+            box-shadow:
+                var(--menu-shadow-1),
+                var(--menu-shadow-2),
+                var(--menu-inset) !important;
+            transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+                        box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+                        filter 220ms ease !important;
             cursor: pointer;
         }
-        .menu-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+
+        /* backdrop-filter 지원 시에만 적용 (fallback은 gradient 배경으로) */
+        @supports (backdrop-filter: blur(8px)) {
+            .menu-card {
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+            }
         }
+
+        /* 상단 하이라이트 레이어 */
+        .menu-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%);
+            border-radius: var(--menu-radius) var(--menu-radius) 0 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* 하단/우측 컬러 글로우 */
+        .menu-card::after {
+            content: '';
+            position: absolute;
+            bottom: -50%;
+            right: -30%;
+            width: 80%;
+            height: 80%;
+            background: radial-gradient(circle, var(--menu-glow, rgba(14,116,144,0.25)) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.6;
+            transition: opacity 220ms ease;
+        }
+
+        /* hover - 터치 디바이스 제외, 강화된 상승 효과 */
+        @media (hover: hover) and (pointer: fine) {
+            .menu-card:hover {
+                transform: translateY(-8px);
+                box-shadow:
+                    0 22px 45px rgba(15,23,42,0.25),
+                    0 40px 70px rgba(14,116,144,0.38),
+                    var(--menu-inset);
+            }
+            .menu-card:hover::after {
+                opacity: 1;
+            }
+        }
+
+        /* active - 강화된 눌림감 */
         .menu-card:active {
-            transform: scale(0.98);
+            transform: translateY(-1px) scale(0.985);
+            box-shadow:
+                0 4px 10px rgba(15,23,42,0.08),
+                0 8px 18px rgba(14,116,144,0.12),
+                var(--menu-inset);
+        }
+
+        /* focus-visible - 키보드 접근성 */
+        .menu-card:focus-visible {
+            outline: none;
+            box-shadow:
+                var(--menu-shadow-1),
+                var(--menu-shadow-2),
+                var(--menu-inset),
+                0 0 0 2px #0ea5e9;
+        }
+
+        /* prefers-reduced-motion - 모션 감소 */
+        @media (prefers-reduced-motion: reduce) {
+            .menu-card {
+                transition: filter 220ms ease;
+            }
+            .menu-card:hover,
+            .menu-card:active {
+                transform: none;
+            }
+        }
+
+        /* 메뉴별 카드 글로우 색상 - 강화된 불투명도 */
+        .menu-card--franchise { --menu-glow: rgba(37,99,235,0.55); }
+        .menu-card--course { --menu-glow: rgba(5,150,105,0.55); }
+        .menu-card--kiosk { --menu-glow: rgba(79,70,229,0.55); }
+        .menu-card--super { --menu-glow: rgba(124,58,237,0.55); }
+        .menu-card--parent { --menu-glow: rgba(14,165,233,0.55); }
+
+        /* 아이콘 배지 광택 애니메이션 */
+        @keyframes badge-glow {
+            0%, 100% {
+                box-shadow:
+                    0 4px 12px rgba(0,0,0,0.15),
+                    inset 0 1px 0 rgba(255,255,255,0.25),
+                    0 0 0 0 rgba(255,255,255,0);
+            }
+            50% {
+                box-shadow:
+                    0 4px 12px rgba(0,0,0,0.15),
+                    inset 0 1px 0 rgba(255,255,255,0.25),
+                    0 0 16px 4px rgba(255,255,255,0.35);
+            }
+        }
+
+        @keyframes badge-shine {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        /* 아이콘 배지 스타일 */
+        .menu-badge {
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.34) !important;
+            box-shadow:
+                0 4px 12px rgba(0,0,0,0.15),
+                inset 0 1px 0 rgba(255,255,255,0.25) !important;
+            border-radius: 12px !important;
+            flex-shrink: 0;
+            /* 광택 애니메이션 적용 */
+            animation: badge-glow 3s ease-in-out infinite;
+        }
+
+        /* 배지 위를 지나가는 반짝이 효과 */
+        .menu-badge::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 12px;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                rgba(255,255,255,0.4) 50%,
+                transparent 100%
+            );
+            background-size: 200% 100%;
+            animation: badge-shine 4s linear infinite;
+            pointer-events: none;
+        }
+
+        /* prefers-reduced-motion에서 애니메이션 비활성화 */
+        @media (prefers-reduced-motion: reduce) {
+            .menu-badge,
+            .menu-badge::before {
+                animation: none !important;
+            }
+        }
+
+        /* 메뉴별 배지 그라데이션 */
+        .menu-badge--franchise { background: linear-gradient(135deg, #2563eb, #06b6d4) !important; }
+        .menu-badge--course { background: linear-gradient(135deg, #059669, #14b8a6) !important; }
+        .menu-badge--kiosk { background: linear-gradient(135deg, #4f46e5, #7c3aed) !important; }
+        .menu-badge--super { background: linear-gradient(135deg, #7c3aed, #ec4899) !important; }
+        .menu-badge--parent { background: linear-gradient(135deg, #0ea5e9, #22c55e) !important; }
+
+        /* 메뉴 텍스트 스타일 */
+        .menu-title {
+            color: var(--menu-text) !important;
+            font-weight: 700 !important;
+        }
+
+        .menu-desc {
+            color: var(--menu-subtext) !important;
+        }
+
+        .menu-chevron {
+            color: var(--menu-chevron) !important;
         }
 
         /* 유저 프로필 헤더 */
@@ -575,44 +765,44 @@
             <!-- 메뉴 카드들 -->
             <div class="space-y-4">
                 <!-- 프랜차이즈 관리 -->
-                <a href="franchise.html" class="menu-card block">
+                <a href="franchise.html" class="menu-card menu-card--franchise block">
                     <div class="flex items-center gap-4">
-                        <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                        <div class="menu-badge menu-badge--franchise w-14 h-14 rounded-xl flex items-center justify-center">
                             <span class="material-symbols-outlined text-white text-3xl">store</span>
                         </div>
                         <div class="text-left flex-1">
-                            <h3 class="text-lg font-bold text-gray-800">프랜차이즈 관리</h3>
-                            <p class="text-sm text-gray-500">학생, 좌석, 수업 관리</p>
+                            <h3 class="menu-title text-lg font-bold">프랜차이즈 관리</h3>
+                            <p class="menu-desc text-sm">학생, 좌석, 수업 관리</p>
                         </div>
-                        <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                        <span class="material-symbols-outlined menu-chevron">chevron_right</span>
                     </div>
                 </a>
 
                 <!-- 수강신청 관리 -->
-                <a href="course-registration-admin.html" class="menu-card block">
+                <a href="course-registration-admin.html" class="menu-card menu-card--course block">
                     <div class="flex items-center gap-4">
-                        <div class="w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                        <div class="menu-badge menu-badge--course w-14 h-14 rounded-xl flex items-center justify-center">
                             <span class="material-symbols-outlined text-white text-3xl">edit_calendar</span>
                         </div>
                         <div class="text-left flex-1">
-                            <h3 class="text-lg font-bold text-gray-800">수강신청 관리</h3>
-                            <p class="text-sm text-gray-500">강좌 개설 및 신청 현황</p>
+                            <h3 class="menu-title text-lg font-bold">수강신청 관리</h3>
+                            <p class="menu-desc text-sm">강좌 개설 및 신청 현황</p>
                         </div>
-                        <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                        <span class="material-symbols-outlined menu-chevron">chevron_right</span>
                     </div>
                 </a>
 
                 <!-- 키오스크 -->
-                <a href="kiosk.html" class="menu-card block">
+                <a href="kiosk.html" class="menu-card menu-card--kiosk block">
                     <div class="flex items-center gap-4">
-                        <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                        <div class="menu-badge menu-badge--kiosk w-14 h-14 rounded-xl flex items-center justify-center">
                             <span class="material-symbols-outlined text-white text-3xl">touch_app</span>
                         </div>
                         <div class="text-left flex-1">
-                            <h3 class="text-lg font-bold text-gray-800">키오스크</h3>
-                            <p class="text-sm text-gray-500">학생 등원/하원 체크</p>
+                            <h3 class="menu-title text-lg font-bold">키오스크</h3>
+                            <p class="menu-desc text-sm">학생 등원/하원 체크</p>
                         </div>
-                        <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                        <span class="material-symbols-outlined menu-chevron">chevron_right</span>
                     </div>
                 </a>
             </div>
@@ -1013,17 +1203,17 @@
             const superAdminMenu = document.createElement('a');
             superAdminMenu.id = 'super-admin-menu';
             superAdminMenu.href = 'super-admin.html';
-            superAdminMenu.className = 'menu-card block';
+            superAdminMenu.className = 'menu-card menu-card--super block';
             superAdminMenu.innerHTML = `
                 <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                    <div class="menu-badge menu-badge--super w-14 h-14 rounded-xl flex items-center justify-center">
                         <span class="material-symbols-outlined text-white text-3xl">shield</span>
                     </div>
                     <div class="text-left flex-1">
-                        <h3 class="text-lg font-bold text-gray-800">슈퍼관리자</h3>
-                        <p class="text-sm text-gray-500">가입 승인 관리</p>
+                        <h3 class="menu-title text-lg font-bold">슈퍼관리자</h3>
+                        <p class="menu-desc text-sm">가입 승인 관리</p>
                     </div>
-                    <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                    <span class="material-symbols-outlined menu-chevron">chevron_right</span>
                 </div>
             `;
 
@@ -1052,17 +1242,17 @@
             const parentApprovalMenu = document.createElement('a');
             parentApprovalMenu.id = 'parent-approval-menu';
             parentApprovalMenu.href = 'admin-parent-approvals.html';
-            parentApprovalMenu.className = 'menu-card block';
+            parentApprovalMenu.className = 'menu-card menu-card--parent block';
             parentApprovalMenu.innerHTML = `
                 <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+                    <div class="menu-badge menu-badge--parent w-14 h-14 rounded-xl flex items-center justify-center">
                         <span class="material-symbols-outlined text-white text-3xl">family_restroom</span>
                     </div>
                     <div class="text-left flex-1">
-                        <h3 class="text-lg font-bold text-gray-800">학부모 승인 관리</h3>
-                        <p class="text-sm text-gray-500">우리 학원 학부모 신청 승인</p>
+                        <h3 class="menu-title text-lg font-bold">학부모 승인 관리</h3>
+                        <p class="menu-desc text-sm">우리 학원 학부모 신청 승인</p>
                     </div>
-                    <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                    <span class="material-symbols-outlined menu-chevron">chevron_right</span>
                 </div>
             `;
 
