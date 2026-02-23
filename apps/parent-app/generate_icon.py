@@ -9,10 +9,10 @@ import sys
 PINK_BG = (253, 242, 248)  # #fdf2f8
 
 # 라벨 텍스트
-LABEL_TEXT = "학부모용"
+LABEL_TEXT = "학부모"
 
-# 라벨 텍스트 색상 (핑크색)
-LABEL_TEXT_COLOR = (236, 72, 153)  # #ec4899
+# 라벨 텍스트 색상 (진한 핑크색)
+LABEL_TEXT_COLOR = (190, 24, 93)  # #be185d
 
 # 라벨 배경색 (흰색)
 LABEL_BG = (255, 255, 255)  # #ffffff
@@ -81,9 +81,9 @@ def create_icon_with_label(logo_img, size, is_foreground=False):
     logo_resized = logo_img.copy()
     logo_resized.thumbnail((logo_max_width, logo_max_height), Image.Resampling.LANCZOS)
 
-    # 로고 중앙 위치 계산
+    # 로고 위치 계산 (가로는 중앙, 세로는 위쪽으로)
     logo_x = (size - logo_resized.width) // 2
-    logo_y = (size - logo_resized.height) // 2
+    logo_y = int(size * 0.08)  # 아이콘을 위로 올림
 
     # 로고 붙여넣기
     if logo_resized.mode == 'RGBA':
