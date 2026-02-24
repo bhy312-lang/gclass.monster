@@ -37,13 +37,13 @@ public class MainActivity extends BridgeActivity {
         // Kakao SDK 초기??
         try {
             // 진단 로그 출력
-            android.util.Log.d("KakaoSDK", "=== KOE101 진단 로그 ?�작 ===");
+            android.util.Log.d("KakaoSDK", "=== KOE101 진단 로그 ?�작 ===");
             android.util.Log.d("KakaoSDK", "packageName=" + getPackageName());
 
             String appKey = com.inclass.admin.BuildConfig.KAKAO_NATIVE_APP_KEY;
             android.util.Log.d("KakaoSDK", "appKey length=" + appKey.length());
 
-            // ?�뒤 4?�리�??�출 (?�체 ???�출 금�?)
+            // ?�뒤 4?�리�??�출 (?�체 ???�출 금�?)
             String keyPrefix = appKey.substring(0, 4);
             String keySuffix = appKey.substring(appKey.length() - 4);
             android.util.Log.d("KakaoSDK", "appKey=" + keyPrefix + "..." + keySuffix);
@@ -51,7 +51,7 @@ public class MainActivity extends BridgeActivity {
             KakaoSdk.init(this, appKey);
             android.util.Log.d("KakaoSDK", "Kakao SDK initialized successfully");
 
-            // KeyHash 로그 출력 (KOE101 ?�버깅용)
+            // KeyHash 로그 출력 (KOE101 ?�버깅용)
             String keyHash = getKeyHash();
             android.util.Log.d("KakaoSDK", "KeyHash=" + keyHash);
             android.util.Log.d("KakaoSDK", "=== KOE101 진단 로그 ??===");
@@ -60,29 +60,29 @@ public class MainActivity extends BridgeActivity {
             android.util.Log.e("KakaoSDK", "Failed to initialize Kakao SDK", e);
         }
 
-        // WebView textZoom 100% 강제 ?�정 (?�스???�프 방�?)
+        // WebView textZoom 100% 강제 ?�정 (?�스???�프 방�?)
         applyTextZoomSafely();
 
-        // ?�태�??�상 ?�정
+        // ?�태�??�상 ?�정
         getWindow().setStatusBarColor(Color.parseColor("#1e3a8a"));
 
-        // ?�스??UI ?�셋 처리 (?�보???�?�을 ?�해)
+        // ?�스??UI ?�셋 처리 (?�보???�?�을 ?�해)
         WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
 
-        // ?�보?��? ?�라????WebView가 리사?�즈?�도�?처리
+        // ?�보?��? ?�라????WebView가 리사?�즈?�도�?처리
         View rootView = findViewById(android.R.id.content);
         ViewCompat.setOnApplyWindowInsetsListener(rootView, (view, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
             Insets imeInsets = windowInsets.getInsets(WindowInsetsCompat.Type.ime());
 
-            // ?�태�??�비게이?�바 ?�셋�??�용 (IME ?�셋?� ?�스?�이 ?�동 처리?�도�?
+            // ?�태�??�비게이?�바 ?�셋�??�용 (IME ?�셋?� ?�스?�이 ?�동 처리?�도�?
             view.setPadding(insets.left, insets.top, insets.right, insets.bottom);
 
-            // ?�비?��? ?�고 ?�파?�여 WebView가 IME ?�셋??반응?�도�?
-            return WindowInsetsCompat.CONSUMED;
+            // ?�비?��? ?�고 ?�파?�여 WebView가 IME ?�셋??반응?�도�?
+            return windowInsets;
         });
 
-        // ?�로가�?버튼 처리 (Android 13+ ?�환)
+        // ?�로가�?버튼 처리 (Android 13+ ?�환)
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -93,7 +93,7 @@ public class MainActivity extends BridgeActivity {
                     android.util.Log.d("BackButton", "Current URL: " + url);
 
                     if (url != null) {
-                        // URL?�서 쿼리 ?�라미터?� ?�시 ?�거
+                        // URL?�서 쿼리 ?�라미터?� ?�시 ?�거
                         String cleanUrl = url.split("\\?")[0].split("#")[0];
 
                         boolean isMainPage = cleanUrl.endsWith("index.html") ||
@@ -104,10 +104,10 @@ public class MainActivity extends BridgeActivity {
                         android.util.Log.d("BackButton", "Clean URL: " + cleanUrl + ", isMainPage: " + isMainPage);
 
                         if (isMainPage) {
-                            // 메인 ?�면?�서????종료
+                            // 메인 ?�면?�서????종료
                             finish();
                         } else {
-                            // ?�른 ?�면?�서??JavaScript�?index.html�??�동 (?�션 ?��?)
+                            // ?�른 ?�면?�서??JavaScript�?index.html�??�동 (?�션 ?��?)
                             webView.evaluateJavascript("window.location.href = 'index.html';", null);
                         }
                     }
@@ -119,13 +119,13 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
-        // ?�면 복�? ?�에??textZoom ?�적??
+        // ?�면 복�? ?�에??textZoom ?�적??
         applyTextZoomSafely();
     }
 
     /**
-     * WebView textZoom 100% 강제 ?�정 (?�스???�프 방�?)
-     * WebView 준�??�?�밍 ?�슈 방�?�??�해 post + 지???�시???�함
+     * WebView textZoom 100% 강제 ?�정 (?�스???�프 방�?)
+     * WebView 준�??�?�밍 ?�슈 방�?�??�해 post + 지???�시???�함
      */
     private void applyTextZoomSafely() {
         if (getBridge() == null || getBridge().getWebView() == null) return;
@@ -145,7 +145,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     /**
-     * KeyHash 구하�?(Kakao ?�증??
+     * KeyHash 구하�?(Kakao ?�증??
      */
     private String getKeyHash() {
         try {
