@@ -1,8 +1,17 @@
 apply plugin: 'com.android.application'
 
+// Kakao Native App Key (fallback 제거 - 잘못된 키 사용 방지)
+def kakaoNativeAppKey = project.findProperty("KAKAO_NATIVE_APP_KEY") ?: System.getenv("KAKAO_NATIVE_APP_KEY")
+if (kakaoNativeAppKey == null || kakaoNativeAppKey.isEmpty()) {
+    throw new GradleException("KAKAO_NATIVE_APP_KEY is not set! Please set it in gradle.properties or as environment variable.")
+}
+
 android {
     namespace = "com.inclass.admin"
     compileSdk = rootProject.ext.compileSdkVersion
+    buildFeatures {
+        buildConfig = true
+    }
     defaultConfig {
         applicationId "com.inclass.admin"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -10,6 +19,15 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // Kakao SDK placeholder for AndroidManifest
+        manifestPlaceholders = [
+            KAKAO_NATIVE_APP_KEY: kakaoNativeAppKey
+        ]
+
+        // BuildConfig에 Kakao Native App Key 주입
+        buildConfigField "String", "KAKAO_NATIVE_APP_KEY", "\"${kakaoNativeAppKey}\""
+
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -25,6 +43,8 @@ android {
 }
 
 repositories {
+    mavenCentral()
+    maven { url 'https://devrepo.kakao.com/nexus/content/groups/public/' }
     flatDir{
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
@@ -40,6 +60,10 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+
+    // Kakao SDK
+    implementation 'com.kakao.sdk:v2-user:2.20.1'
+    implementation 'com.kakao.sdk:v2-auth:2.20.1'
 }
 
 apply from: 'capacitor.build.gradle'

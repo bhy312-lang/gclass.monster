@@ -23,11 +23,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- OAuth 콜백을 위한 Deep Link (유니크한 커스텀 스킴만 사용) -->
+            <!-- OAuth 콜백을 위한 Deep Link -->
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="inclassadmin" android:host="auth" android:path="/callback" />
+                <!-- backward compatibility -->
                 <data android:scheme="com.inclass.admin.oauth" android:host="callback" />
             </intent-filter>
 
@@ -42,6 +44,11 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Kakao SDK App Key -->
+        <meta-data
+            android:name="com.kakao.sdk.AppKey"
+            android:value="${KAKAO_NATIVE_APP_KEY}" />
     </application>
 
     <!-- Permissions -->
