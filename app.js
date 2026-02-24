@@ -498,6 +498,11 @@ function makeSeatDraggable(seatElement, seatId) {
     let isDragging = true;
     const rect = seatElement.getBoundingClientRect();
     const containerRect = seatElement.parentElement.getBoundingClientRect();
+    const prevTransition = seatElement.style.transition;
+
+    // Prevent release jump while position is being finalized.
+    seatElement.style.transition = 'none';
+    seatElement.style.transform = 'none';
 
     function handleMouseMove(e) {
         if (!isDragging) return;
@@ -519,6 +524,14 @@ function makeSeatDraggable(seatElement, seatId) {
             isDragging = false;
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
+
+            // Keep final placement instantaneous, then restore transition.
+            seatElement.style.transition = 'none';
+            seatElement.style.transform = 'none';
+            void seatElement.offsetHeight;
+            requestAnimationFrame(() => {
+                seatElement.style.transition = prevTransition;
+            });
 
             const seat = seats.find(s => s.id == seatId);
             if (seat) {
