@@ -42,7 +42,8 @@
             box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.1);
         }
 
-        .input-group input:focus + .input-icon, .input-group select:focus + .input-icon {
+        .input-group .relative input:focus + .input-icon,
+        .input-group .relative select:focus + .input-icon {
             color: #ec4899;
         }
 
@@ -54,6 +55,7 @@
             color: #9ca3af;
             transition: color 0.3s ease;
             pointer-events: none;
+            line-height: 1;
         }
 
         .input-label {
@@ -286,47 +288,57 @@
 
                     <div class="input-group">
                         <label class="input-label required">학생 이름</label>
-                        <input type="text" id="student-name" placeholder="홍길동" required>
-                        <span class="material-symbols-outlined input-icon">person</span>
+                        <div class="relative">
+                            <input type="text" id="student-name" placeholder="홍길동" required>
+                            <span class="material-symbols-outlined input-icon">person</span>
+                        </div>
                     </div>
 
                     <div class="input-group">
                         <label class="input-label required">생일</label>
-                        <input type="date" id="birth-date" required>
-                        <span class="material-symbols-outlined input-icon">cake</span>
+                        <div class="relative">
+                            <input type="date" id="birth-date" required>
+                            <span class="material-symbols-outlined input-icon">cake</span>
+                        </div>
                     </div>
 
                     <div class="input-group">
                         <label class="input-label required">학교</label>
-                        <input type="text" id="school-name" placeholder="예: 서울초등학교" required>
-                        <span class="material-symbols-outlined input-icon">school</span>
+                        <div class="relative">
+                            <input type="text" id="school-name" placeholder="예: 서울초등학교" required>
+                            <span class="material-symbols-outlined input-icon">school</span>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div class="input-group">
                             <label class="input-label required">학년</label>
-                            <select id="grade" required>
-                                <option value="">선택</option>
-                                <option value="1">초1</option>
-                                <option value="2">초2</option>
-                                <option value="3">초3</option>
-                                <option value="4">초4</option>
-                                <option value="5">초5</option>
-                                <option value="6">초6</option>
-                                <option value="7">중1</option>
-                                <option value="8">중2</option>
-                                <option value="9">중3</option>
-                                <option value="10">고1</option>
-                                <option value="11">고2</option>
-                                <option value="12">고3</option>
-                            </select>
-                            <span class="material-symbols-outlined input-icon">badge</span>
+                            <div class="relative">
+                                <select id="grade" required>
+                                    <option value="">선택</option>
+                                    <option value="1">초1</option>
+                                    <option value="2">초2</option>
+                                    <option value="3">초3</option>
+                                    <option value="4">초4</option>
+                                    <option value="5">초5</option>
+                                    <option value="6">초6</option>
+                                    <option value="7">중1</option>
+                                    <option value="8">중2</option>
+                                    <option value="9">중3</option>
+                                    <option value="10">고1</option>
+                                    <option value="11">고2</option>
+                                    <option value="12">고3</option>
+                                </select>
+                                <span class="material-symbols-outlined input-icon">badge</span>
+                            </div>
                         </div>
 
                         <div class="input-group">
                             <label class="input-label required">연락처</label>
-                            <input type="tel" id="phone" placeholder="010-0000-0000" maxlength="13" required>
-                            <span class="material-symbols-outlined input-icon">phone</span>
+                            <div class="relative">
+                                <input type="tel" id="phone" placeholder="010-0000-0000" maxlength="13" required>
+                                <span class="material-symbols-outlined input-icon">phone</span>
+                            </div>
                         </div>
                     </div>
                 </div>
