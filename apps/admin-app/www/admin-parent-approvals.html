@@ -225,32 +225,30 @@
                     return false;
                 }
 
-                // 슈퍼관리자인 경우: 일반 관리자 페이지 접근 불가
-                if (profile.is_super_admin) {
-                    alert('슈퍼관리자는 이 페이지에 접근할 수 없습니다.\n슈퍼관리자 페이지를 이용해주세요.');
-                    window.location.href = 'admin-main.html';
-                    return false;
-                }
+                // 통합 권한 로직: 슈퍼관리자 또는 일반 관리자 허용
+                const isAdminRole = profile.role === 'Admin' || profile.role === 'admin';
+                const canAccess = profile.is_super_admin || isAdminRole;
 
-                // 관리자 권한 체크 (대소문자 모두 지원)
-                if (profile.role !== 'Admin' && profile.role !== 'admin') {
+                if (!canAccess) {
                     alert('관리자 권한이 필요합니다.');
                     window.location.href = 'admin-main.html';
                     return false;
                 }
 
-                // 승인 상태 체크
-                if (profile.approval_status !== 'approved') {
-                    alert('관리자 승인이 필요합니다.');
-                    window.location.href = 'admin-status.html?status=' + (profile.approval_status || 'pending');
+                // 학원 정보 체크 (슈퍼관리자, 일반 관리자 공통)
+                if (!profile.academy_name) {
+                    alert('학원 정보가 필요합니다.\n내 학원 설정 페이지로 이동합니다.');
+                    window.location.href = 'admin-academy-settings.html';
                     return false;
                 }
 
-                // 학원 정보 체크
-                if (!profile.academy_name) {
-                    alert('학원 정보가 필요합니다.');
-                    window.location.href = 'admin-join.html';
-                    return false;
+                // 일반 관리자인 경우 승인 상태 체크
+                if (!profile.is_super_admin) {
+                    if (profile.approval_status !== 'approved') {
+                        alert('관리자 승인이 필요합니다.');
+                        window.location.href = 'admin-status.html?status=' + (profile.approval_status || 'pending');
+                        return false;
+                    }
                 }
 
                 // 모든 검증 통과

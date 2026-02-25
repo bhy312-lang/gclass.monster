@@ -75,9 +75,8 @@ async function searchAcademies(searchTerm) {
         const { data, error } = await supabase
             .from('profiles')
             .select('id, academy_name, business_number, full_phone')
-            .in('role', ['admin', 'Admin'])
-            .eq('approval_status', 'approved')
-            .ilike('academy_name', `%${searchTerm}%`)
+            .or('role.in.(admin,Admin),is_super_admin.eq.true')
+            .or(`academy_name.ilike.%${searchTerm}%,full_phone.ilike.%${searchTerm}%`)
             .order('academy_name')
             .limit(10);
 

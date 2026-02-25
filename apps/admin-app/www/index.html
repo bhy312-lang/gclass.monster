@@ -1192,6 +1192,7 @@
                     showMainScreen();
                     updateUserInfo();
                     addSuperAdminMenu();
+                    addParentApprovalMenu();  // 슈퍼관리자도 학부모 승인 메뉴 추가
                     if (window.Capacitor && window.Capacitor.Plugins) {
                         initAdminPushNotifications();
                     }
@@ -1217,6 +1218,7 @@
                     showMainScreen();
                     updateUserInfo();
                     addSuperAdminMenu();
+                    addParentApprovalMenu();  // 슈퍼관리자도 학부모 승인 메뉴 추가
                     if (window.Capacitor && window.Capacitor.Plugins) {
                         initAdminPushNotifications();
                     }
@@ -1282,6 +1284,7 @@
             // 슈퍼관리자 메뉴가 이미 있는지 확인
             if (document.getElementById('super-admin-menu')) return;
 
+            // 슈퍼관리자 메뉴 (가입 승인 관리)
             const superAdminMenu = document.createElement('a');
             superAdminMenu.id = 'super-admin-menu';
             superAdminMenu.href = 'super-admin.html';
@@ -1299,8 +1302,28 @@
                 </div>
             `;
 
-            // 첫 번째 메뉴 앞에 추가
+            // 내 학원 설정 메뉴
+            const academySettingsMenu = document.createElement('a');
+            academySettingsMenu.id = 'academy-settings-menu';
+            academySettingsMenu.href = 'admin-academy-settings.html';
+            academySettingsMenu.className = 'menu-card menu-card--super block';
+            academySettingsMenu.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="menu-badge menu-badge--super w-14 h-14 rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-white text-3xl">school</span>
+                    </div>
+                    <div class="text-left flex-1">
+                        <h3 class="menu-title text-lg font-bold">내 학원 설정</h3>
+                        <p class="menu-desc text-sm">공부방/학원명 관리</p>
+                    </div>
+                    <span class="material-symbols-outlined menu-chevron">chevron_right</span>
+                </div>
+            `;
+
+            // 첫 번째로 슈퍼관리자 메뉴 추가
             menuContainer.insertBefore(superAdminMenu, menuContainer.firstChild);
+            // 그 뒤에 내 학원 설정 메뉴 추가
+            superAdminMenu.after(academySettingsMenu);
         }
 
         // 슈퍼관리자 메뉴 제거
@@ -1308,6 +1331,10 @@
             const superAdminMenu = document.getElementById('super-admin-menu');
             if (superAdminMenu) {
                 superAdminMenu.remove();
+            }
+            const academySettingsMenu = document.getElementById('academy-settings-menu');
+            if (academySettingsMenu) {
+                academySettingsMenu.remove();
             }
             // 일반 관리자 메뉴도 함께 제거
             removeParentApprovalMenu();

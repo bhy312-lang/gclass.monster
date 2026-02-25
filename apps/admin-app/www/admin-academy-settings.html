@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <style>
+        html, body {
+            -webkit-text-size-adjust: 100% !important;
+            text-size-adjust: 100% !important;
+        }
+    </style>
+    <title>내 학원 설정 | EDUINSYS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="./styles/admin-tailwind.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+    <style>
+        :root {
+            --keyboard-offset: 0px;
+        }
+        * { font-family: 'Noto Sans KR', sans-serif; }
+
+        html {
+            position: relative;
+            overflow-y: auto;
+            height: auto;
+            min-height: 100%;
+        }
+
+        body {
+            min-height: 100vh;
+            min-height: 100dvh;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%);
+            overflow-x: hidden;
+            position: relative;
+            padding-bottom: var(--keyboard-offset);
+        }
+
+        .max-w-lg {
+            max-width: 32rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+        }
+
+        .input-wrapper .input-icon {
+            flex-shrink: 0;
+            margin-left: 16px;
+            margin-right: 12px;
+            color: #9ca3af;
+            transition: color 0.3s ease;
+            pointer-events: none;
+        }
+
+        .input-wrapper:focus-within .input-icon {
+            color: #0ea5e9;
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 16px;
+            padding: 16px 16px 16px 0;
+            height: 52px;
+            min-width: 0;
+        }
+
+        .input-wrapper input::placeholder {
+            color: #9ca3af;
+        }
+
+        .required::after {
+            content: ' *';
+            color: #ef4444;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+            padding: 18px 32px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 16px;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(14, 165, 233, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(14, 165, 233, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #374151;
+            border: 2px solid #e5e7eb;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-secondary:hover {
+            border-color: #0ea5e9;
+            color: #0ea5e9;
+        }
+
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: #1f2937;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+            opacity: 0;
+            transition: all 0.4s ease;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        .toast.show {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        /* iOS safe area */
+        @supports (padding: env(safe-area-inset-bottom)) {
+            body {
+                padding-bottom: calc(var(--keyboard-offset) + env(safe-area-inset-bottom));
+            }
+        }
+
+        /* Sticky 버튼 영역 */
+        .sticky-footer {
+            position: sticky;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+            margin: 1.5rem -1.5rem -1.5rem -1.5rem;
+            z-index: 100;
+        }
+
+        @supports (padding: env(safe-area-inset-bottom)) {
+            .sticky-footer {
+                padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+            }
+        }
+
+        /* 키보드 오픈 시 sticky footer를 static으로 변경 */
+        body.keyboard-open .sticky-footer {
+            position: static;
+            margin: 1rem 0 0;
+            border-top: none;
+        }
+
+        /* 헤더 뒤로가기 버튼 */
+        .header-back {
+            position: absolute;
+            top: calc(env(safe-area-inset-top, 20px) + 16px);
+            left: 16px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .header-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .header-back span {
+            color: white;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <!-- 헤더 뒤로가기 버튼 -->
+    <div class="header-back" onclick="goBack()">
+        <span class="material-symbols-outlined">arrow_back</span>
+    </div>
+
+    <!-- 토스트 메시지 -->
+    <div id="toast" class="toast"></div>
+
+    <!-- 메인 카드 -->
+    <div class="max-w-lg mx-auto">
+        <div class="glass-card rounded-3xl shadow-2xl overflow-hidden">
+            <!-- 헤더 -->
+            <div class="bg-gradient-to-r from-sky-500 to-blue-600 p-6 text-white text-center">
+                <div class="w-20 h-20 bg-white/20 rounded-2xl mx-auto mb-4 flex items-center justify-center backdrop-blur-sm">
+                    <span class="material-symbols-outlined text-4xl">school</span>
+                </div>
+                <h1 class="text-2xl font-bold mb-1">내 학원 설정</h1>
+                <p class="text-sky-100 text-sm">공부방/학원명을 등록해주세요</p>
+            </div>
+
+            <!-- 폼 -->
+            <form id="academy-form" class="p-6 space-y-6">
+                <div class="input-group">
+                    <label class="input-label required">공부방/학원명</label>
+                    <div class="input-wrapper">
+                        <span class="material-symbols-outlined input-icon">store</span>
+                        <input type="text" id="academy-name" placeholder="예: 열공 스터디카페" required minlength="2" maxlength="100">
+                    </div>
+                    <p class="text-gray-500 text-xs mt-2">2자 ~ 100자 이내로 입력해주세요.</p>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">연락처</label>
+                    <div class="input-wrapper">
+                        <span class="material-symbols-outlined input-icon">phone</span>
+                        <input type="tel" id="phone" placeholder="010-0000-0000" maxlength="13" inputmode="numeric">
+                    </div>
+                    <p class="text-gray-500 text-xs mt-2">학부모 검색 결과에 표시될 연락처입니다.</p>
+                </div>
+
+                <!-- 버튼 (sticky) -->
+                <div class="sticky-footer flex gap-3">
+                    <button type="button" onclick="goBack()" class="btn-secondary">
+                        <span class="material-symbols-outlined align-middle">cancel</span>
+                        취소
+                    </button>
+                    <button type="submit" id="save-btn" class="btn-primary flex-1">
+                        <span class="material-symbols-outlined align-middle text-sm">save</span>
+                        저장
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 스크립트 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="js/admin-academy-settings.js"></script>
+</body>
+</html>
