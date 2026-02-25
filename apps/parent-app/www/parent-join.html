@@ -411,9 +411,9 @@
         </div>
     </div>
 
-    <!-- 스크립트 -->
-    <script src="supabase-config.js"></script>
+    <!-- 스크립트 - 순서 중요: supabase CDN을 먼저 로드해야 함 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script src="auth.js"></script>
     <script src="js/parent-join.js"></script>
 </body>
