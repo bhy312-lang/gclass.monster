@@ -112,9 +112,17 @@
                     </div>
 
                     <!-- 새로고침 버튼 -->
-                    <button onclick="refreshStatus()" class="w-full bg-white border-2 border-pink-200 text-pink-600 py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-pink-50 transition-colors">
+                    <button onclick="refreshStatus()" class="w-full bg-white border-2 border-pink-200 text-pink-600 py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-pink-50 transition-colors mb-3">
                         <span class="material-symbols-outlined spinner" id="refresh-icon">refresh</span>
                         상태 새로고침
+                    </button>
+
+                    <!-- 신청 취소 버튼 -->
+                    <button onclick="cancelPendingApplications()"
+                            id="cancel-btn"
+                            class="w-full bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-gray-300 transition-colors">
+                        <span class="material-symbols-outlined">cancel</span>
+                        신청 취소
                     </button>
                 </div>
 
@@ -152,7 +160,7 @@
 
         <!-- 하단 -->
         <div class="text-center mt-6">
-            <button onclick="logout()" class="text-white/80 hover:text-white text-sm font-medium transition-colors">
+            <button onclick="handleLogout()" class="text-white/80 hover:text-white text-sm font-medium transition-colors">
                 <span class="material-symbols-outlined align-middle text-sm">logout</span>
                 로그아웃
             </button>
@@ -160,9 +168,10 @@
     </div>
 
     <!-- 스크립트 -->
-    <script src="supabase-config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script src="auth.js"></script>
+    <script src="fcm-service.js"></script>
     <script>
         let refreshInterval = null;
 
@@ -185,23 +194,47 @@
 
                 const { data: children, error } = await supabase
                     .from('students')
-                    .select('*, profiles!inner(academy_name)')
+                    .select('*, profiles!academy_id(academy_name)')
                     .eq('parent_id', user.id)
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
 
-                // 상태에 따라 UI 업데이트
-                updateStatusUI(children || []);
+                // 디버깅: 학생 상태 로그
+                console.log('[checkStatus] children:', children);
+                const approvedChildren = children?.filter(c => c.approval_status === 'approved') || [];
+                const pendingChildren = children?.filter(c => c.approval_status === 'pending') || [];
+                const rejectedChildren = children?.filter(c => c.approval_status === 'rejected') || [];
+                console.log('[checkStatus] approved:', approvedChildren.length, 'pending:', pendingChildren.length, 'rejected:', rejectedChildren.length);
+
+                // 학생이 아예 없으면 신청 페이지로 이동
+                if (!children || children.length === 0) {
+                    clearInterval(refreshInterval);
+                    window.location.href = 'parent-join.html';
+                    return;
+                }
 
                 // 승인 완료된 자녀가 있으면 메인 페이지로 이동
-                const approvedChildren = children?.filter(c => c.approval_status === 'approved') || [];
                 if (approvedChildren.length > 0) {
                     clearInterval(refreshInterval);
                     setTimeout(() => {
                         window.location.href = 'index.html';
                     }, 1500);
+                    return;
                 }
+
+                // 거절된 학생이 있으면 자동 삭제
+                if (rejectedChildren.length > 0) {
+                    console.log('[checkStatus] 거절된 학생 삭제:', rejectedChildren.map(r => r.id));
+                    const rejectedIds = rejectedChildren.map(r => r.id);
+                    await supabase.from('students').delete().in('id', rejectedIds);
+                    // 삭제 후 다시 상태 확인
+                    await checkStatus();
+                    return;
+                }
+
+                // 상태에 따라 UI 업데이트 (대기 중인 경우만 여기 도달)
+                updateStatusUI(children);
 
             } catch (error) {
                 console.error('상태 확인 에러:', error);
@@ -221,6 +254,12 @@
             const rejectedChildren = children.filter(c => c.approval_status === 'rejected');
             const approvedChildren = children.filter(c => c.approval_status === 'approved');
 
+            // 취소 버튼 표시/숨김
+            const cancelBtn = document.getElementById('cancel-btn');
+            if (cancelBtn) {
+                cancelBtn.style.display = pendingChildren.length > 0 ? 'flex' : 'none';
+            }
+
             if (approvedChildren.length > 0) {
                 // 승인 완료
                 header.className = 'bg-gradient-to-r from-emerald-500 to-green-600 p-6 text-white text-center';
@@ -232,13 +271,19 @@
                 return;
             }
 
-            if (rejectedChildren.length > 0 && pendingChildren.length === 0) {
-                // 거절됨
+            if (rejectedChildren.length > 0) {
+                // 거절됨 (pending이 있어도 거절 섹션 표시)
                 header.className = 'bg-gradient-to-r from-red-500 to-red-600 p-6 text-white text-center';
                 statusIcon.textContent = 'cancel';
-                statusTitle.textContent = '승인 거절';
-                statusSubtitle.textContent = '승인이 거절되었습니다';
-                pendingContent.classList.add('hidden');
+
+                if (pendingChildren.length > 0) {
+                    statusTitle.textContent = '일부 신청이 거절되었습니다';
+                    statusSubtitle.textContent = `거절 ${rejectedChildren.length}명, 대기 ${pendingChildren.length}명`;
+                } else {
+                    statusTitle.textContent = '승인 거절';
+                    statusSubtitle.textContent = '승인이 거절되었습니다';
+                }
+
                 rejectedContent.classList.remove('hidden');
 
                 // 거절된 자녀 목록 표시
@@ -256,9 +301,47 @@
                             <div class="bg-red-50 rounded-lg p-3">
                                 <p class="text-sm text-red-700"><strong>거절 사유:</strong> ${child.rejection_reason}</p>
                             </div>
-                        ` : ''}
+                        ` : `
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <p class="text-sm text-gray-500">별도의 거절 사유가 없습니다.</p>
+                            </div>
+                        `}
                     </div>
                 `).join('');
+
+                // pending도 있으면 pending 섹션도 함께 표시
+                if (pendingChildren.length > 0) {
+                    pendingContent.classList.remove('hidden');
+
+                    // 대기 중인 자녀 목록 표시
+                    const studentsList = document.getElementById('students-list');
+                    if (pendingChildren.length === 0) {
+                        studentsList.innerHTML = `
+                            <div class="text-center py-8 text-gray-400">
+                                <span class="material-symbols-outlined text-4xl">person_off</span>
+                                <p class="mt-2">신청한 자녀가 없습니다</p>
+                            </div>
+                        `;
+                    } else {
+                        studentsList.innerHTML = pendingChildren.map(child => `
+                            <div class="student-card bg-white border-2 border-amber-200 rounded-xl p-4">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <h4 class="font-bold text-gray-800">${child.name}</h4>
+                                        <p class="text-sm text-gray-500">${child.school_name} ${child.grade ? child.grade + '학년' : ''}</p>
+                                    </div>
+                                    <span class="bg-amber-100 text-amber-600 text-xs px-2 py-1 rounded-full font-semibold">대기중</span>
+                                </div>
+                                <p class="text-sm text-gray-600">
+                                    <span class="material-symbols-outlined text-sm align-middle">school</span>
+                                    ${child.profiles?.academy_name || '학원'}
+                                </p>
+                            </div>
+                        `).join('');
+                    }
+                } else {
+                    pendingContent.classList.add('hidden');
+                }
                 return;
             }
 
@@ -314,10 +397,113 @@
             }
         }
 
+        // 신청 취소
+        async function cancelPendingApplications() {
+            const btn = document.getElementById('cancel-btn');
+            if (!btn) return;
+
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> 처리 중...';
+
+            try {
+                const { data: authData, error: authError } = await supabase.auth.getUser();
+                if (authError || !authData?.user) {
+                    alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+                    window.location.replace('index.html?logout=true');
+                    return;
+                }
+
+                const userId = authData.user.id;
+
+                const { data: pendingRows, error: fetchError } = await supabase
+                    .from('students')
+                    .select('id')
+                    .eq('parent_id', userId)
+                    .eq('approval_status', 'pending');
+
+                if (fetchError) throw fetchError;
+
+                if (!pendingRows || pendingRows.length === 0) {
+                    // 거절된 자녀 확인
+                    const { data: rejectedRows } = await supabase
+                        .from('students')
+                        .select('id')
+                        .eq('parent_id', userId)
+                        .eq('approval_status', 'rejected');
+
+                    // 거절된 자녀도 없으면 신청 페이지로
+                    if (!rejectedRows || rejectedRows.length === 0) {
+                        alert('신청한 내역이 없습니다. 학생 정보를 입력해주세요.');
+                        window.location.href = 'parent-join.html';
+                    } else {
+                        alert('취소할 대기 신청이 없습니다.');
+                    }
+                    return;
+                }
+
+                if (!confirm(`대기 중 신청 ${pendingRows.length}건을 취소할까요?`)) return;
+
+                const ids = pendingRows.map(r => r.id);
+                const { error: deleteError } = await supabase
+                    .from('students')
+                    .delete()
+                    .in('id', ids);
+
+                if (deleteError) throw deleteError;
+
+                alert('신청이 취소되었습니다.');
+                await checkStatus();
+            } catch (err) {
+                console.error('[CancelPending] failed:', err);
+                alert(`신청 취소 실패\ncode: ${err?.code || '-'}\nmessage: ${err?.message || err}`);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+
         // 로그아웃
-        async function logout() {
-            await supabase.auth.signOut();
-            window.location.href = 'index.html';
+        async function handleLogout() {
+            let isLoggedOut = false;
+
+            try {
+                // global 인증 시도
+                const { error } = await supabase.auth.signOut();
+                if (!error) isLoggedOut = true;
+            } catch (e) {
+                console.warn('[Logout] Global signOut failed:', e);
+            }
+
+            // 실패 시 local 재시도
+            if (!isLoggedOut) {
+                try {
+                    const { error: localError } = await supabase.auth.signOut({ scope: 'local' });
+                    if (!localError) isLoggedOut = true;
+                } catch (e) {
+                    console.warn('[Logout] Local signOut failed:', e);
+                }
+            }
+
+            // FCM 토큰 비활성화 (선택 사항)
+            if (window.fcmService) {
+                try {
+                    await window.fcmService.unregister();
+                } catch (e) {
+                    console.warn('[Logout] FCM unregister failed:', e);
+                }
+            }
+
+            // 로컬 세션 키 정리
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch (e) {
+                console.warn('[Logout] Storage clear failed:', e);
+            }
+
+            // 무조건 초기화면 이동
+            window.location.replace('index.html?logout=true');
         }
 
         // 페이지 언마운트 시 인터벌 정리

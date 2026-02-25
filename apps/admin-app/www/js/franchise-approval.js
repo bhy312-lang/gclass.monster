@@ -221,6 +221,16 @@ async function confirmRejectStudent() {
     }
 
     try {
+        // 푸시 발송을 위한 학생 정보 조회
+        const { data: student, error: studentError } = await supabase
+            .from('students')
+            .select('id, parent_id, name')
+            .eq('id', studentId)
+            .single();
+
+        if (studentError) throw studentError;
+
+        // 거절 처리
         const { error } = await supabase
             .from('students')
             .update({
@@ -230,6 +240,35 @@ async function confirmRejectStudent() {
             .eq('id', studentId);
 
         if (error) throw error;
+
+        // FCM 푸시 발송 (학부모에게 거절 알림)
+        if (student?.parent_id) {
+            try {
+                const { error: fcmError } = await supabase.functions.invoke('fcm-send-notification', {
+                    body: {
+                        recipient_id: student.parent_id,
+                        target_type: 'parent',
+                        type: 'parent_registration_rejected',
+                        title: '가입 신청이 거절되었습니다',
+                        body: `${student.name} 학생 신청이 거절되었습니다.`,
+                        data: {
+                            type: 'parent_registration_rejected',
+                            student_id: String(student.id),
+                            rejection_reason: reason
+                        },
+                        priority: 'high'
+                    }
+                });
+                if (fcmError) {
+                    console.error('[FCM] 푸시 발송 실패:', fcmError);
+                } else {
+                    console.log('[FCM] 거절 푸시 발송 성공');
+                }
+            } catch (fcmErr) {
+                console.error('[FCM] 푸시 발송 에러:', fcmErr);
+                // 푸시 실패는 거절 처리에 영향 없음
+            }
+        }
 
         closeRejectStudentModal();
         showToast('거절 처리가 완료되었습니다.', 'success');

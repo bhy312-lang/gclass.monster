@@ -80,24 +80,21 @@ class FCMService {
     try {
       const deviceInfo = await this.getDeviceInfo();
 
-      const response = await fetch('/api/v1/fcm/tokens/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.getAuthToken()}`
-        },
-        body: JSON.stringify({
+      // Supabase Edge Function 호출 (자동 인증)
+      const { data, error } = await window.supabase.functions.invoke('fcm-token-register', {
+        body: {
           fcm_token: fcmToken,
           device_info: deviceInfo,
           user_type: 'parent'
-        })
+        }
       });
 
-      const result = await response.json();
-      if (result.success) {
+      if (error) {
+        console.error('[FCM Service] Token registration failed:', error.message, error.status);
+      } else if (data?.success) {
         console.log('[FCM Service] Token registered successfully');
       } else {
-        console.error('[FCM Service] Token registration failed:', result.error);
+        console.error('[FCM Service] Token registration failed:', data?.error);
       }
     } catch (error) {
       console.error('[FCM Service] Failed to send token to server:', error);
@@ -312,6 +309,16 @@ class FCMService {
     const type = data.type;
 
     switch (type) {
+      case 'parent_registration_rejected':
+        if (!window.location.pathname.includes('parent-status')) {
+          window.location.href = '/parent-status.html';
+        }
+        break;
+      case 'parent_registration_approved':
+        if (!window.location.pathname.includes('parent-main')) {
+          window.location.href = '/parent-main.html';
+        }
+        break;
       case 'attendance_check_in':
       case 'attendance_check_out':
         if (!window.location.pathname.includes('attendance')) {
