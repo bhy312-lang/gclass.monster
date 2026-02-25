@@ -147,6 +147,15 @@ async function loadSchools() {
     const schoolSelect = document.getElementById('school-name');
     const noSchoolsGuidance = document.getElementById('no-schools-guidance');
 
+    // selectedAcademy null 가드
+    if (!selectedAcademy) {
+        console.error('[Parent] loadSchools: selectedAcademy is null');
+        const errorOption = document.createElement('option');
+        errorOption.textContent = '학원을 먼저 선택해주세요';
+        schoolSelect.appendChild(errorOption);
+        return;
+    }
+
     // 초기 상태 - 옵션 모두 제거
     while (schoolSelect.firstChild) {
         schoolSelect.removeChild(schoolSelect.firstChild);
@@ -195,8 +204,8 @@ async function loadSchools() {
         });
 
     } catch (error) {
-        // 콘솔에는 상세 에러 정보 출력
-        console.error('[Parent] loadSchools rpc error:', {
+        // 상세 에러 로깅
+        console.error('[Parent] loadSchools RPC error:', {
             message: error?.message,
             code: error?.code,
             details: error?.details,
@@ -204,12 +213,115 @@ async function loadSchools() {
             selectedAcademy
         });
 
-        // UI에는 에러 코드만 간단히 표시
+        // fallback 트리거 조건 확대
+        const errorMsg = (error?.message || '').toLowerCase();
+        const shouldFallback =
+            error?.code === '42702'                    // ambiguous column
+            || error?.code === '42883'                 // undefined function
+            || errorMsg.includes('ambiguous')
+            || errorMsg.includes('does not exist')
+            || errorMsg.includes('function')
+            || (error?.code && String(error.code).startsWith('PGRST'));       // PostgREST errors
+
+        if (shouldFallback) {
+            console.log('[Parent] RPC error detected, trying fallback query...');
+            await loadSchoolsFallback();
+        } else {
+            // 다른 에러는 기존대로 표시
+            while (schoolSelect.firstChild) {
+                schoolSelect.removeChild(schoolSelect.firstChild);
+            }
+            const errorOption = document.createElement('option');
+            errorOption.textContent = `학교 목록 로드 실패 (${error?.code || 'unknown'})`;
+            schoolSelect.appendChild(errorOption);
+        }
+    }
+}
+
+// RPC 실패 시 fallback 직접 조회
+async function loadSchoolsFallback() {
+    const schoolSelect = document.getElementById('school-name');
+    const noSchoolsGuidance = document.getElementById('no-schools-guidance');
+
+    try {
+        // 로딩 옵션 추가
+        while (schoolSelect.firstChild) {
+            schoolSelect.removeChild(schoolSelect.firstChild);
+        }
+        const loadingOption = document.createElement('option');
+        loadingOption.textContent = '로딩 중...';
+        schoolSelect.appendChild(loadingOption);
+
+        // 직접 schools 테이블 조회
+        let query = supabase.from('schools').select('id,name');
+
+        if (selectedAcademy?.academy_id) {
+            // academy_id가 있는 경우: profile_id 또는 academy_id로 검색
+            query = query.or(`profile_id.eq.${selectedAcademy.id},academy_id.eq.${selectedAcademy.academy_id}`);
+        } else {
+            // academy_id가 없는 경우: profile_id로만 검색
+            query = query.eq('profile_id', selectedAcademy.id);
+        }
+
+        const { data: fallbackData, error: fallbackError } = await query.order('name', { ascending: true });
+
+        if (fallbackError) throw fallbackError;
+
+        // 옵션 모두 제거
+        while (schoolSelect.firstChild) {
+            schoolSelect.removeChild(schoolSelect.firstChild);
+        }
+
+        // 빈 이름 제거 + 중복 제거
+        const uniqueSchools = new Map();
+        (fallbackData || []).forEach(school => {
+            if (school.name && school.name.trim() !== '') {
+                if (!uniqueSchools.has(school.name)) {
+                    uniqueSchools.set(school.name, school);
+                }
+            }
+        });
+
+        const schoolList = Array.from(uniqueSchools.values());
+
+        if (schoolList.length === 0) {
+            const noOption = document.createElement('option');
+            noOption.textContent = '등록된 학교가 없습니다';
+            schoolSelect.appendChild(noOption);
+            noSchoolsGuidance.classList.remove('hidden');
+            return;
+        }
+
+        // 기본 옵션 추가
+        const defaultOption = document.createElement('option');
+        defaultOption.textContent = '학교를 선택하세요';
+        defaultOption.value = '';
+        schoolSelect.appendChild(defaultOption);
+
+        // 학교 옵션 추가
+        schoolList.forEach(school => {
+            const option = document.createElement('option');
+            option.value = school.name;
+            option.textContent = school.name;
+            schoolSelect.appendChild(option);
+        });
+
+        console.log('[Parent] Fallback query succeeded, loaded', schoolList.length, 'unique schools');
+
+    } catch (fallbackError) {
+        console.error('[Parent] Fallback query failed:', {
+            message: fallbackError?.message,
+            code: fallbackError?.code,
+            details: fallbackError?.details,
+            hint: fallbackError?.hint,
+            selectedAcademy
+        });
+
         while (schoolSelect.firstChild) {
             schoolSelect.removeChild(schoolSelect.firstChild);
         }
         const errorOption = document.createElement('option');
-        errorOption.textContent = `학교 목록 로드 실패 (${error?.code || 'unknown'})`;
+        errorOption.textContent = `학교 목록 로드 실패 (${fallbackError?.code || 'unknown'})`;
         schoolSelect.appendChild(errorOption);
     }
 }
