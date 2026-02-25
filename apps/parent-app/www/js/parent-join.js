@@ -518,3 +518,63 @@ function showToast(message, type = 'success') {
         toast.classList.remove('show');
     }, 3000);
 }
+
+// =====================================================
+// 로그아웃 유틸리티
+// =====================================================
+
+// 인증 스토리지 정리
+function clearAuthStorage() {
+    const authKeys = ['isLoggedIn', 'userId', 'userName', 'userEmail',
+                      'userPhoto', 'userPhone'];
+    authKeys.forEach(key => localStorage.removeItem(key));
+
+    // Supabase 세션 키 제거 (키를 먼저 수집 후 삭제 - 인덱스 꼬임 방지)
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.match(/(^sb-.*-auth-token$)|code-verifier|^supabase\./)) {
+            keysToRemove.push(key);
+        }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+}
+
+// 로그아웃 (global -> local fallback)
+async function performLogout() {
+    // supabase 미초기화 상황 대비
+    if (!window.supabase?.auth) {
+        clearAuthStorage();
+        return;
+    }
+
+    try {
+        // global 로그아웃 시도 (서버 토큰 무효화)
+        await window.supabase.auth.signOut();
+    } catch (error) {
+        console.warn('Global logout failed, trying local only:', error);
+        try {
+            // 실패 시 local만 로그아웃
+            await window.supabase.auth.signOut({ scope: 'local' });
+        } catch (localError) {
+            console.error('Local logout also failed:', localError);
+        }
+    } finally {
+        // 인증 스토리지 정리 (항상 실행)
+        clearAuthStorage();
+    }
+}
+
+// 홈으로 돌아가기 (로그아웃 후 로그인 화면으로)
+let isLoggingOut = false;  // 중복 실행 방지 플래그
+async function handleGoHome() {
+    if (isLoggingOut) return;  // 이미 로그아웃 중이면 무시
+    isLoggingOut = true;
+
+    try {
+        await performLogout();
+        window.location.href = './index.html?logout=true';
+    } finally {
+        isLoggingOut = false;
+    }
+}
