@@ -289,6 +289,36 @@
                     <p class="text-gray-500 text-xs mt-2">학부모 검색 결과에 표시될 연락처입니다.</p>
                 </div>
 
+                <!-- 학교 관리 섹션 -->
+                <div class="border-t border-gray-200 pt-6 mt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">학교 관리</h3>
+                        <span class="text-sm text-gray-500" id="school-count">0개 학교</span>
+                    </div>
+
+                    <!-- 학교 추가 -->
+                    <div class="flex gap-2 mb-4">
+                        <div class="input-wrapper flex-1">
+                            <span class="material-symbols-outlined input-icon">school</span>
+                            <input type="text" id="new-school-name" placeholder="학교명 입력 (예: 서울초등학교)" maxlength="50">
+                        </div>
+                        <button type="button" id="add-school-btn" class="btn-secondary px-3">
+                            <span class="material-symbols-outlined text-sm">add</span>
+                        </button>
+                    </div>
+
+                    <!-- 학교 목록 -->
+                    <div id="schools-list" class="space-y-2 max-h-48 overflow-y-auto">
+                        <!-- 동적으로 생성됨 -->
+                    </div>
+
+                    <!-- 학교 없음 메시지 -->
+                    <div id="no-schools-msg" class="text-center py-6 text-gray-400 text-sm">
+                        <span class="material-symbols-outlined text-2xl">info</span>
+                        <p class="mt-2">등록된 학교가 없습니다.</p>
+                    </div>
+                </div>
+
                 <!-- 버튼 (sticky) -->
                 <div class="sticky-footer flex gap-3">
                     <button type="button" onclick="goBack()" class="btn-secondary">

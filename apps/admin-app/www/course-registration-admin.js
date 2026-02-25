@@ -621,13 +621,26 @@ function onApplicationsPeriodChange() {
 async function loadSchools() {
     const schoolsList = document.getElementById('schools-list');
 
-    console.log('[Admin] loadSchools 호출, currentAcademyId:', currentAcademyId);
+    console.log('[Admin] loadSchools 호출, currentAcademyId:', currentAcademyId, 'currentUser:', currentUser?.id);
+
+    // currentUser null guard
+    if (!currentUser || !currentUser.id) {
+        console.error('[Admin] currentUser가 없습니다.');
+        schoolsList.innerHTML = `
+            <div class="error-state col-span-full text-center">
+                <span class="material-symbols-outlined text-4xl text-red-300">error</span>
+                <p class="text-red-500 mt-2">사용자 정보를 찾을 수 없습니다</p>
+            </div>
+        `;
+        return;
+    }
 
     try {
+        // profile_id 기반 + academy_id 기반 하위 호환 조회
         const { data: schools, error } = await supabase
             .from('schools')
             .select('*')
-            .eq('academy_id', currentAcademyId)
+            .or(`academy_id.eq.${currentAcademyId},profile_id.eq.${currentUser.id}`)
             .order('name');
 
         console.log('[Admin] 학교 조회 결과:', { schools, error });
@@ -698,14 +711,22 @@ async function addSchool(event) {
         return;
     }
 
-    console.log('[Admin] 학교 추가 시도:', { academy_id: currentAcademyId, name: schoolName });
+    // currentUser null guard
+    if (!currentUser || !currentUser.id) {
+        showError('사용자 정보를 찾을 수 없습니다.');
+        console.error('[Admin] addSchool: currentUser가 없습니다.');
+        return;
+    }
+
+    console.log('[Admin] 학교 추가 시도:', { academy_id: currentAcademyId, name: schoolName, profile_id: currentUser.id });
 
     try {
         const { data, error } = await supabase
             .from('schools')
             .insert({
                 academy_id: currentAcademyId,
-                name: schoolName
+                name: schoolName,
+                profile_id: currentUser.id  // 추가: profile_id 기반 관리 지원
             })
             .select();
 

@@ -5,6 +5,14 @@ const totalSteps = 3;
 let selectedAcademy = null;
 let searchTimeout = null;
 
+// XSS 방지용 escapeHtml 함수
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // 폼 요소
 const academySearchInput = document.getElementById('academy-search');
 const studentNameInput = document.getElementById('student-name');
@@ -66,19 +74,16 @@ function handleAcademySearch(e) {
     }, 300);
 }
 
-// 학원 검색
+// 학원 검색 (RPC 사용)
 async function searchAcademies(searchTerm) {
     try {
         const resultsContainer = document.getElementById('academy-results');
         resultsContainer.innerHTML = '<div class="text-center py-4 text-gray-400"><span class="material-symbols-outlined animate-spin">loading</span><br>검색 중...</div>';
 
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('id, academy_name, business_number, full_phone')
-            .or('role.in.(admin,Admin),is_super_admin.eq.true')
-            .or(`academy_name.ilike.%${searchTerm}%,full_phone.ilike.%${searchTerm}%`)
-            .order('academy_name')
-            .limit(10);
+        // RPC 함수 호출 (승인된 학원만 반환)
+        const { data, error } = await supabase.rpc('search_academies', {
+            p_search_term: searchTerm
+        });
 
         if (error) throw error;
 
@@ -87,12 +92,33 @@ async function searchAcademies(searchTerm) {
             return;
         }
 
-        resultsContainer.innerHTML = data.map(academy => `
-            <div class="academy-search-result" onclick="selectAcademy('${academy.id}', '${academy.academy_name}', '${academy.full_phone || ''}')">
-                <p class="font-semibold text-gray-800">${academy.academy_name}</p>
-                ${academy.full_phone ? `<p class="text-sm text-gray-500">${academy.full_phone}</p>` : ''}
-            </div>
-        `).join('');
+        // 결과 컨테이너 비우기
+        resultsContainer.innerHTML = '';
+
+        // createElement로 안전하게 생성 (XSS 방지)
+        data.forEach(academy => {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'academy-search-result';
+
+            const nameP = document.createElement('p');
+            nameP.className = 'font-semibold text-gray-800';
+            nameP.textContent = academy.academy_name;
+            resultDiv.appendChild(nameP);
+
+            if (academy.full_phone) {
+                const phoneP = document.createElement('p');
+                phoneP.className = 'text-sm text-gray-500';
+                phoneP.textContent = academy.full_phone;
+                resultDiv.appendChild(phoneP);
+            }
+
+            // 이벤트 리스너로 안전하게 바인딩 (inline onclick 대체)
+            resultDiv.addEventListener('click', () => {
+                selectAcademy(academy.id, academy.academy_name, academy.full_phone || '', academy.academy_id || null);
+            });
+
+            resultsContainer.appendChild(resultDiv);
+        });
     } catch (error) {
         console.error('학원 검색 에러:', error);
         document.getElementById('academy-results').innerHTML = '<div class="text-center py-4 text-red-400">검색 중 오류가 발생했습니다.</div>';
@@ -100,8 +126,8 @@ async function searchAcademies(searchTerm) {
 }
 
 // 학원 선택
-function selectAcademy(id, name, phone) {
-    selectedAcademy = { id, name, phone };
+function selectAcademy(id, name, phone, academy_id = null) {
+    selectedAcademy = { id, name, phone, academy_id };
 
     // 선택된 학원 표시
     document.getElementById('selected-academy').classList.remove('hidden');
@@ -111,6 +137,81 @@ function selectAcademy(id, name, phone) {
     // 검색 결과 숨김
     document.getElementById('academy-results').innerHTML = '';
     academySearchInput.value = name;
+
+    // 학교 목록 로드
+    loadSchools();
+}
+
+// 학교 목록 로드
+async function loadSchools() {
+    const schoolSelect = document.getElementById('school-name');
+    const noSchoolsGuidance = document.getElementById('no-schools-guidance');
+
+    // 초기 상태 - 옵션 모두 제거
+    while (schoolSelect.firstChild) {
+        schoolSelect.removeChild(schoolSelect.firstChild);
+    }
+    noSchoolsGuidance.classList.add('hidden');
+
+    // 로딩 옵션 추가 (createElement 사용)
+    const loadingOption = document.createElement('option');
+    loadingOption.textContent = '로딩 중...';
+    schoolSelect.appendChild(loadingOption);
+
+    try {
+        // RPC 함수 호출 (profile_id 기반)
+        const { data, error } = await supabase.rpc('get_school_options_for_profile', {
+            p_profile_id: selectedAcademy.id,
+            p_academy_id: selectedAcademy.academy_id || null
+        });
+
+        if (error) throw error;
+
+        // 옵션 모두 제거
+        while (schoolSelect.firstChild) {
+            schoolSelect.removeChild(schoolSelect.firstChild);
+        }
+
+        if (!data || data.length === 0) {
+            const noOption = document.createElement('option');
+            noOption.textContent = '등록된 학교가 없습니다';
+            schoolSelect.appendChild(noOption);
+            noSchoolsGuidance.classList.remove('hidden');
+            return;
+        }
+
+        // 기본 옵션 추가
+        const defaultOption = document.createElement('option');
+        defaultOption.textContent = '학교를 선택하세요';
+        defaultOption.value = '';
+        schoolSelect.appendChild(defaultOption);
+
+        // 학교 옵션 추가 (createElement 사용 - 값 깨짐/XSS 방지)
+        data.forEach(school => {
+            const option = document.createElement('option');
+            option.value = school.name;
+            option.textContent = school.name;
+            schoolSelect.appendChild(option);
+        });
+
+    } catch (error) {
+        // 콘솔에는 상세 에러 정보 출력
+        console.error('[Parent] loadSchools rpc error:', {
+            message: error?.message,
+            code: error?.code,
+            details: error?.details,
+            hint: error?.hint,
+            selectedAcademy
+        });
+
+        // UI에는 에러 코드만 간단히 표시
+        while (schoolSelect.firstChild) {
+            schoolSelect.removeChild(schoolSelect.firstChild);
+        }
+        const errorOption = document.createElement('option');
+        errorOption.textContent = `학교 목록 로드 실패 (${error?.code || 'unknown'})`;
+        schoolSelect.appendChild(errorOption);
+    }
 }
 
 // 다음 단계
@@ -152,7 +253,7 @@ function validateCurrentStep() {
                 return false;
             }
             if (!schoolNameInput.value.trim()) {
-                showToast('학교명을 입력해주세요.', 'error');
+                showToast('학교를 선택해주세요.', 'error');
                 schoolNameInput.focus();
                 return false;
             }

@@ -305,9 +305,15 @@
                     <div class="input-group">
                         <label class="input-label required">학교</label>
                         <div class="relative">
-                            <input type="text" id="school-name" placeholder="예: 서울초등학교" required>
+                            <select id="school-name" required>
+                                <option value="">학원을 먼저 선택해주세요</option>
+                            </select>
                             <span class="material-symbols-outlined input-icon">school</span>
                         </div>
+                        <p id="no-schools-guidance" class="hidden text-amber-600 text-xs mt-2">
+                            <span class="material-symbols-outlined text-sm align-middle">info</span>
+                            등록된 학교가 없습니다. 관리자에게 문의해주세요.
+                        </p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
