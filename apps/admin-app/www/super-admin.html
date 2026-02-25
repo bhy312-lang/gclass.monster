@@ -110,6 +110,12 @@
             animation: slideIn 0.3s ease-out;
         }
 
+        @keyframes spin-slow {
+            0% { transform: rotate(0deg); color: #38bdf8; }
+            50% { transform: rotate(180deg); color: #10b981; }
+            100% { transform: rotate(360deg); color: #38bdf8; }
+        }
+
         /* 반응형 */
         @media (min-width: 768px) {
             .request-grid {
@@ -172,10 +178,17 @@
         <div id="admin-tab" class="tab-content">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-white font-semibold">관리자 가입 신청</h2>
-                <button onclick="forceReload('admin')" class="text-sky-400 text-sm flex items-center gap-1 hover:text-sky-300">
-                    <span class="material-symbols-outlined text-sm">refresh</span>
-                    새로고침
-                </button>
+                <div class="flex items-center gap-2">
+                    <button id="bulk-approve-btn" onclick="approveAllAdmins()"
+                        class="bg-amber-500 hover:bg-amber-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white text-sm px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                        <span class="material-symbols-outlined text-sm">check_circle</span>
+                        일괄승인
+                    </button>
+                    <button onclick="manualRefreshAdmin()" class="text-sky-400 text-sm flex items-center gap-1 hover:text-sky-300">
+                        <span id="admin-refresh-icon" class="material-symbols-outlined text-sm" style="animation: spin-slow 3s linear infinite;">refresh</span>
+                        새로고침
+                    </button>
+                </div>
             </div>
             <div id="admin-requests" class="request-grid space-y-4 md:space-y-0">
                 <!-- 요청 카드가 여기에 추가됨 -->
@@ -236,6 +249,10 @@
     <script>
         let currentTab = 'admin';
         let selectedRequestId = null;
+        let isBulkApproving = false;
+        let adminRefreshInterval = null;
+        let adminRealtimeChannel = null;
+        let realtimeConnected = false;
 
         // 데이터 캐싱
         const cachedData = {
@@ -255,6 +272,13 @@
             // 관리자 신청과 학부모 신청 목록 사전 로드 (병렬 처리)
             loadAdminRequests();
             loadStudentRequests();
+
+            // 실시간 갱신 시작
+            startRealtimeAdminRefresh();
+
+            // 페이지 이탈 시 정리 (pagehide + beforeunload 둘 다)
+            window.addEventListener('pagehide', stopRealtimeAdminRefresh);
+            window.addEventListener('beforeunload', stopRealtimeAdminRefresh);
         });
 
         // 카운트만 빠르게 로드
@@ -342,8 +366,7 @@
         // 데이터 강제 새로고침 (새로고침 버튼용)
         function forceReload(tab) {
             if (tab === 'admin') {
-                cachedData.admin = null;
-                loadAdminRequests();
+                manualRefreshAdmin();
             } else if (tab === 'student') {
                 cachedData.student = null;
                 loadStudentRequests();
@@ -351,6 +374,152 @@
                 cachedData.approved = null;
                 loadApprovedList();
             }
+        }
+
+        // 수동 새로고침 함수
+        async function manualRefreshAdmin() {
+            cachedData.admin = null;
+            cachedData.approved = null;
+            await Promise.all([loadAdminRequests(), loadCounts()]);
+            if (currentTab === 'approved') await loadApprovedList();
+        }
+
+        // 일괄 승인 함수
+        async function approveAllAdmins() {
+            if (isBulkApproving) return;
+
+            try {
+                // 캐시 사용 금지 - 직접 DB 조회
+                const { data: pendingAdmins, error: fetchError } = await supabase
+                    .from('profiles')
+                    .select('id, email, name')
+                    .eq('approval_status', 'pending')
+                    .in('role', ['admin', 'Admin']);
+
+                if (fetchError) throw fetchError;
+
+                if (!pendingAdmins || pendingAdmins.length === 0) {
+                    showToast('승인 대기 중인 관리자가 없습니다.', 'error');
+                    return;
+                }
+
+                if (!confirm(`관리자 ${pendingAdmins.length}명을 일괄 승인하시겠습니까?`)) {
+                    return;
+                }
+
+                isBulkApproving = true;
+                const btn = document.getElementById('bulk-approve-btn');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span>일괄승인 중...';
+
+                const adminIds = pendingAdmins.map(a => a.id);
+
+                // 승인 업데이트 (pending 상태 체크 포함)
+                const { error: updateError } = await supabase
+                    .from('profiles')
+                    .update({ approval_status: 'approved' })
+                    .in('id', adminIds)
+                    .eq('approval_status', 'pending');
+
+                if (updateError) throw updateError;
+
+                // 알림 읽음 처리
+                await supabase
+                    .from('admin_registration_notifications')
+                    .update({ is_read: true })
+                    .in('admin_id', adminIds);
+
+                // 푸시 전송 - 일부 실패해도 승인 완료 흐름 유지 (Promise.allSettled)
+                const pushPromises = adminIds.map(adminId =>
+                    sendPushNotification(adminId, '승인 완료', '관리자 가입이 승인되었습니다. 지금부터 서비스를 이용하실 수 있습니다.')
+                );
+                await Promise.allSettled(pushPromises);
+
+                showToast(`${pendingAdmins.length}명의 관리자가 승인되었습니다.`, 'success');
+
+                // 캐시 무효화 및 병렬 재로드
+                cachedData.admin = null;
+                cachedData.approved = null;
+                await Promise.all([loadAdminRequests(), loadCounts()]);
+                if (currentTab === 'approved') await loadApprovedList();
+
+            } catch (error) {
+                console.error('일괄승인 에러:', error);
+                showToast('일괄승인에 실패했습니다.', 'error');
+            } finally {
+                isBulkApproving = false;
+                const btn = document.getElementById('bulk-approve-btn');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-symbols-outlined text-sm">check_circle</span>일괄승인';
+                }
+            }
+        }
+
+        // 실시간 갱신 시작 함수
+        function startRealtimeAdminRefresh() {
+            // 재호출 방지
+            stopRealtimeAdminRefresh();
+
+            // Supabase Realtime 구독 (filter는 과도하게 좁히지 않음)
+            adminRealtimeChannel = supabase
+                .channel('admin-approval-changes')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'profiles'
+                        // filter는 콜백에서 처리 (대소문자 이슈 방지)
+                    },
+                    (payload) => {
+                        // role/admin, approval_status 관련 변경만 처리
+                        const record = payload.new || payload.old;
+                        if (record && (record.role === 'admin' || record.role === 'Admin') &&
+                            (payload.new?.approval_status !== payload.old?.approval_status || payload.eventType === 'INSERT')) {
+
+                            cachedData.admin = null;
+                            loadAdminRequests();
+                            loadCounts();
+
+                            if (currentTab === 'approved') {
+                                cachedData.approved = null;
+                                loadApprovedList();
+                            }
+                        }
+                    }
+                )
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        realtimeConnected = true;
+                    }
+                });
+
+            // Fallback 폴링 (5초 간격)
+            adminRefreshInterval = setInterval(() => {
+                if (currentTab === 'admin') {
+                    cachedData.admin = null;
+                    loadAdminRequests();
+                }
+                loadCounts(); // 항상 갱신
+                if (currentTab === 'approved') {
+                    cachedData.approved = null;
+                    loadApprovedList();
+                }
+            }, 5000);
+        }
+
+        // 실시간 갱신 정리 함수
+        function stopRealtimeAdminRefresh() {
+            if (adminRefreshInterval) {
+                clearInterval(adminRefreshInterval);
+                adminRefreshInterval = null;
+            }
+            if (adminRealtimeChannel) {
+                supabase.removeChannel(adminRealtimeChannel);
+                adminRealtimeChannel = null;
+            }
+            realtimeConnected = false;
         }
 
         // 관리자 요청 목록 로드 (이미지 제외하여 빠르게 로드)
