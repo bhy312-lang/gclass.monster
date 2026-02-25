@@ -28,6 +28,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     initPage();
 });
 
+// 페이지 이탈 시 리소스 정리
+window.addEventListener('pagehide', () => {
+    teardownKeyboardAwareScroll();
+});
+
 // 페이지 초기화 함수
 function initPage() {
     // 폼 요소 가져오기
@@ -42,10 +47,12 @@ function initPage() {
     phoneInput.addEventListener('input', formatPhoneNumber);
     businessNumberInput.addEventListener('input', formatBusinessNumber);
 
-    // 키보드 가림 방지 - focus 시 자동 스크롤
-    document.querySelectorAll('input').forEach(input => {
-        input.addEventListener('focus', handleInputFocus);
-    });
+    // 키보드 인식 스크롤 설정
+    if (window.visualViewport) {
+        setupKeyboardAwareScroll();
+    } else {
+        setupFallbackScroll();
+    }
 
     // 폼 제출
     form.addEventListener('submit', handleSubmit);
@@ -415,33 +422,130 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-// 키보드 가림 방지 - 입력 필드 포커스 시 스크롤
-function handleInputFocus(e) {
-    // input이 포커스될 때 화면 중앙으로 스크롤
-    setTimeout(() => {
-        const input = e.target;
-        // scrollIntoView 사용
-        input.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-            inline: 'nearest'
-        });
+// =====================================================
+// 키보드 인식 스크롤 관련 상태
+// =====================================================
+let keyboardHeight = 0;
+let lastScrollTime = 0;
+let activeElementRef = null;
+const FOOTER_SAFE_GAP = 88;
+const KEYBOARD_THRESHOLD = 120;
 
-        // 추가적으로 Visual Viewport가 지원되면 더 정확한 계산
-        if (window.visualViewport) {
-            const viewportHeight = window.visualViewport.height;
-            const rect = input.getBoundingClientRect();
-            const inputCenter = rect.top + rect.height / 2;
+// 키보드 인식 스크롤 설정
+function setupKeyboardAwareScroll() {
+    const visualViewport = window.visualViewport;
 
-            // input이 화면 하단 70% 아래에 있으면 스크롤
-            if (inputCenter > viewportHeight * 0.7) {
-                window.scrollBy({
-                    top: inputCenter - viewportHeight * 0.4,
-                    behavior: 'smooth'
-                });
-            }
+    // 키보드 높이 계산 및 CSS 변수 업데이트
+    const updateKeyboardHeight = () => {
+        if (!visualViewport) return;
+        keyboardHeight = Math.max(0, window.innerHeight - visualViewport.height);
+        document.documentElement.style.setProperty('--keyboard-offset', keyboardHeight + 'px');
+
+        const isOpen = keyboardHeight > KEYBOARD_THRESHOLD;
+        document.body.classList.toggle('keyboard-open', isOpen);
+    };
+
+    // visualViewport 지원 시
+    if (visualViewport) {
+        visualViewport.addEventListener('resize', updateKeyboardHeight);
+        visualViewport.addEventListener('scroll', updateKeyboardHeight);
+    }
+
+    // focusin 이벤트
+    document.addEventListener('focusin', (e) => {
+        if (e.target.matches('input, textarea, select')) {
+            activeElementRef = e.target;
+            requestAnimationFrame(() => {
+                setTimeout(() => ensureFocusedFieldVisible(e.target), 150);
+            });
         }
-    }, 350); // 키보드가 열리는 시간을 고려한 지연
+    });
+
+    // focusout 이벤트 (지연 후 다른 입력칸 확인)
+    document.addEventListener('focusout', () => {
+        setTimeout(() => {
+            const activeElement = document.activeElement;
+            if (!activeElement || !activeElement.matches('input, textarea, select')) {
+                document.body.classList.remove('keyboard-open');
+            }
+        }, 100);
+    });
+
+    // 초기 호출
+    updateKeyboardHeight();
+}
+
+// 포커스된 필드가 화면에 보이도록 스크롤
+function ensureFocusedFieldVisible(target) {
+    const visualViewport = window.visualViewport;
+    const viewportHeight = visualViewport?.height ?? window.innerHeight;
+    const rect = target.getBoundingClientRect();
+    const visibleBottom = viewportHeight - FOOTER_SAFE_GAP;
+
+    // 중복 스크롤 방지 (100ms 내 재호출 무시)
+    const now = Date.now();
+    if (now - lastScrollTime < 100) return;
+
+    // 입력창 하단이 화면 밖에 있으면 스크롤
+    if (rect.bottom > visibleBottom) {
+        lastScrollTime = now;
+        const overflow = rect.bottom - visibleBottom;
+        window.scrollBy({
+            top: overflow + 16,
+            behavior: 'smooth'
+        });
+    }
+}
+
+// visualViewport 미지원 fallback
+function setupFallbackScroll() {
+    document.addEventListener('focusin', (e) => {
+        if (e.target.matches('input, textarea, select')) {
+            e.target.scrollIntoView({
+                block: 'center',
+                behavior: 'smooth'
+            });
+        }
+    });
+}
+
+// 정리 함수 (페이지 이탈 시 리소스 정리)
+function teardownKeyboardAwareScroll() {
+    document.body.classList.remove('keyboard-open');
+    document.documentElement.style.removeProperty('--keyboard-offset');
+}
+
+// =====================================================
+// 로그아웃 관련 함수
+// =====================================================
+function clearAuthStorage() {
+    const authKeys = ['isLoggedIn', 'userId', 'userName', 'userEmail',
+                      'userPhoto', 'isSuperAdmin', 'userPhone', 'selectedRole'];
+    authKeys.forEach(key => localStorage.removeItem(key));
+
+    // Supabase 세션 키 제거
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.match(/(^sb-.*-auth-token$)|code-verifier|^supabase\./)) {
+            keysToRemove.push(key);
+        }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+}
+
+async function performLogout() {
+    if (!window.supabase?.auth) {
+        clearAuthStorage();
+        return;
+    }
+    try {
+        await window.supabase.auth.signOut({ scope: 'local' });
+    } catch (e) {
+        console.error('Logout error:', e);
+    } finally {
+        clearAuthStorage();
+    }
 }
 
 // 홈으로 돌아가기 (로그아웃 후 로그인 화면으로)

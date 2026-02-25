@@ -26,7 +26,7 @@ public class MainActivity extends BridgeActivity {
         ViewCompat.setOnApplyWindowInsetsListener(rootView, (view, windowInsets) -> {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
             view.setPadding(insets.left, insets.top, insets.right, 0);
-            return WindowInsetsCompat.CONSUMED;
+            return windowInsets;
         });
     }
 }

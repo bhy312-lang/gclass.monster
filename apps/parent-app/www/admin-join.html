@@ -9,6 +9,9 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
+        :root {
+            --keyboard-offset: 0px;
+        }
         * { font-family: 'Noto Sans KR', sans-serif; }
 
         html {
@@ -24,6 +27,7 @@
             background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%);
             overflow-x: hidden;
             position: relative;
+            padding-bottom: var(--keyboard-offset);
         }
 
         /* 메인 컨테이너 */
@@ -296,15 +300,15 @@
             scroll-margin-bottom: 200px;
         }
 
-        input, textarea {
-            scroll-margin-bottom: 200px;
-            scroll-margin-top: 100px;
+        input, textarea, select {
+            scroll-margin-bottom: calc(120px + var(--keyboard-offset));
+            scroll-margin-top: 88px;
         }
 
         /* iOS safe area */
         @supports (padding: env(safe-area-inset-bottom)) {
             body {
-                padding-bottom: env(safe-area-inset-bottom);
+                padding-bottom: calc(var(--keyboard-offset) + env(safe-area-inset-bottom));
             }
         }
 
@@ -325,6 +329,13 @@
             .sticky-footer {
                 padding-bottom: calc(1rem + env(safe-area-inset-bottom));
             }
+        }
+
+        /* ?ㅻ낫???ㅽ뵂 ??sticky footer瑜?static?쇰줈 蹂寃?*/
+        body.keyboard-open .sticky-footer {
+            position: static;
+            margin: 1rem 0 0;
+            border-top: none;
         }
     </style>
 </head>
