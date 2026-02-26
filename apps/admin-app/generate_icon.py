@@ -16,7 +16,7 @@ LOGO_MAX_HEIGHT_RATIO = 0.80
 # 경로 설정
 # ============================================
 base_path = os.path.dirname(os.path.abspath(__file__))
-logo_path = os.path.normpath(os.path.join(base_path, "..", "..", "assets", "logo_icon.png"))
+logo_path = os.path.normpath(os.path.join(base_path, "..", "..", "assets", "admin_icon.png"))
 res_path = os.path.join(base_path, "android", "app", "src", "main", "res")
 
 # 아이콘 크기 설정
