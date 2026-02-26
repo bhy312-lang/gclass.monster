@@ -43,13 +43,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // 전화번호 포맷 (010-0000-0000)
 function formatPhoneNumber(e) {
+    const inputType = e.inputType;
+    const isDeletion = inputType === 'deleteContentBackward' ||
+                      inputType === 'deleteContentForward' ||
+                      inputType === 'delete';
+
+    // 숫자만 추출
     let value = e.target.value.replace(/[^0-9]/g, '');
-    if (value.length >= 3) {
+
+    // 삭제 동작인 경우: 유연하게 포맷 적용
+    if (isDeletion) {
+        if (value.length === 0) {
+            e.target.value = '';
+            return;
+        }
+        if (value.length <= 3) {
+            e.target.value = value;
+        } else if (value.length <= 7) {
+            e.target.value = value.slice(0, 3) + '-' + value.slice(3);
+        } else {
+            e.target.value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
+        }
+        return;
+    }
+
+    // 숫자 입력인 경우: 정상 포맷팅
+    if (value.length >= 3 && value.length <= 7) {
         value = value.slice(0, 3) + '-' + value.slice(3);
+    } else if (value.length >= 8) {
+        value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
     }
-    if (value.length >= 8) {
-        value = value.slice(0, 8) + '-' + value.slice(8, 12);
-    }
+
     e.target.value = value;
 }
 
@@ -449,6 +473,78 @@ function getGradeText(grade) {
     return gradeMap[grade] || grade;
 }
 
+// =====================================================
+// 관리자 푸시 알림 전송
+// =====================================================
+
+// 관리자에게 학부모 가입 신청 푸시 알림 전송
+async function notifyAdminParentJoinRequest(studentName, studentId, academyId, parentId) {
+    console.log(`[PARENT_JOIN_PUSH] Starting: student=${studentName}, academy_id=${academyId}, student_id=${studentId}`);
+
+    try {
+        // handleSubmit에서 갱신된 세션 사용
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+            console.error('[PARENT_JOIN_PUSH] No active session');
+            return { success: false, error_code: 'NO_SESSION', error: 'No active session' };
+        }
+
+        console.log('[PARENT_JOIN_PUSH] has_session=true, has_user_jwt=true');
+        console.log('[PARENT_JOIN_PUSH] Token preview:', session.access_token?.substring(0, 20) + '...');
+
+        // 헤더 전략: Authorization=anon key(Gateway 통과용), x-user-jwt=user token(실제 인증용)
+        const { data, error } = await supabase.functions.invoke('fcm-send-notification', {
+            headers: {
+                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+                'x-user-jwt': session.access_token,
+                apikey: SUPABASE_ANON_KEY,
+                'Content-Type': 'application/json'
+            },
+            body: {
+                recipient_id: academyId,
+                target_type: 'admin',
+                type: 'new_parent_registration',
+                title: '새 학부모 가입 신청',
+                body: `${studentName} 학생 가입 신청이 접수되었습니다.`,
+                data: {
+                    type: 'new_parent_registration',
+                    student_id: String(studentId),
+                    academy_id: String(academyId),
+                    parent_id: String(parentId)
+                },
+                priority: 'high'
+            }
+        });
+
+        // Edge Function 호출 자체 실패
+        if (error) {
+            console.error('[PARENT_JOIN_PUSH] Function error:', error.message);
+            console.error('[PARENT_JOIN_PUSH] error_code=FUNCTION_ERROR');
+            return { success: false, error_code: 'FUNCTION_ERROR', error: error.message };
+        }
+
+        // API 응답 실패 (MISSING_USER_JWT, INVALID_USER_JWT, NO_ACTIVE_TOKEN 등)
+        if (!data?.success) {
+            const errorMsg = data?.error || '알 수 없는 오류';
+            const errorCode = data?.error_code || 'API_ERROR';
+            console.error('[PARENT_JOIN_PUSH] API failed:', errorMsg);
+            console.error(`[PARENT_JOIN_PUSH] error_code=${errorCode}, target_type=admin, academy_id=${academyId}`);
+            return { success: false, error_code: errorCode, error: errorMsg };
+        }
+
+        // 성공
+        const messageId = data?.data?.message_id;
+        console.log(`[PARENT_JOIN_PUSH] Success: message_id=${messageId}, target_type=admin, academy_id=${academyId}`);
+        return { success: true, message_id: messageId };
+
+    } catch (error) {
+        // 푸시 실패해도 가입 신청은 성공 처리 (로그만 남김)
+        console.error('[PARENT_JOIN_PUSH] Exception:', error.message);
+        console.error('[PARENT_JOIN_PUSH] error_code=EXCEPTION, target_type=admin');
+        return { success: false, error_code: 'EXCEPTION', error: error.message };
+    }
+}
+
 // 폼 제출 처리
 async function handleSubmit(e) {
     e.preventDefault();
@@ -456,34 +552,56 @@ async function handleSubmit(e) {
     showLoading();
 
     try {
+        // 0. 세션 갱신 (RPC + 푸시 모두를 위해 유효한 토큰 확보)
+        console.log('[PARENT_JOIN] Refreshing session...');
+        const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError || !session?.access_token) {
+            console.error('[PARENT_JOIN] Session refresh failed:', refreshError?.message);
+            hideLoading();
+            alert('세션 갱신 실패. 다시 로그인해 주세요.');
+            return;
+        }
+        console.log('[PARENT_JOIN] Session refreshed. has_session=true, has_user_jwt=true');
+
         const { data: { user } } = await supabase.auth.getUser();
 
-        // 자녀 정보 저장
-        const { error } = await supabase
-            .from('students')
-            .insert({
-                name: studentNameInput.value.trim(),
-                birth_date: birthDateInput.value,
-                school_name: schoolNameInput.value.trim(),
-                grade: parseInt(gradeInput.value),
-                full_phone: phoneInput.value,
-                parent_id: user.id,
-                academy_id: selectedAcademy.id,
-                approval_status: 'pending'
-            });
+        // RPC 호출로 students + notifications 한 번에 처리 (RLS 우회)
+        console.log('[PARENT_JOIN] Calling submit_parent_registration RPC...');
 
-        if (error) throw error;
+        const { data: rpcData, error: rpcError } = await supabase.rpc('submit_parent_registration', {
+            p_student_name: studentNameInput.value.trim(),
+            p_birth_date: birthDateInput.value,
+            p_school_name: schoolNameInput.value.trim(),
+            p_grade: parseInt(gradeInput.value),
+            p_full_phone: phoneInput.value,
+            p_academy_id: selectedAcademy.id
+        });
 
-        // 알림 생성
-        await supabase
-            .from('parent_registration_notifications')
-            .insert({
-                academy_id: selectedAcademy.id,
-                student_id: null // 생성된 student_id를 모르므로 null로 처리
-            });
+        if (rpcError || !rpcData?.success) {
+            console.error('[PARENT_JOIN] RPC failed:', rpcError || rpcData);
+            throw new Error(rpcError?.message || rpcData?.message || '가입 신청 실패');
+        }
+
+        const studentId = rpcData.student_id;
+        console.log('[PARENT_JOIN] RPC success: student_id=', studentId);
+
+        // 관리자에게 푸시 알림 전송
+        const pushResult = await notifyAdminParentJoinRequest(
+            studentNameInput.value.trim(),
+            studentId,
+            selectedAcademy.id,
+            user.id
+        );
 
         hideLoading();
-        showToast('가입 신청이 완료되었습니다!\n승인 대기 페이지로 이동합니다.', 'success');
+
+        // 푸시 실패 시 사용자에게 안내 (가입은 성공)
+        if (!pushResult.success) {
+            console.warn('[PARENT_JOIN_PUSH] Push notification failed, but signup succeeded');
+            showToast('가입 신청이 완료되었습니다!\n(관리자 알림 전송에 실패했습니다. 학원에 직접 연락해주세요.)', 'warning');
+        } else {
+            showToast('가입 신청이 완료되었습니다!\n승인 대기 페이지로 이동합니다.', 'success');
+        }
 
         setTimeout(() => {
             window.location.href = 'parent-status.html';

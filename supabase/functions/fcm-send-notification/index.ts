@@ -9,7 +9,7 @@ import { generateMessageId } from '../shared/message-id-generator.ts';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, content-type',
+  'Access-Control-Allow-Headers': 'authorization, apikey, x-client-info, content-type, x-supabase-api-version, x-user-jwt',
 };
 
 interface SendRequest {
@@ -25,9 +25,54 @@ interface SendRequest {
 const ACK_TIMEOUT_SECONDS = 10;
 
 serve(async (req) => {
+  // 최상단 로그: 함수 시작 확인
+  console.log('[FCM_SEND] === FUNCTION START ===');
+  console.log('[FCM_SEND] Method:', req.method);
+  console.log('[FCM_SEND] URL:', req.url);
+
   if (req.method === 'OPTIONS') {
+    console.log('[FCM_SEND] OPTIONS preflight');
     return new Response('ok', { headers: corsHeaders });
   }
+
+  // [FCM_SEND_AUTH] 사용자 JWT 검증
+  console.log('[FCM_SEND_AUTH] Starting user JWT verification...');
+
+  const userJwt = req.headers.get('x-user-jwt');
+  if (!userJwt) {
+    console.log('[FCM_SEND_AUTH] FAILED: x-user-jwt header missing');
+    return new Response(
+      JSON.stringify({ success: false, error_code: 'MISSING_USER_JWT', error: 'x-user-jwt header required' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser(userJwt);
+  if (authError || !user) {
+    console.log('[FCM_SEND_AUTH] FAILED: Invalid user JWT', authError?.message);
+    return new Response(
+      JSON.stringify({ success: false, error_code: 'INVALID_USER_JWT', error: 'Invalid user token' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  console.log('[FCM_SEND_AUTH] SUCCESS: user_id=', user.id);
+
+  // 디버깅: Request Headers 로깅
+  console.log('[FCM_SEND_AUTH] === Request Headers ===');
+  const authHeader = req.headers.get('authorization');
+  const apikeyHeader = req.headers.get('apikey');
+  const contentType = req.headers.get('content-type');
+  const clientInfo = req.headers.get('x-client-info');
+  console.log('[FCM_SEND_AUTH] Authorization:', authHeader ? authHeader.substring(0, 30) + '...' : 'MISSING');
+  console.log('[FCM_SEND_AUTH] x-user-jwt:', userJwt ? userJwt.substring(0, 20) + '...' : 'MISSING');
+  console.log('[FCM_SEND_AUTH] apikey:', apikeyHeader ? apikeyHeader.substring(0, 20) + '...' : 'MISSING');
+  console.log('[FCM_SEND_AUTH] content-type:', contentType);
+  console.log('[FCM_SEND_AUTH] =========================');
 
   try {
     const {
@@ -48,9 +93,7 @@ serve(async (req) => {
       );
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // supabase client는 이미 상단에서 생성됨 (auth 검증용)
 
     // Generate message ID
     const messageId = generateMessageId();
@@ -68,7 +111,7 @@ serve(async (req) => {
       .eq('is_active', true);
 
     if (tokensError) {
-      console.error('[FCM Send] Token query error:', tokensError);
+      console.error('[FCM_SEND_RESULT] Token query error:', tokensError);
       return new Response(
         JSON.stringify({ success: false, error: 'Database query failed' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -77,7 +120,8 @@ serve(async (req) => {
 
     if (!tokens || tokens.length === 0) {
       // No active tokens - create message record with failed status
-      await supabase.from('fcm_messages').insert({
+      // Use message_id (TEXT) for query since no recipient record is created
+      const { error: noTokenError } = await supabase.from('fcm_messages').insert({
         message_id: messageId,
         message_type: type,
         title,
@@ -93,6 +137,10 @@ serve(async (req) => {
         failed_at: now
       });
 
+      if (noTokenError) {
+        console.error('[FCM_SEND_RESULT] No-token message insert error:', noTokenError);
+      }
+
       return new Response(
         JSON.stringify({
           success: false,
@@ -103,34 +151,40 @@ serve(async (req) => {
       );
     }
 
-    // Create message record with queued status
-    const { error: insertError } = await supabase.from('fcm_messages').insert({
-      message_id: messageId,
-      message_type: type,
-      title,
-      body,
-      data,
-      priority,
-      target_type,
-      target_id: recipient_id,
-      status: 'queued',
-      queued_at: now
-    });
+    // Create message record with queued status and get the UUID (id)
+    const { data: messageData, error: insertError } = await supabase
+      .from('fcm_messages')
+      .insert({
+        message_id: messageId,
+        message_type: type,
+        title,
+        body,
+        data,
+        priority,
+        target_type,
+        target_id: recipient_id,
+        status: 'queued',
+        queued_at: now
+      })
+      .select('id')
+      .single();
 
-    if (insertError) {
-      console.error('[FCM Send] Message insert error:', insertError);
+    if (insertError || !messageData) {
+      console.error('[FCM_SEND_RESULT] Message insert error:', insertError);
       return new Response(
         JSON.stringify({ success: false, error: 'Failed to create message record' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    const messageUuid = messageData.id;
+
     // Initialize FCM client
     let fcmClient: ReturnType<typeof createFCMClient>;
     try {
       fcmClient = createFCMClient();
     } catch (error) {
-      console.error('[FCM Send] FCM client error:', error);
+      console.error('[FCM_SEND_RESULT] FCM client error:', error);
       // Mark message as failed
       await supabase.from('fcm_messages')
         .update({
@@ -177,11 +231,12 @@ serve(async (req) => {
         }
       });
 
-      // Create recipient record
+      // Create recipient record with proper UUID and token column
       await supabase.from('fcm_message_recipients').insert({
-        message_id: messageId,
+        message_id: messageUuid, // Use fcm_messages.id (UUID) not message_id (TEXT)
         recipient_id,
         fcm_token_id: target_type === 'parent' ? token.id : null,
+        admin_fcm_token_id: target_type === 'admin' ? token.id : null,
         status: result.success ? 'sent' : 'failed',
         sent_at: result.success ? now : null,
         failed_at: result.success ? null : now,
@@ -203,7 +258,7 @@ serve(async (req) => {
             .from(tokensTable)
             .update({ is_active: false, updated_at: now })
             .eq('id', token.id);
-          console.log(`[FCM Send] Token invalidated: ${token.id}, error: ${result.errorCode}`);
+          console.log(`[FCM_SEND_RESULT] Token invalidated: ${token.id}, error: ${result.errorCode}`);
         }
       }
 
@@ -228,9 +283,9 @@ serve(async (req) => {
 
     await supabase.from('fcm_messages')
       .update(updateData)
-      .eq('message_id', messageId);
+      .eq('id', messageUuid); // Use UUID id instead of TEXT message_id
 
-    console.log(`[FCM Send] Message ${messageId}: ${successCount}/${tokens.length} tokens sent`);
+    console.log(`[FCM_SEND_RESULT] Message ${messageId}: ${successCount}/${tokens.length} tokens sent`);
 
     return new Response(
       JSON.stringify({
@@ -246,7 +301,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[FCM Send] Error:', error);
+    console.error('[FCM_SEND_RESULT] Error:', error);
     return new Response(
       JSON.stringify({
         success: false,

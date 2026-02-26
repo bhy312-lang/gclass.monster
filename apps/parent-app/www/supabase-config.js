@@ -56,6 +56,8 @@ function isSupabaseConfigured() {
 }
 
 // 전역에서 접근 가능하도록 설정
+window.SUPABASE_URL = SUPABASE_URL;
+window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 window.isSupabaseConfigured = isSupabaseConfigured;
 
 // 설정 확인 경고

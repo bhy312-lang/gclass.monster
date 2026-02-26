@@ -67,12 +67,15 @@ serve(async (_req) => {
   for (const message of messagesToRetry) {
     try {
       const tokensTable = message.target_type === 'admin' ? 'admin_fcm_tokens' : 'parent_fcm_tokens';
-      const userIdColumn = message.target_type === 'admin' ? 'admin_id' : 'parent_id';
+      const tokenRelation = message.target_type === 'admin'
+        ? 'admin_fcm_tokens!inner(fcm_token)'
+        : 'parent_fcm_tokens!inner(fcm_token)';
 
       // Get recipients that haven't acknowledged (still in sent/pending status)
+      // Use dynamic join based on target_type to support both admin and parent tokens
       const { data: pendingRecipients } = await supabase
         .from('fcm_message_recipients')
-        .select('*, parent_fcm_tokens!inner(fcm_token)')
+        .select(`*, ${tokenRelation}`)
         .eq('message_id', message.id)
         .in('status', ['sent', 'pending']);
 
@@ -102,7 +105,10 @@ serve(async (_req) => {
       // Retry sending to pending recipients
       let successCount = 0;
       for (const recipient of pendingRecipients) {
-        const token = (recipient as any).parent_fcm_tokens?.fcm_token;
+        // Extract token based on target_type
+        const token = message.target_type === 'admin'
+          ? (recipient as any).admin_fcm_tokens?.fcm_token
+          : (recipient as any).parent_fcm_tokens?.fcm_token;
         if (!token) continue;
 
         const result = await fcmClient!.send({

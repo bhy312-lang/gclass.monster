@@ -121,19 +121,33 @@ serve(async (req) => {
       );
     }
 
-    // Create message record
-    await supabase.from('fcm_messages').insert({
-      message_id: messageId,
-      message_type: type,
-      title,
-      body,
-      data,
-      priority,
-      target_type: 'broadcast',
-      academy_id,
-      status: 'queued',
-      queued_at: now
-    });
+    // Create message record and get UUID (id)
+    const { data: messageData, error: insertError } = await supabase
+      .from('fcm_messages')
+      .insert({
+        message_id: messageId,
+        message_type: type,
+        title,
+        body,
+        data,
+        priority,
+        target_type: 'broadcast',
+        academy_id,
+        status: 'queued',
+        queued_at: now
+      })
+      .select('id')
+      .single();
+
+    if (insertError || !messageData) {
+      console.error('[FCM Broadcast] Message insert error:', insertError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Failed to create message record' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const messageUuid = messageData.id;
 
     // Initialize FCM client
     let fcmClient: ReturnType<typeof createFCMClient>;
@@ -146,7 +160,7 @@ serve(async (req) => {
           error_code: 'FCM_NOT_CONFIGURED',
           failed_at: now
         })
-        .eq('message_id', messageId);
+        .eq('id', messageUuid);
 
       return new Response(
         JSON.stringify({ success: false, error: 'FCM not configured' }),
@@ -154,11 +168,12 @@ serve(async (req) => {
       );
     }
 
-    // Prepare recipient records for batch insert
+    // Prepare recipient records for batch insert with UUID and proper token column
     const recipientRecords = uniqueRecipients.map(r => ({
-      message_id: messageId,
+      message_id: messageUuid, // Use fcm_messages.id (UUID) not message_id (TEXT)
       recipient_id: r.recipient_id,
       fcm_token_id: target_type === 'parent' ? r.token_id : null,
+      admin_fcm_token_id: target_type === 'admin' ? r.token_id : null,
       status: 'pending' as const,
       delivery_attempts: 0
     }));
@@ -194,7 +209,7 @@ serve(async (req) => {
               }
             });
 
-            // Update recipient record
+            // Update recipient record with token-specific condition
             await supabase.from('fcm_message_recipients')
               .update({
                 status: result.success ? 'sent' : 'failed',
@@ -203,8 +218,10 @@ serve(async (req) => {
                 error_code: result.errorCode,
                 delivery_attempts: 1
               })
-              .eq('message_id', messageId)
-              .eq('recipient_id', recipient.recipient_id);
+              .eq('message_id', messageUuid)
+              .eq('recipient_id', recipient.recipient_id)
+              // Add token-specific condition for multi-device support
+              .eq(target_type === 'admin' ? 'admin_fcm_token_id' : 'fcm_token_id', recipient.token_id);
 
             // Update token last_used_at on success
             if (result.success) {
@@ -248,7 +265,7 @@ serve(async (req) => {
         next_retry_at: totalSent > 0 ? new Date(Date.now() + ACK_TIMEOUT_SECONDS * 1000).toISOString() : null,
         failed_at: totalSent === 0 ? now : null
       })
-      .eq('message_id', messageId);
+      .eq('id', messageUuid);
 
     console.log(`[FCM Broadcast] ${messageId}: ${totalSent}/${uniqueRecipients.length} sent, ${totalFailed} failed`);
 

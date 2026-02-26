@@ -785,8 +785,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
 
-    <!-- FCM Service -->
-    <script src="js/fcm-service.js"></script>
+    <!-- FCM Service 제거됨 (RPC 방식으로 단일화) -->
 
     <!-- Capacitor Browser Plugin (IIFE) -->
     <script>
@@ -1540,19 +1539,27 @@
         }
 
         // 푸시 알림 초기화 및 FCM 토큰 등록
+        let adminPushInitialized = false;  // 중복 리스너 등록 방지 플래그
+
         async function initAdminPushNotifications() {
+            if (adminPushInitialized) {
+                console.log('[ADMIN_FCM] Already initialized, skipping duplicate init');
+                return;
+            }
+
             if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.PushNotifications) {
-                console.log('PushNotifications 플러그인 없음 (웹 환경)');
+                console.log('[ADMIN_FCM_REGISTER] PushNotifications plugin not found (web environment)');
                 return;
             }
 
             const PushNotifications = window.Capacitor.Plugins.PushNotifications;
+            adminPushInitialized = true;  // 초기화 시작 시 플래그 설정
 
             try {
                 // 권한 요청
                 const permResult = await PushNotifications.requestPermissions();
                 if (permResult.receive !== 'granted') {
-                    console.log('푸시 알림 권한 거부됨');
+                    console.warn('[ADMIN_FCM_REGISTER] Push permission denied');
                     return;
                 }
 
@@ -1561,58 +1568,145 @@
 
                 // 토큰 수신 리스너
                 PushNotifications.addListener('registration', async (token) => {
-                    console.log('FCM 토큰 수신:', token.value);
-                    await saveAdminFcmToken(token.value);
+                    const tokenPreview = token.value?.substring(0, 12) || 'none';
+                    console.log(`[ADMIN_FCM_REGISTER] Token received: ${tokenPreview}...`);
+
+                    const result = await saveAdminFcmToken(token.value);
+                    console.log(`[ADMIN_FCM_REGISTER] Registration result:`, result);
                 });
 
-                // 알림 수신 리스너 (앱 포그라운드)
-                PushNotifications.addListener('pushNotificationReceived', (notification) => {
-                    console.log('푸시 알림 수신:', notification);
+                // LocalNotifications 권한 요청 및 채널 생성 (Android 13+)
+                const LocalNotifications = window.Capacitor.Plugins.LocalNotifications;
+                try {
+                    // 권한 요청
+                    await LocalNotifications.requestPermissions();
+
+                    // 기존 default_channel 정리 (선택 사항 - 깔끔한 유지보수용)
+                    const channels = await LocalNotifications.listChannels();
+                    for (const channel of channels) {
+                        if (channel.id === 'default_channel') {
+                            try {
+                                await LocalNotifications.deleteChannel({ id: 'default_channel' });
+                                console.log('[ADMIN_FCM] Deleted old default_channel');
+                            } catch (_) {}
+                        }
+                    }
+
+                    // 새 고임포던스 채널 생성 (중요: 신규 ID 사용으로 importance 5가 반영되도록)
+                    await LocalNotifications.createChannel({
+                        id: 'admin-high-v1',
+                        name: '관리자 중요 알림',
+                        importance: 5,  // MAX (Heads-up 표시를 위해 필수)
+                        description: '학원관리 중요 알림',
+                        visibility: 1,  // PUBLIC (잠금 화면에서도 내용 표시)
+                        sound: 'default',
+                        lights: true,
+                        vibration: true
+                    });
+                    console.log('[ADMIN_FCM] High-importance channel admin-high-v1 created');
+                } catch (e) {
+                    console.error('[ADMIN_FCM] Channel setup error:', e);
+                }
+
+                // 알림 수신 리스너 (앱 포그라운드) - 시스템 알림 개선
+                PushNotifications.addListener('pushNotificationReceived', async (notification) => {
+                    console.log('[ADMIN_FCM_PUSH] Notification received:', notification.title);
+
+                    // 1) 인앱 토스트 (기존 동작 유지)
                     showInAppNotification(notification.title, notification.body);
+
+                    // 2) 시스템 알림 팝업/Heads-up (고임포던스 채널 사용)
+                    try {
+                        const data = notification.data || {};
+                        const safeId = Date.now() + Math.floor(Math.random() * 1000);  // 충돌 방지
+
+                        await LocalNotifications.schedule({
+                            notifications: [{
+                                id: safeId,
+                                title: notification.title || '알림',
+                                body: notification.body || '',
+                                data: data,
+                                channelId: 'admin-high-v1',  // 중요: 고임포던스 채널 지정
+                                sound: 'default',
+                                smallText: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+                                schedule: { at: new Date() }  // 즉시 표시
+                            }]
+                        });
+                    } catch (e) {
+                        console.error('[ADMIN_FCM_LOCAL] schedule failed:', e);
+                    }
+
+                    // 3) 네이티브 Toast (옵션 - 플러그인 존재 시만)
+                    try {
+                        const Toast = window.Capacitor?.Plugins?.Toast;
+                        if (Toast?.show) {
+                            await Toast.show({
+                                text: notification.title || '새 알림',
+                                duration: 'short'
+                            });
+                        }
+                    } catch (e) {
+                        console.error('[ADMIN_TOAST] show failed:', e);
+                    }
                 });
 
                 // 알림 탭 리스너
                 PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-                    console.log('푸시 알림 액션:', notification);
-                    // 필요시 특정 페이지로 이동
-                    if (notification.notification.data?.type === 'new_registration') {
+                    console.log('[ADMIN_FCM_PUSH] Notification action performed:', notification.notification.data?.type);
+                    const dataType = notification.notification.data?.type;
+                    if (dataType === 'new_parent_registration') {
+                        window.location.href = 'admin-parent-approvals.html';
+                    } else if (dataType === 'new_registration') {
                         window.location.href = 'franchise.html';
                     }
                 });
 
+                console.log('[ADMIN_FCM] Initialization completed successfully');
             } catch (error) {
-                console.error('푸시 알림 초기화 실패:', error);
+                console.error('[ADMIN_FCM_REGISTER] Initialization failed:', error);
+                adminPushInitialized = false;  // 실패 시 플래그 리셋하여 재시도 가능하게 함
             }
         }
 
-        // 관리자 FCM 토큰 저장
+        // 관리자 FCM 토큰 저장 (RPC 방식)
         async function saveAdminFcmToken(fcmToken) {
             if (!window.supabase) {
-                console.error('Supabase 미설정');
-                return;
+                console.error('[ADMIN_FCM_REGISTER] Supabase not configured');
+                return { success: false, error: 'NO_SUPABASE' };
             }
 
             try {
                 const { data: { session } } = await supabase.auth.getSession();
-                const adminId = session?.user?.id || null;
+                const adminId = session?.user?.id || localStorage.getItem('userId') || null;
 
-                // 토큰 저장 (upsert)
-                const { error } = await supabase.from('admin_fcm_tokens').upsert({
-                    fcm_token: fcmToken,
-                    admin_id: adminId,
-                    device_name: navigator.userAgent.substring(0, 100),
-                    updated_at: new Date().toISOString()
-                }, {
-                    onConflict: 'fcm_token'
+                if (!adminId) {
+                    console.warn('[ADMIN_FCM_REGISTER] Skipped: missing admin_id');
+                    return { success: false, error: 'NO_ADMIN_ID' };
+                }
+
+                console.log(`[ADMIN_FCM_REGISTER] user_id=${adminId}, method=RPC`);
+
+                // RPC 호출로 토큰 등록 (원자적 처리, 토큰 takeover 포함)
+                const { data, error } = await supabase.rpc('register_admin_fcm_token', {
+                    p_fcm_token: fcmToken,
+                    p_device_name: navigator.userAgent.substring(0, 100)
                 });
 
                 if (error) {
-                    console.error('FCM 토큰 저장 실패:', error);
-                } else {
-                    console.log('관리자 FCM 토큰 저장 완료');
+                    console.error('[ADMIN_FCM_REGISTER] RPC error:', error.message, 'code:', error.code, 'hint:', error.hint, 'details:', error.details);
+                    return { success: false, error: error.message, error_code: 'RPC_ERROR', rpc_code: error.code, rpc_hint: error.hint };
                 }
-            } catch (error) {
-                console.error('토큰 저장 중 오류:', error);
+
+                if (!data?.success) {
+                    console.error('[ADMIN_FCM_REGISTER] RPC returned failure:', data);
+                    return { success: false, error: data?.error || 'UNKNOWN', error_code: data?.error || 'RPC_FAILED', rpc_data: data };
+                }
+
+                console.log(`[ADMIN_FCM_REGISTER] Success: token_id=${data.token_id}`);
+                return { success: true, token_id: data.token_id };
+            } catch (e) {
+                console.error('[ADMIN_FCM_REGISTER] Exception:', e.message);
+                return { success: false, error: e.message, error_code: 'EXCEPTION' };
             }
         }
 
