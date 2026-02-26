@@ -4,6 +4,7 @@ let currentStep = 1;
 const totalSteps = 3;
 let selectedAcademy = null;
 let searchTimeout = null;
+let isSubmitting = false;  // 중복 제출 방지
 
 // XSS 방지용 escapeHtml 함수
 function escapeHtml(text) {
@@ -473,6 +474,15 @@ function getGradeText(grade) {
     return gradeMap[grade] || grade;
 }
 
+// 세션 만료 임박 확인 (초 단위)
+function isSessionExpiringSoon(session, secondsThreshold = 60) {
+    if (!session?.expires_at) return true;
+    const expiresAt = new Date(session.expires_at);
+    const now = new Date();
+    const secondsLeft = (expiresAt - now) / 1000;
+    return secondsLeft < secondsThreshold;
+}
+
 // =====================================================
 // 관리자 푸시 알림 전송
 // =====================================================
@@ -549,23 +559,36 @@ async function notifyAdminParentJoinRequest(studentName, studentId, academyId, p
 async function handleSubmit(e) {
     e.preventDefault();
 
+    // 중복 제출 방지
+    if (isSubmitting) {
+        console.log('[PARENT_JOIN] Already submitting, ignoring duplicate click');
+        return;
+    }
+    isSubmitting = true;
+
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = true;
+
     showLoading();
 
     try {
-        // 0. 세션 갱신 (RPC + 푸시 모두를 위해 유효한 토큰 확보)
-        console.log('[PARENT_JOIN] Refreshing session...');
-        const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError || !session?.access_token) {
-            console.error('[PARENT_JOIN] Session refresh failed:', refreshError?.message);
-            hideLoading();
-            alert('세션 갱신 실패. 다시 로그인해 주세요.');
-            return;
+        // 1. 조건부 세션 갱신 (만료 1분 미만 또는 없을 때만)
+        console.log('[PARENT_JOIN] Checking session...');
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session || isSessionExpiringSoon(session, 60)) {
+            console.log('[PARENT_JOIN] Session expired or expiring soon, refreshing...');
+            const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshError || !newSession?.access_token) {
+                console.error('[PARENT_JOIN] Session refresh failed:', refreshError?.message);
+                throw new Error('세션 갱신 실패. 다시 로그인해 주세요.');
+            }
+            console.log('[PARENT_JOIN] Session refreshed successfully');
+        } else {
+            console.log('[PARENT_JOIN] Session is valid, skipping refresh');
         }
-        console.log('[PARENT_JOIN] Session refreshed. has_session=true, has_user_jwt=true');
 
-        const { data: { user } } = await supabase.auth.getUser();
-
-        // RPC 호출로 students + notifications 한 번에 처리 (RLS 우회)
+        // 2. RPC 호출로 students + notifications 한 번에 처리 (RLS 우회)
         console.log('[PARENT_JOIN] Calling submit_parent_registration RPC...');
 
         const { data: rpcData, error: rpcError } = await supabase.rpc('submit_parent_registration', {
@@ -585,29 +608,35 @@ async function handleSubmit(e) {
         const studentId = rpcData.student_id;
         console.log('[PARENT_JOIN] RPC success: student_id=', studentId);
 
-        // 관리자에게 푸시 알림 전송
-        const pushResult = await notifyAdminParentJoinRequest(
+        // 3. 성공 UI 즉시 표시
+        hideLoading();
+        showToast('가입 신청이 완료되었습니다!\n승인 대기 페이지로 이동합니다.', 'success');
+
+        // 4. 백그라운드 FCM 전송 (non-blocking)
+        const { data: { user } } = await supabase.auth.getUser();
+        notifyAdminParentJoinRequest(
             studentNameInput.value.trim(),
             studentId,
             selectedAcademy.id,
             user.id
-        );
+        ).then(result => {
+            if (!result.success) {
+                console.log('[PARENT_JOIN_PUSH] Background push failed (signup already succeeded):', result.error);
+            } else {
+                console.log('[PARENT_JOIN_PUSH] Background push sent successfully');
+            }
+        }).catch(err => {
+            console.error('[PARENT_JOIN_PUSH] Background push exception:', err);
+        });
 
-        hideLoading();
-
-        // 푸시 실패 시 사용자에게 안내 (가입은 성공)
-        if (!pushResult.success) {
-            console.warn('[PARENT_JOIN_PUSH] Push notification failed, but signup succeeded');
-            showToast('가입 신청이 완료되었습니다!\n(관리자 알림 전송에 실패했습니다. 학원에 직접 연락해주세요.)', 'warning');
-        } else {
-            showToast('가입 신청이 완료되었습니다!\n승인 대기 페이지로 이동합니다.', 'success');
-        }
-
+        // 5. 리다이렉트
         setTimeout(() => {
             window.location.href = 'parent-status.html';
         }, 2000);
 
     } catch (error) {
+        isSubmitting = false;
+        submitBtn.disabled = false;
         hideLoading();
         console.error('가입 신청 에러:', error);
         showToast('가입 신청에 실패했습니다: ' + error.message, 'error');
