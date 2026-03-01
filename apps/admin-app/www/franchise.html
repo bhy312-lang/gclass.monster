@@ -5567,15 +5567,36 @@
 
             // ========== 등원 목록 실시간 업데이트 ==========
             // 등원 목록 로드 함수
-            function loadCheckInList() {
+            async function loadCheckInList() {
+                const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured() && typeof window.supabase !== 'undefined';
+
+                if (sbOk) {
+                    try {
+                        const { data, error } = await window.supabase
+                            .from('attendance')
+                            .select('*')
+                            .eq('status', 'waiting')
+                            .order('check_in_time', { ascending: true });
+
+                        if (error) throw error;
+
+                        const waitingList = data || [];
+                        console.log('[등원 목록] Supabase waiting 데이터:', waitingList);
+                        renderCheckInList(waitingList);
+                        return;
+                    } catch (error) {
+                        console.error('[등원 목록] Supabase 로드 실패, localStorage fallback:', error);
+                    }
+                }
+
                 try {
                     const stored = localStorage.getItem('demo_attendance');
                     const demoAttendance = stored ? JSON.parse(stored) : [];
-                    console.log('[등원 목록] 전체 데이터:', demoAttendance);
+                    console.log('[등원 목록] localStorage 전체 데이터:', demoAttendance);
 
                     // waiting 상태인 학생만 표시 (좌석에 배정된 seated는 제외)
                     const waitingList = demoAttendance.filter(a => a.status === 'waiting');
-                    console.log('[등원 목록] 필터링 후 (waiting만):', waitingList);
+                    console.log('[등원 목록] localStorage 필터링(waiting):', waitingList);
                     renderCheckInList(waitingList);
 
                     // localStorage에서 좌석 데이터 다시 읽어오기 (동기화)
@@ -5597,7 +5618,7 @@
                         }
                     }
                 } catch (error) {
-                    console.error('[등원 목록] 로드 실패:', error);
+                    console.error('[등원 목록] localStorage 로드 실패:', error);
                 }
             }
 
