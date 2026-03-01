@@ -3482,7 +3482,46 @@
         ];
 
         // 로컬 스토리지에서 학생 목록 불러오기
-        function loadStudents() {
+        async function loadStudents() {
+            // Supabase 연동: students 테이블에서 조회
+            if (window.supabase) {
+                try {
+                    const { data: { session } } = await window.supabase.auth.getSession();
+                    if (session?.user?.id) {
+                        const { data, error } = await window.supabase
+                            .from('students')
+                            .select('*')
+                            .eq('academy_id', session.user.id)
+                            .eq('approval_status', 'approved')
+                            .order('name', { ascending: true });
+
+                        if (!error && data) {
+                            // DB 데이터를 기존 포맷으로 변환
+                            students = data.map(s => ({
+                                id: s.id,
+                                name: s.name,
+                                grade: s.grade ? convertGradeToText(s.grade) : '',
+                                school: s.school_name || '',
+                                parentPhone: s.full_phone || '',
+                                parentPhoneLast4: s.parent_phone_last4 || '',
+                                // 기존 localStorage 데이터 호환을 위한 필드들
+                                memos: s.memos || [],
+                                makeupTimes: s.makeup_times || [],
+                                grades: s.grades || [],
+                                feedbacks: s.feedbacks || []
+                            }));
+                            // 캐시로 저장
+                            localStorage.setItem('students', JSON.stringify(students));
+                            console.log('[loadStudents] DB에서 ' + students.length + '명 로드됨');
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.error('[loadStudents] DB 조회 실패:', e);
+                }
+            }
+
+            // Fallback: localStorage 사용
             try {
                 const storedStudents = localStorage.getItem('students');
                 if (storedStudents) {
@@ -3491,6 +3530,29 @@
             } catch (e) {
                 console.error('Error parsing saved students:', e);
             }
+        }
+
+        // 학년 숫자를 텍스트로 변환 (1 -> '초1', 7 -> '중1' 등)
+        function convertGradeToText(gradeNum) {
+            if (!gradeNum) return '';
+            const gradeMap = {
+                1: '초1', 2: '초2', 3: '초3', 4: '초4', 5: '초5', 6: '초6',
+                7: '중1', 8: '중2', 9: '중3',
+                10: '고1', 11: '고2', 12: '고3'
+            };
+            return gradeMap[gradeNum] || gradeNum;
+        }
+
+        // 학년 텍스트를 숫자로 변환 ('초1' -> 1 등)
+        function convertGradeToNum(gradeText) {
+            if (!gradeText) return null;
+            const gradeMap = {
+                '초1': 1, '초2': 2, '초3': 3, '초4': 4, '초5': 5, '초6': 6,
+                '중1': 7, '중2': 8, '중3': 9,
+                '고1': 10, '고2': 11, '고3': 12,
+                '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6
+            };
+            return gradeMap[gradeText.trim()] || null;
         }
 
         // 로컬 스토리지에 학생 목록 저장하기
@@ -5369,7 +5431,7 @@
         }
 
         // DOMContentLoaded 초기화
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const modal = document.getElementById('edit-seat-modal');
             if (modal) {
                 const modalContent = modal.querySelector('div');
@@ -5420,7 +5482,7 @@
                 }
             });
 
-            loadStudents();
+            await loadStudents();
             renderAttendance();
             loadSeats();
             renderSeats();
@@ -5914,19 +5976,37 @@
         }
 
         // 학생 기본정보 저장
-        function saveStudentInfo() {
-            const students = JSON.parse(localStorage.getItem('students') || '[]');
-            const idx = students.findIndex(s => s.id === currentStudentId);
+        async function saveStudentInfo() {
+            if (!window.supabase) {
+                showAlertModal('에러', 'Supabase 연결이 필요합니다.', '⚠️');
+                return;
+            }
 
-            if (idx === -1) return;
+            const name = document.getElementById('studentInfoName').value.trim();
+            const grade = document.getElementById('studentInfoGrade').value.trim();
+            const school = document.getElementById('studentInfoSchool').value.trim();
+            const parentPhone = document.getElementById('studentInfoPhone').value.trim();
 
-            students[idx].name = document.getElementById('studentInfoName').value.trim();
-            students[idx].grade = document.getElementById('studentInfoGrade').value.trim();
-            students[idx].school = document.getElementById('studentInfoSchool').value.trim();
-            students[idx].parentPhone = document.getElementById('studentInfoPhone').value.trim();
+            // RPC 호출: admin_upsert_student
+            const { data, error } = await window.supabase.rpc('admin_upsert_student', {
+                p_student_id: currentStudentId,
+                p_name: name,
+                p_school_name: school,
+                p_grade: convertGradeToNum(grade),
+                p_full_phone: parentPhone
+            });
 
-            localStorage.setItem('students', JSON.stringify(students));
-            document.getElementById('studentModalName').textContent = students[idx].name;
+            if (error) {
+                console.error('[saveStudentInfo] RPC 에러:', error);
+                showAlertModal('저장 실패', error.message || '학생 정보 저장에 실패했습니다.', '❌');
+                return;
+            }
+
+            // DB에서 다시 로드
+            await loadStudents();
+
+            // UI 업데이트
+            document.getElementById('studentModalName').textContent = name;
             loadStudentManagementList();
             showAlertModal('저장 완료', '학생 정보가 저장되었습니다.', '✅');
         }
@@ -6410,11 +6490,32 @@
             );
             if (!confirmed) return;
 
+            // RPC 호출: admin_delete_student (UUID 형식인 경우만)
+            if (window.supabase && currentStudentId && currentStudentId.includes('-')) {
+                const { data, error } = await window.supabase.rpc('admin_delete_student', {
+                    p_student_id: currentStudentId
+                });
+
+                if (error) {
+                    console.error('[deleteStudent] RPC 에러:', error);
+                    showAlertModal('삭제 실패', error.message || '학생 삭제에 실패했습니다.', '❌');
+                    return;
+                }
+            }
+
+            // localStorage 캐치도 정리
             const students = JSON.parse(localStorage.getItem('students') || '[]');
             const filtered = students.filter(s => s.id !== currentStudentId);
             localStorage.setItem('students', JSON.stringify(filtered));
 
+            // 메모리 변수도 업데이트
+            const idx = students.findIndex(s => s.id === currentStudentId);
+            if (idx !== -1) {
+                students.splice(idx, 1);
+            }
+
             closeStudentDetailModal();
+            await loadStudents();
             loadStudentManagementList();
             showAlertModal('삭제 완료', '학생이 삭제되었습니다.', '✅');
         }

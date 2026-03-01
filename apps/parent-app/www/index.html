@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>EDUINSYS 학부모</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
     <style>
-        * { font-family: 'Noto Sans KR', sans-serif; }
+        * {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
 
         /* 로그인 화면 */
         .login-screen {
@@ -81,8 +86,15 @@
         }
 
         @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
         }
 
         .app-title {
@@ -215,13 +227,16 @@
             transition: transform 0.2s, box-shadow 0.2s;
             cursor: pointer;
         }
+
         .menu-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
         }
+
         .menu-card:active {
             transform: scale(0.98);
         }
+
         .bottom-nav {
             position: fixed;
             bottom: 34px;
@@ -231,6 +246,7 @@
             border-top: 1px solid #f3f4f6;
             padding: 8px 0 12px 0;
         }
+
         .nav-item {
             display: flex;
             flex-direction: column;
@@ -240,12 +256,16 @@
             text-decoration: none;
             transition: color 0.2s;
         }
-        .nav-item.active, .nav-item:hover {
+
+        .nav-item.active,
+        .nav-item:hover {
             color: #ec4899;
         }
+
         .nav-item span:first-child {
             font-size: 24px;
         }
+
         .nav-item span:last-child {
             font-size: 11px;
             margin-top: 2px;
@@ -260,7 +280,7 @@
             background: white;
             border-radius: 16px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
         }
 
         .user-avatar {
@@ -305,15 +325,18 @@
             transition: transform 0.3s ease-out, opacity 0.3s ease-out;
             display: none;
         }
+
         .push-toast.show {
             transform: translateY(0);
             display: block;
         }
+
         .push-toast-title {
             font-weight: bold;
             font-size: 16px;
             margin-bottom: 4px;
         }
+
         .push-toast-body {
             font-size: 14px;
             opacity: 0.95;
@@ -345,8 +368,15 @@
         }
 
         @keyframes floatSplash {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-15px);
+            }
         }
 
         .splash-description {
@@ -395,14 +425,23 @@
             animation: dotPulse 1.4s ease-in-out infinite;
         }
 
-        .splash-dot:nth-child(2) { animation-delay: 0.2s; }
-        .splash-dot:nth-child(3) { animation-delay: 0.4s; }
+        .splash-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .splash-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
 
         @keyframes dotPulse {
-            0%, 80%, 100% {
+
+            0%,
+            80%,
+            100% {
                 transform: scale(0.8);
                 opacity: 0.5;
             }
+
             40% {
                 transform: scale(1.2);
                 opacity: 1;
@@ -437,8 +476,15 @@
         }
 
         @keyframes pulseLogo {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
         }
 
         .login-loading-text {
@@ -466,12 +512,15 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
     </style>
     <!-- 인증 유틸리티 -->
-    <script src="js/auth-utils.js"></script>
+    <script src="public/js/auth-utils.js"></script>
 </head>
+
 <body>
     <!-- 스플래시/로딩 화면 -->
     <div id="splash-screen" class="splash-screen">
@@ -514,17 +563,22 @@
                 <div class="login-buttons">
                     <button class="login-btn btn-kakao" onclick="loginWithKakao()">
                         <svg class="kakao-icon" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 3C6.48 3 2 6.58 2 11c0 2.83 1.88 5.31 4.68 6.73l-.95 3.53c-.08.29.25.54.51.38l4.2-2.77c.51.07 1.03.11 1.56.11 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
+                            <path
+                                d="M12 3C6.48 3 2 6.58 2 11c0 2.83 1.88 5.31 4.68 6.73l-.95 3.53c-.08.29.25.54.51.38l4.2-2.77c.51.07 1.03.11 1.56.11 5.52 0 10-3.58 10-8s-4.48-8-10-8z" />
                         </svg>
                         카카오로 시작하기
                     </button>
 
                     <button class="login-btn btn-google" onclick="loginWithGoogle()">
                         <svg class="google-icon" viewBox="0 0 24 24">
-                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            <path fill="#4285F4"
+                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                            <path fill="#34A853"
+                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                            <path fill="#FBBC05"
+                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                            <path fill="#EA4335"
+                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                         </svg>
                         Google로 시작하기
                     </button>
@@ -567,7 +621,8 @@
             <div class="grid grid-cols-2 gap-4">
                 <!-- 수강신청 -->
                 <a href="course-registration.html" class="menu-card">
-                    <div class="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-xl flex items-center justify-center mb-3 shadow-md shadow-emerald-200">
+                    <div
+                        class="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-xl flex items-center justify-center mb-3 shadow-md shadow-emerald-200">
                         <span class="material-symbols-outlined text-white text-2xl">edit_calendar</span>
                     </div>
                     <h3 class="font-bold text-gray-800 mb-1">수강신청</h3>
@@ -576,7 +631,8 @@
 
                 <!-- 출결 확인 -->
                 <a href="attendance.html" class="menu-card">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-500 rounded-xl flex items-center justify-center mb-3 shadow-md shadow-blue-200">
+                    <div
+                        class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-500 rounded-xl flex items-center justify-center mb-3 shadow-md shadow-blue-200">
                         <span class="material-symbols-outlined text-white text-2xl">fact_check</span>
                     </div>
                     <h3 class="font-bold text-gray-800 mb-1">출결 확인</h3>
@@ -585,7 +641,8 @@
 
                 <!-- 피드백 -->
                 <a href="feedback.html" class="menu-card">
-                    <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-500 rounded-xl flex items-center justify-center mb-3 shadow-md shadow-purple-200">
+                    <div
+                        class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-500 rounded-xl flex items-center justify-center mb-3 shadow-md shadow-purple-200">
                         <span class="material-symbols-outlined text-white text-2xl">chat</span>
                     </div>
                     <h3 class="font-bold text-gray-800 mb-1">피드백</h3>
@@ -594,7 +651,8 @@
 
                 <!-- 자녀 등록 -->
                 <a href="register-child.html" class="menu-card">
-                    <div class="w-12 h-12 bg-gradient-to-br from-pink-400 to-pink-500 rounded-xl flex items-center justify-center mb-3 shadow-md shadow-pink-200">
+                    <div
+                        class="w-12 h-12 bg-gradient-to-br from-pink-400 to-pink-500 rounded-xl flex items-center justify-center mb-3 shadow-md shadow-pink-200">
                         <span class="material-symbols-outlined text-white text-2xl">person_add</span>
                     </div>
                     <h3 class="font-bold text-gray-800 mb-1">자녀 등록</h3>
@@ -632,9 +690,9 @@
 
     <!-- Capacitor Browser Plugin Wrapper -->
     <script>
-        (function() {
+        (function () {
             window.CapacitorBrowser = {
-                open: async function(options) {
+                open: async function (options) {
                     if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
                         return await window.Capacitor.Plugins.Browser.open(options);
                     } else {
@@ -643,7 +701,7 @@
                         return;
                     }
                 },
-                close: async function() {
+                close: async function () {
                     if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
                         return await window.Capacitor.Plugins.Browser.close();
                     }
@@ -676,7 +734,7 @@
 
                 // 기존 세션 정리
                 if (window.supabase) {
-                    try { await window.supabase.auth.signOut(); } catch (_) {}
+                    try { await window.supabase.auth.signOut(); } catch (_) { }
                 }
 
                 // Firebase 로그아웃 추가 (계정 선택 화면 보장)
@@ -693,14 +751,23 @@
                     throw new Error('Google idToken not found');
                 }
 
+                console.log('[Login] Supabase signInWithIdToken starting...');
                 const { data, error } = await window.supabase.auth.signInWithIdToken({
                     provider: 'google',
                     token: idToken
                 });
 
-                if (error) throw error;
-                if (!data?.session?.user) throw new Error('No session user');
+                if (error) {
+                    console.error('[Login] Supabase signInWithIdToken failed:', error);
+                    throw error;
+                }
 
+                if (!data?.session?.user) {
+                    console.error('[Login] No session/user in response');
+                    throw new Error('No session user');
+                }
+
+                console.log('[Login] Supabase session established successfully');
                 const user = data.session.user;
                 localStorage.setItem('isLoggedIn', 'true');
                 localStorage.setItem('userId', user.id);
@@ -708,13 +775,16 @@
                 localStorage.setItem('userEmail', user.email || '');
                 localStorage.setItem('userPhoto', user.user_metadata?.avatar_url || user.user_metadata?.picture || '');
 
-                // 전화번호가 있으면 저장
-                if (user.phone) {
-                    localStorage.setItem('userPhone', user.phone);
+                // ✅ 로그인 성공 직후 FCM 토큰 등록 재시도
+                if (window.fcmService) {
+                    console.log('[Login] Triggering FCM token registration...');
+                    window.fcmService.registerTokenAfterLogin();
                 }
 
+                console.log('[Login] Proceeding to approval status check...');
                 await handleParentApprovalRedirect(user.id);
             } catch (e) {
+                console.error('[Login] Unexpected login error:', e);
                 hideLoginLoading();
                 alert('Google 로그인 실패: ' + (e?.message || e));
             }
@@ -724,6 +794,29 @@
     </script>
 
     <script>
+        function isInvalidRefreshTokenError(error) {
+            const message = (error?.message || error?.error_description || '').toLowerCase();
+            return message.includes('invalid refresh token') || message.includes('refresh token not found');
+        }
+
+        async function recoverFromInvalidRefreshToken(error) {
+            if (!isInvalidRefreshTokenError(error)) {
+                return false;
+            }
+
+            console.warn('[Auth] Invalid refresh token detected. Clearing stale auth state...');
+            try {
+                await window.supabase?.auth?.signOut({ scope: 'local' });
+            } catch (_) { }
+
+            if (typeof clearAuthStorage === 'function') {
+                clearAuthStorage();
+            } else {
+                localStorage.clear();
+            }
+            return true;
+        }
+
         // 로그인 상태 확인
         async function checkLoginStatus() {
             // 로그아웃 파라미터가 있으면 자동 리다이렉트 방지
@@ -735,7 +828,7 @@
                 // 확실하게 로그아웃 (local scope로 충분)
                 try {
                     await window.supabase?.auth?.signOut({ scope: 'local' });
-                } catch (e) {}
+                } catch (e) { }
 
                 // 인증 스토리지 정리
                 clearAuthStorage();
@@ -767,6 +860,11 @@
                     }
                 } catch (e) {
                     console.error('세션 확인 오류:', e);
+                    const recovered = await recoverFromInvalidRefreshToken(e);
+                    if (recovered) {
+                        showLoginScreen();
+                        return;
+                    }
                 }
             }
 
@@ -784,9 +882,18 @@
                     }
                 } catch (e) {
                     console.error('세션 재확인 오류:', e);
+                    const recovered = await recoverFromInvalidRefreshToken(e);
+                    if (recovered) {
+                        showLoginScreen();
+                        return;
+                    }
                 }
                 // 세션이 만료되면 로그인 화면으로
-                localStorage.clear();
+                if (typeof clearAuthStorage === 'function') {
+                    clearAuthStorage();
+                } else {
+                    localStorage.clear();
+                }
                 showLoginScreen();
                 return;
             }
@@ -1050,7 +1157,7 @@
         }
 
         // 페이지 로드 시 초기화
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // 스플래시 화면을 2초 후에 숨김
             setTimeout(() => {
                 hideSplashScreen();
@@ -1246,4 +1353,5 @@
         }
     </script>
 </body>
+
 </html>

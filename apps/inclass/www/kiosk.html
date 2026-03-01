@@ -573,6 +573,22 @@
             if (landscapeNameText) {
                 landscapeNameText.textContent = student.name;
             }
+
+            // parent_id 상태 배지 표시
+            const existingBadge = document.getElementById('parent-app-badge');
+            if (existingBadge) {
+                existingBadge.remove();
+            }
+
+            // parent_id가 없는 경우 배지 추가 (단일 학생 선택 시)
+            if (student && !student.parent_id && student.name) {
+                const badge = document.createElement('div');
+                badge.id = 'parent-app-badge';
+                badge.className = 'mt-2 px-3 py-1 bg-gray-200 text-gray-600 text-sm rounded-full inline-flex items-center';
+                badge.innerHTML = '<span class="material-symbols-outlined text-sm mr-1">link_off</span>부모 앱 미연동';
+                nameEl.parentNode.appendChild(badge);
+            }
+
             infoEl.classList.remove('hidden');
             landscapeNameEl.classList.remove('hidden');
         }
@@ -650,12 +666,21 @@
             const modal = document.getElementById('student-select-modal');
             const list = document.getElementById('student-select-list');
 
-            list.innerHTML = foundStudents.map(student => `
+            list.innerHTML = foundStudents.map(student => {
+                // parent_id 유무에 따른 배지 표시
+                const hasParent = !!student.parent_id;
+                const badgeHtml = hasParent
+                    ? ''
+                    : '<span class="ml-2 px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded-full">부모 앱 미연동</span>';
+
+                return `
                 <button onclick="selectStudent('${student.id}')"
-                    class="w-full px-6 py-4 bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-gray-700 font-bold rounded-xl transition-all">
-                    ${escapeHtml(student.name)}
+                    class="w-full px-6 py-4 bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-gray-700 font-bold rounded-xl transition-all flex items-center justify-between">
+                    <span>${escapeHtml(student.name)}</span>
+                    ${badgeHtml}
                 </button>
-            `).join('');
+                `;
+            }).join('');
 
             modal.style.display = 'flex';
             modal.classList.remove('hidden');
@@ -721,11 +746,26 @@
                     const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
                     const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
+                    // FCM 알림용 학생 데이터 저장 (kioskClearInput 전에 복사)
+                    const studentForNotification = selectedStudent;
+
                     // 보강시간이 있으면 메시지에 표시
                     const makeupMsg = makeupMinutes > 0 ? `\n(보강 +${makeupMinutes}분 적용)` : '';
                     showAlert('success', '등원 완료',
                         `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}${makeupMsg}`);
                     kioskClearInput();
+
+                    // 등원 성공 후 FCM 알림 전송 (비차단)
+                    sendFcmAttendanceNotification(studentForNotification, 'check_in', now.toISOString())
+                        .then(fcmResult => {
+                            if (!fcmResult.success && fcmResult.skipReason !== 'session_missing') {
+                                // FCM 실패 시 추가 안내 (비차단 토스트 또는 모달)
+                                setTimeout(() => {
+                                    showAlert('info', '알림', `출결은 완료되었으나 부모 앱 알림 전송에 실패했습니다.\n\n${fcmResult.message || ''}`);
+                                }, 500);
+                            }
+                        })
+                        .catch(err => console.error('[FCM] unhandled send error:', err));
                 } else {
                     if (fetchResult.alreadyCheckedIn) {
                         showAlert('info', '알림', fetchResult.error);
@@ -825,9 +865,24 @@
                     const checkOutTime = new Date();
                     const timeStr = checkOutTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
+                    // FCM 알림용 학생 데이터 저장 (kioskClearInput 전에 복사)
+                    const studentForNotification = selectedStudent;
+
                     showAlert('success', '하원 완료',
                         `${selectedStudent.name}님, 하원 완료되었습니다!\n안녕히 가세요!\n\n하원시간: ${timeStr}`);
                     kioskClearInput();
+
+                    // 하원 성공 후 FCM 알림 전송 (비차단)
+                    sendFcmAttendanceNotification(studentForNotification, 'check_out', checkOutTime.toISOString())
+                        .then(fcmResult => {
+                            if (!fcmResult.success && fcmResult.skipReason !== 'session_missing') {
+                                // FCM 실패 시 추가 안내 (비차단 토스트 또는 모달)
+                                setTimeout(() => {
+                                    showAlert('info', '알림', `출결은 완료되었으나 부모 앱 알림 전송에 실패했습니다.\n\n${fcmResult.message || ''}`);
+                                }, 500);
+                            }
+                        })
+                        .catch(err => console.error('[FCM] unhandled send error:', err));
                 } else if (fetchResult.alreadyCheckedOut) {
                     showAlert('info', '알림', fetchResult.error);
                     kioskClearInput();
@@ -937,10 +992,10 @@
                     return;
                 }
 
-                console.log(`[Kiosk] Web Push 알림 전송 시도: student_id=${student.id}, name=${student.name}, parent_phone=${student.parent_phone}, type=${type}`);
+                console.log(`[Kiosk] Web Push 알림 전송 시도 (WebPush 전용, FCM과 별개): student_id=${student.id}, name=${student.name}, parent_phone=${student.parent_phone}, type=${type}`);
 
                 if (!student.parent_phone) {
-                    console.log('[Kiosk] 부모 전화번호가 없음 - 알림 스킵');
+                    console.log('[Kiosk] 부모 전화번호가 없음 - Web Push 알림 스킵 (FCM은 별도로 시도됨)');
                     return;
                 }
 
@@ -1001,6 +1056,143 @@
 
             } catch (error) {
                 console.error('[Kiosk] 직접 fetch 오류:', error);
+            }
+        }
+
+        // FCM 알림 전송 함수 (모바일 앱용)
+        /**
+         * @param {Object} student - selectedStudent 객체 (parent_id 포함 필수)
+         * @param {string} actionType - 'check_in' 또는 'check_out'
+         * @param {string} attendanceTimeIso - 출결 시간 ISO 문자열
+         * @returns {Promise<Object>} - { success: boolean, message?: string, skipReason?: string }
+         */
+        async function sendFcmAttendanceNotification(student, actionType, attendanceTimeIso) {
+            const traceId = `fcm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+            // FCM 에러 코드별 사용자 메시지 매핑
+            const ERROR_MESSAGES = {
+                'NO_ACTIVE_TOKEN': '부모 앱이 미설치이거나 알림이 비활성화되어 있습니다',
+                'INVALID_USER_JWT': '인증 오류가 발생했습니다. 다시 시도해주세요',
+                'MISSING_USER_JWT': '인증 정보가 없습니다. 다시 로그인해주세요',
+                'FCM_NOT_CONFIGURED': 'FCM 설정 오류가 발생했습니다',
+                'ALL_TOKENS_FAILED': '알림 전송에 실패했습니다. 기기 상태를 확인해주세요',
+                'UNREGISTERED': '앱이 등록되지 않았습니다. 부모가 앱을 다시 설치해야 합니다',
+                'DEFAULT': '알림 전송에 실패했습니다. 잠시 후 다시 시도해주세요'
+            };
+
+            // student null 체크 (안전장치)
+            if (!student) {
+                console.warn(`[FCM][${traceId}] 스킵 - student 파라미터가 null`);
+                return { success: false, skipReason: 'student_null', message: '학생 정보가 없습니다' };
+            }
+
+            try {
+                // 1. 세션 확인
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session?.access_token) {
+                    console.warn(`[FCM][${traceId}] 스킵 - 세션 없음 (access_token null)`);
+                    return { success: false, skipReason: 'session_missing' };
+                }
+
+                // 2. parent_id 확인
+                if (!student.parent_id) {
+                    console.warn(`[FCM][${traceId}] 스킵 - parent_id 없음 (student_id: ${student.id}, name: ${student.name})`);
+                    return { success: false, skipReason: 'no_parent_id', message: '부모 앱 미연동 상태입니다' };
+                }
+
+                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+
+                // 3. FCM Edge Function 호출
+                const isCheckIn = actionType === 'check_in';
+                const timeStr = new Date(attendanceTimeIso).toLocaleTimeString('ko-KR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                // API 호출 직전 로그
+                console.log(`[FCM][${traceId}] send start - student_id: ${student.id}, parent_id: ${student.parent_id}, action: ${actionType}`);
+
+                // JWT 검증 로그
+                console.log(`[FCM][${traceId}] Access token length: ${session.access_token?.length || 0}`);
+                try {
+                    const jwtPayload = JSON.parse(atob(session.access_token.split('.')[1]));
+                    console.log(`[FCM][${traceId}] JWT iss:`, jwtPayload.iss);
+                    console.log(`[FCM][${traceId}] JWT aud:`, jwtPayload.aud);
+                    console.log(`[FCM][${traceId}] JWT exp:`, new Date(jwtPayload.exp * 1000).toISOString());
+                } catch (e) {
+                    console.warn(`[FCM][${traceId}] JWT parsing failed:`, e.message);
+                }
+
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/fcm-send-notification`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`  // Only Bearer token, no apikey override
+                    },
+                    body: JSON.stringify({
+                        recipient_id: student.parent_id,
+                        type: isCheckIn ? 'attendance_check_in' : 'attendance_check_out',
+                        title: isCheckIn ? '등원 알림' : '하원 알림',
+                        body: isCheckIn
+                            ? `${student.name}님이 등원했습니다`
+                            : `${student.name}님이 ${timeStr}에 하원했습니다`,  // 하원 시간 포함
+                        data: {
+                            student_id: student.id,
+                            student_name: student.name,
+                            attendance_time: attendanceTimeIso,
+                            time_display: timeStr,  // 표시용 시간
+                            type: actionType
+                        },
+                        priority: 'high',
+                        target_type: 'parent'
+                    })
+                });
+
+                // 4. 응답 파싱 (안전화)
+                const raw = await response.text();
+                let parsed;
+                try {
+                    parsed = JSON.parse(raw);
+                } catch (e) {
+                    parsed = { raw };
+                }
+
+                // 응답 처리 및 결과 반환
+                if (!response.ok) {
+                    const errorCode = parsed.error_code || (parsed.data?.error_code) || 'UNKNOWN';
+                    const userMessage = ERROR_MESSAGES[errorCode] || ERROR_MESSAGES['DEFAULT'];
+                    console.error(`[FCM][${traceId}] send failed - HTTP ${response.status}, error_code: ${errorCode}, error: ${parsed.error || parsed.error_message || parsed.raw || 'Unknown'}`);
+                    return {
+                        success: false,
+                        errorCode,
+                        message: userMessage,
+                        raw: parsed
+                    };
+                } else {
+                    if (parsed.success) {
+                        console.log(`[FCM][${traceId}] send success - message_id: ${parsed.data?.message_id || 'N/A'}, status: ${parsed.data?.status || parsed.status || 'sent'}`);
+                        return { success: true };
+                    } else {
+                        const errorCode = parsed.error_code || (parsed.data?.error_code) || 'UNKNOWN';
+                        const userMessage = ERROR_MESSAGES[errorCode] || ERROR_MESSAGES['DEFAULT'];
+                        console.error(`[FCM][${traceId}] send failed - error_code: ${errorCode}, error: ${parsed.error || parsed.error_message || 'Unknown'}`);
+                        return {
+                            success: false,
+                            errorCode,
+                            message: userMessage,
+                            raw: parsed
+                        };
+                    }
+                }
+
+            } catch (error) {
+                console.error(`[FCM][${traceId}] exception - ${error.message}`);
+                return {
+                    success: false,
+                    message: ERROR_MESSAGES['DEFAULT'],
+                    error: error.message
+                };
             }
         }
 
@@ -1195,11 +1387,33 @@
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/students?parent_phone_last4=eq.${phoneLast4}&select=id,name,parent_id,parent_phone_last4,parent_phone`, {
+                // 현재 로그인한 관리자의 ID로 academy_id 필터링
+                const { data: { session } } = await supabase.auth.getSession();
+                const currentAdminId = session?.user?.id;
+
+                // session null 가드
+                if (!currentAdminId) {
+                    alert('로그인이 필요합니다. 다시 로그인해주세요.');
+                    window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                    return { data: [], error: 'No session' };
+                }
+
+                const url = new URL(`${SUPABASE_URL}/rest/v1/students`);
+                url.searchParams.set('parent_phone_last4', `eq.${phoneLast4}`);
+                url.searchParams.set('approval_status', 'eq.approved');
+                url.searchParams.set('academy_id', `eq.${currentAdminId}`);
+                url.searchParams.set('select', 'id,name,grade,school_name,parent_id,parent_phone_last4,full_phone');
+
+                // 디버깅: 요청 URL 로깅
+                console.log('[Kiosk Debug] Query URL:', url.toString());
+                console.log('[Kiosk Debug] currentAdminId:', currentAdminId);
+                console.log('[Kiosk Debug] phoneLast4:', phoneLast4);
+
+                const response = await fetch(url.toString(), {
                     method: 'GET',
                     headers: {
                         'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Authorization': `Bearer ${session.access_token}`,  // 세션 토큰 사용
                         'Content-Type': 'application/json'
                     },
                     signal: controller.signal
@@ -1424,6 +1638,7 @@
                 console.log('[performCheckOutDirectFetch] 찾은 등원 기록:', attendance);
 
                 // 3. 하원 처리 (상태 업데이트)
+                const now = new Date();  // FCM 알림용
                 const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/attendance?id=eq.${attendance.id}`, {
                     method: 'PATCH',
                     headers: {
@@ -1436,7 +1651,7 @@
                     body: JSON.stringify({
                         type: 'check_out',
                         status: 'completed',
-                        check_out: new Date().toISOString()
+                        check_out: now.toISOString()
                     })
                 });
 

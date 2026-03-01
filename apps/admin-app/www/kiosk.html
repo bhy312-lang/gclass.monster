@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <style>
-        html, body {
+        html,
+        body {
             -webkit-text-size-adjust: 100% !important;
             text-size-adjust: 100% !important;
         }
@@ -16,12 +19,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="./styles/admin-tailwind.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
     <style>
         * {
             font-family: 'Noto Sans KR', sans-serif;
         }
+
         body {
             background: linear-gradient(135deg, #fce7f3 0%, #e9d5ff 25%, #dbeafe 50%, #fef3c7 75%, #fef2f2 100%);
             min-height: 100vh;
@@ -64,7 +69,7 @@
         }
 
         /* 세로모드 키패드 버튼 높이 (화면에 맞춤) */
-        .kiosk-content > .kiosk-keypad .kiosk-key {
+        .kiosk-content>.kiosk-keypad .kiosk-key {
             padding-top: 3rem !important;
             padding-bottom: 3rem !important;
         }
@@ -124,11 +129,11 @@
         }
 
         /* 세로모드: 키패드 버튼 화면 가득 차게 */
-        .kiosk-content > .kiosk-keypad {
+        .kiosk-content>.kiosk-keypad {
             width: 100% !important;
         }
 
-        .kiosk-content > .kiosk-keypad .kiosk-key {
+        .kiosk-content>.kiosk-keypad .kiosk-key {
             width: 100% !important;
             font-size: 4rem !important;
         }
@@ -144,6 +149,7 @@
 
         /* 가로모드 레이아웃 */
         @media (min-width: 600px) and (orientation: landscape) {
+
             /* 가로모드: 뒤로가기 버튼 위로 이동 */
             .kiosk-back-btn {
                 top: 0.5rem !important;
@@ -214,7 +220,7 @@
             }
 
             /* 세로모드용 키패드 숨김 */
-            .kiosk-content > .kiosk-keypad {
+            .kiosk-content>.kiosk-keypad {
                 display: none !important;
             }
 
@@ -275,30 +281,255 @@
                 font-size: 3rem !important;
             }
         }
+
+        /* Device-fit layout override: fills any screen without clipping */
+        :root {
+            --kiosk-gap: clamp(0.5rem, 1.4vmin, 1.1rem);
+            --kiosk-pad: clamp(0.5rem, 2vmin, 1.25rem);
+            --kiosk-round: clamp(0.9rem, 2.2vmin, 1.6rem);
+            --kiosk-digit-w: clamp(3rem, 9.6vmin, 6.4rem);
+            --kiosk-digit-h: clamp(3.8rem, 11.2vmin, 7rem);
+            --kiosk-digit-size: clamp(1.35rem, 4.2vmin, 2.7rem);
+            --kiosk-key-size: clamp(1rem, 3.3vmin, 2.1rem);
+            --kiosk-key-h: clamp(2.2rem, 6.8vmin, 5rem);
+            --kiosk-action-size: clamp(1rem, 2.8vmin, 1.8rem);
+            --kiosk-action-py: clamp(0.7rem, 2.2vmin, 1.2rem);
+            --kiosk-name-size: clamp(1.05rem, 2.5vmin, 1.8rem);
+            --kiosk-name-pad: clamp(0.45rem, 1.2vmin, 0.8rem);
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100dvh !important;
+            min-height: 100vh !important;
+            padding: 0 !important;
+        }
+
+        .kiosk-wrapper {
+            width: 100% !important;
+            max-width: none !important;
+            height: 100dvh !important;
+            min-height: 100vh !important;
+            padding:
+                max(var(--kiosk-pad), env(safe-area-inset-top)) max(var(--kiosk-pad), env(safe-area-inset-right)) max(var(--kiosk-pad), env(safe-area-inset-bottom)) max(var(--kiosk-pad), env(safe-area-inset-left)) !important;
+            border-radius: 0 !important;
+            box-sizing: border-box !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: stretch !important;
+            gap: var(--kiosk-gap) !important;
+            overflow: hidden !important;
+        }
+
+        .kiosk-content {
+            height: 100% !important;
+            min-height: 0 !important;
+            justify-content: flex-start !important;
+            gap: var(--kiosk-gap) !important;
+        }
+
+        .kiosk-title-section {
+            margin-bottom: var(--kiosk-gap) !important;
+        }
+
+        .kiosk-digit-display {
+            flex: 0 0 auto !important;
+            margin-bottom: 0 !important;
+        }
+
+        .kiosk-digit-display .bg-gradient-to-br {
+            padding: var(--kiosk-gap) !important;
+            border-radius: var(--kiosk-round) !important;
+        }
+
+        .kiosk-digit-display .flex.justify-center {
+            gap: var(--kiosk-gap) !important;
+            margin-bottom: 0 !important;
+        }
+
+        .kiosk-digit {
+            width: var(--kiosk-digit-w) !important;
+            height: var(--kiosk-digit-h) !important;
+            min-height: var(--kiosk-digit-h) !important;
+            font-size: var(--kiosk-digit-size) !important;
+            border-radius: var(--kiosk-round) !important;
+        }
+
+        .kiosk-content>.kiosk-keypad,
+        .kiosk-keypad-wrapper .kiosk-keypad {
+            width: 100% !important;
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            margin-bottom: 0 !important;
+            gap: var(--kiosk-gap) !important;
+            align-content: stretch !important;
+            grid-template-rows: repeat(4, minmax(0, 1fr)) !important;
+            grid-auto-rows: minmax(var(--kiosk-key-h), 1fr) !important;
+        }
+
+        .kiosk-content>.kiosk-keypad>button,
+        .kiosk-keypad-wrapper .kiosk-keypad>button {
+            width: 100% !important;
+            min-height: var(--kiosk-key-h) !important;
+            font-size: var(--kiosk-key-size) !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            border-radius: var(--kiosk-round) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        .kiosk-button-section {
+            position: static !important;
+            margin-top: var(--kiosk-gap) !important;
+            padding: 0 !important;
+            gap: var(--kiosk-gap) !important;
+        }
+
+        #student-info,
+        #student-name-landscape {
+            margin-bottom: var(--kiosk-gap) !important;
+        }
+
+        #student-info>div,
+        #student-name-landscape>div {
+            padding: var(--kiosk-name-pad) !important;
+        }
+
+        #student-name,
+        #student-name-landscape-text {
+            font-size: var(--kiosk-name-size) !important;
+            line-height: 1.2 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+
+        .portrait-instruction,
+        .kiosk-landscape-instruction {
+            font-size: clamp(0.95rem, 2vmin, 1.15rem) !important;
+            margin-bottom: clamp(0.35rem, 1vmin, 0.6rem) !important;
+        }
+
+        .kiosk-action-btn {
+            padding: var(--kiosk-action-py) 0.8rem !important;
+            font-size: var(--kiosk-action-size) !important;
+            border-radius: var(--kiosk-round) !important;
+            min-height: clamp(3rem, 9vmin, 5.2rem) !important;
+        }
+
+        .kiosk-back-btn {
+            top: max(0.45rem, env(safe-area-inset-top)) !important;
+            left: max(0.45rem, env(safe-area-inset-left)) !important;
+            width: clamp(2.1rem, 5vmin, 3rem) !important;
+            height: clamp(2.1rem, 5vmin, 3rem) !important;
+            padding: 0 !important;
+            border-radius: clamp(0.6rem, 1.6vmin, 1rem) !important;
+        }
+
+        .kiosk-back-btn span {
+            font-size: clamp(1rem, 2.6vmin, 1.5rem) !important;
+        }
+
+        @media (orientation: portrait) {
+            .kiosk-wrapper {
+                display: flex !important;
+            }
+
+            .kiosk-keypad-wrapper {
+                display: none !important;
+            }
+
+            .kiosk-content>.kiosk-keypad {
+                display: grid !important;
+            }
+        }
+
+        @media (orientation: landscape) {
+            .kiosk-wrapper {
+                display: grid !important;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+                align-items: stretch !important;
+            }
+
+            .kiosk-keypad-wrapper {
+                display: flex !important;
+                min-height: 0 !important;
+            }
+
+            .kiosk-keypad-wrapper .kiosk-keypad {
+                height: 100% !important;
+            }
+
+            .kiosk-content {
+                display: flex !important;
+                min-height: 0 !important;
+                padding-bottom: 0 !important;
+            }
+
+            .kiosk-content>.kiosk-keypad {
+                display: none !important;
+            }
+        }
+
+        @media (max-height: 560px) {
+            :root {
+                --kiosk-key-h: clamp(2.2rem, 7.2vmin, 4rem);
+                --kiosk-action-py: clamp(0.45rem, 1.5vmin, 0.7rem);
+            }
+
+            .kiosk-title-section,
+            .kiosk-home-link {
+                display: none !important;
+            }
+        }
     </style>
 </head>
+
 <body class="flex items-center justify-center p-0">
     <!-- 뒤로가기 버튼 (세련된 디자인) -->
-    <button onclick="window.location.href='admin-main.html'" class="kiosk-back-btn fixed top-4 left-4 p-4 bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg hover:bg-white hover:shadow-xl transition-all duration-200 z-50 border border-gray-200/50">
+    <button onclick="window.location.href='admin-main.html'"
+        class="kiosk-back-btn fixed top-4 left-4 p-4 bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg hover:bg-white hover:shadow-xl transition-all duration-200 z-50 border border-gray-200/50">
         <span class="material-symbols-outlined text-gray-700 text-3xl">arrow_back_ios</span>
     </button>
 
-    <div class="kiosk-wrapper bg-gradient-to-br from-white to-pink-50/30 p-8 w-full shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-white/50">
+    <div
+        class="kiosk-wrapper bg-gradient-to-br from-white to-pink-50/30 p-8 w-full shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-white/50">
         <!-- 왼쪽: 키패드 (가로모드) -->
         <div class="kiosk-keypad-wrapper hidden">
             <div class="kiosk-keypad grid grid-cols-3 gap-5 mb-10">
-                <button onclick="kioskPressKey('1')" class="kiosk-key bg-gradient-to-br from-pink-100 to-pink-200 hover:from-pink-200 hover:to-pink-300 text-3xl font-bold text-pink-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-pink-200/50 hover:shadow-xl hover:shadow-pink-300/50 active:scale-95 active:shadow-md">1</button>
-                <button onclick="kioskPressKey('2')" class="kiosk-key bg-gradient-to-br from-purple-100 to-purple-200 hover:from-purple-200 hover:to-purple-300 text-3xl font-bold text-purple-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-purple-200/50 hover:shadow-xl hover:shadow-purple-300/50 active:scale-95 active:shadow-md">2</button>
-                <button onclick="kioskPressKey('3')" class="kiosk-key bg-gradient-to-br from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 text-3xl font-bold text-blue-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-blue-200/50 hover:shadow-xl hover:shadow-blue-300/50 active:scale-95 active:shadow-md">3</button>
-                <button onclick="kioskPressKey('4')" class="kiosk-key bg-gradient-to-br from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 text-3xl font-bold text-green-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-green-200/50 hover:shadow-xl hover:shadow-green-300/50 active:scale-95 active:shadow-md">4</button>
-                <button onclick="kioskPressKey('5')" class="kiosk-key bg-gradient-to-br from-yellow-100 to-yellow-200 hover:from-yellow-200 hover:to-yellow-300 text-3xl font-bold text-yellow-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-yellow-200/50 hover:shadow-xl hover:shadow-yellow-300/50 active:scale-95 active:shadow-md">5</button>
-                <button onclick="kioskPressKey('6')" class="kiosk-key bg-gradient-to-br from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 text-3xl font-bold text-orange-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-orange-200/50 hover:shadow-xl hover:shadow-orange-300/50 active:scale-95 active:shadow-md">6</button>
-                <button onclick="kioskPressKey('7')" class="kiosk-key bg-gradient-to-br from-teal-100 to-teal-200 hover:from-teal-200 hover:to-teal-300 text-3xl font-bold text-teal-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 active:scale-95 active:shadow-md">7</button>
-                <button onclick="kioskPressKey('8')" class="kiosk-key bg-gradient-to-br from-indigo-100 to-indigo-200 hover:from-indigo-200 hover:to-indigo-300 text-3xl font-bold text-indigo-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-indigo-200/50 hover:shadow-xl hover:shadow-indigo-300/50 active:scale-95 active:shadow-md">8</button>
-                <button onclick="kioskPressKey('9')" class="kiosk-key bg-gradient-to-br from-rose-100 to-rose-200 hover:from-rose-200 hover:to-rose-300 text-3xl font-bold text-rose-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-rose-200/50 hover:shadow-xl hover:shadow-rose-300/50 active:scale-95 active:shadow-md">9</button>
-                <button onclick="kioskClearInput()" class="bg-gradient-to-br from-red-100 to-red-200 hover:from-red-200 hover:to-red-300 text-xl font-bold text-red-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-red-200/50 hover:shadow-xl hover:shadow-red-300/50 active:scale-95">지우기</button>
-                <button onclick="kioskPressKey('0')" class="kiosk-key bg-gradient-to-br from-cyan-100 to-cyan-200 hover:from-cyan-200 hover:to-cyan-300 text-3xl font-bold text-cyan-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-cyan-200/50 hover:shadow-xl hover:shadow-cyan-300/50 active:scale-95 active:shadow-md">0</button>
-                <button onclick="kioskBackspace()" class="bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-2xl font-bold text-gray-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-300/50 active:scale-95">←</button>
+                <button onclick="kioskPressKey('1')"
+                    class="kiosk-key bg-gradient-to-br from-pink-100 to-pink-200 hover:from-pink-200 hover:to-pink-300 text-3xl font-bold text-pink-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-pink-200/50 hover:shadow-xl hover:shadow-pink-300/50 active:scale-95 active:shadow-md">1</button>
+                <button onclick="kioskPressKey('2')"
+                    class="kiosk-key bg-gradient-to-br from-purple-100 to-purple-200 hover:from-purple-200 hover:to-purple-300 text-3xl font-bold text-purple-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-purple-200/50 hover:shadow-xl hover:shadow-purple-300/50 active:scale-95 active:shadow-md">2</button>
+                <button onclick="kioskPressKey('3')"
+                    class="kiosk-key bg-gradient-to-br from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 text-3xl font-bold text-blue-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-blue-200/50 hover:shadow-xl hover:shadow-blue-300/50 active:scale-95 active:shadow-md">3</button>
+                <button onclick="kioskPressKey('4')"
+                    class="kiosk-key bg-gradient-to-br from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 text-3xl font-bold text-green-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-green-200/50 hover:shadow-xl hover:shadow-green-300/50 active:scale-95 active:shadow-md">4</button>
+                <button onclick="kioskPressKey('5')"
+                    class="kiosk-key bg-gradient-to-br from-yellow-100 to-yellow-200 hover:from-yellow-200 hover:to-yellow-300 text-3xl font-bold text-yellow-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-yellow-200/50 hover:shadow-xl hover:shadow-yellow-300/50 active:scale-95 active:shadow-md">5</button>
+                <button onclick="kioskPressKey('6')"
+                    class="kiosk-key bg-gradient-to-br from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 text-3xl font-bold text-orange-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-orange-200/50 hover:shadow-xl hover:shadow-orange-300/50 active:scale-95 active:shadow-md">6</button>
+                <button onclick="kioskPressKey('7')"
+                    class="kiosk-key bg-gradient-to-br from-teal-100 to-teal-200 hover:from-teal-200 hover:to-teal-300 text-3xl font-bold text-teal-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 active:scale-95 active:shadow-md">7</button>
+                <button onclick="kioskPressKey('8')"
+                    class="kiosk-key bg-gradient-to-br from-indigo-100 to-indigo-200 hover:from-indigo-200 hover:to-indigo-300 text-3xl font-bold text-indigo-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-indigo-200/50 hover:shadow-xl hover:shadow-indigo-300/50 active:scale-95 active:shadow-md">8</button>
+                <button onclick="kioskPressKey('9')"
+                    class="kiosk-key bg-gradient-to-br from-rose-100 to-rose-200 hover:from-rose-200 hover:to-rose-300 text-3xl font-bold text-rose-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-rose-200/50 hover:shadow-xl hover:shadow-rose-300/50 active:scale-95 active:shadow-md">9</button>
+                <button onclick="kioskClearInput()"
+                    class="bg-gradient-to-br from-red-100 to-red-200 hover:from-red-200 hover:to-red-300 text-xl font-bold text-red-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-red-200/50 hover:shadow-xl hover:shadow-red-300/50 active:scale-95">지우기</button>
+                <button onclick="kioskPressKey('0')"
+                    class="kiosk-key bg-gradient-to-br from-cyan-100 to-cyan-200 hover:from-cyan-200 hover:to-cyan-300 text-3xl font-bold text-cyan-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-cyan-200/50 hover:shadow-xl hover:shadow-cyan-300/50 active:scale-95 active:shadow-md">0</button>
+                <button onclick="kioskBackspace()"
+                    class="bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-2xl font-bold text-gray-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-300/50 active:scale-95">←</button>
             </div>
         </div>
 
@@ -307,10 +538,13 @@
             <!-- 세로모드: 안내 문구 (제거됨 - 입력박스 위로 이동) -->
 
             <div class="kiosk-title-section text-center mb-10">
-                <div class="w-24 h-24 bg-gradient-to-br from-pink-200 to-purple-200 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-200/50">
+                <div
+                    class="w-24 h-24 bg-gradient-to-br from-pink-200 to-purple-200 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-200/50">
                     <span class="material-symbols-outlined text-pink-600 text-6xl">touch_app</span>
                 </div>
-                <h1 class="text-4xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-3">키오스크</h1>
+                <h1
+                    class="text-4xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-3">
+                    키오스크</h1>
                 <p class="text-gray-400 text-lg">부모님 휴대폰 번호 마지막 4자리</p>
             </div>
 
@@ -328,7 +562,8 @@
             <div class="kiosk-digit-display mb-4">
                 <!-- 가로모드: 학생 이름 -->
                 <div id="student-name-landscape" class="hidden mb-2">
-                    <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border-2 border-emerald-200">
+                    <div
+                        class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border-2 border-emerald-200">
                         <div class="text-center">
                             <div id="student-name-landscape-text" class="font-bold text-emerald-700"></div>
                         </div>
@@ -337,31 +572,53 @@
                 <!-- 세로모드: 안내 문구 -->
                 <p class="portrait-instruction text-center font-bold text-xl text-gray-600 mb-2">부모님 휴대폰 번호 마지막 4자리</p>
                 <!-- 가로모드: 안내 문구 -->
-                <p class="kiosk-landscape-instruction hidden text-center font-bold text-xl text-gray-700 mb-4">부모님 휴대폰 번호 마지막 4자리</p>
-                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-4 text-center shadow-inner border-2 border-purple-100">
+                <p class="kiosk-landscape-instruction hidden text-center font-bold text-xl text-gray-700 mb-4">부모님 휴대폰
+                    번호 마지막 4자리</p>
+                <div
+                    class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-4 text-center shadow-inner border-2 border-purple-100">
                     <div class="flex justify-center gap-4 mb-3">
-                        <div id="kiosk-digit-1" class="kiosk-digit w-20 h-24 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-4xl font-bold text-purple-500 min-h-[96px]"></div>
-                        <div id="kiosk-digit-2" class="kiosk-digit w-20 h-24 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-4xl font-bold text-purple-500 min-h-[96px]"></div>
-                        <div id="kiosk-digit-3" class="kiosk-digit w-20 h-24 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-4xl font-bold text-purple-500 min-h-[96px]"></div>
-                        <div id="kiosk-digit-4" class="kiosk-digit w-20 h-24 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-4xl font-bold text-purple-500 min-h-[96px]"></div>
+                        <div id="kiosk-digit-1"
+                            class="kiosk-digit w-20 h-24 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-4xl font-bold text-purple-500 min-h-[96px]">
+                        </div>
+                        <div id="kiosk-digit-2"
+                            class="kiosk-digit w-20 h-24 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-4xl font-bold text-purple-500 min-h-[96px]">
+                        </div>
+                        <div id="kiosk-digit-3"
+                            class="kiosk-digit w-20 h-24 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-4xl font-bold text-purple-500 min-h-[96px]">
+                        </div>
+                        <div id="kiosk-digit-4"
+                            class="kiosk-digit w-20 h-24 bg-white rounded-2xl shadow-lg shadow-purple-200/50 border-2 border-purple-200 flex items-center justify-center text-4xl font-bold text-purple-500 min-h-[96px]">
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- 세로모드: 숫자 키패드 -->
             <div class="kiosk-keypad grid grid-cols-3 gap-1.5 mb-3 w-full">
-                <button onclick="kioskPressKey('1')" class="kiosk-key bg-gradient-to-br from-pink-100 to-pink-200 hover:from-pink-200 hover:to-pink-300 text-3xl font-bold text-pink-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-pink-200/50 hover:shadow-xl hover:shadow-pink-300/50 active:scale-95 active:shadow-md">1</button>
-                <button onclick="kioskPressKey('2')" class="kiosk-key bg-gradient-to-br from-purple-100 to-purple-200 hover:from-purple-200 hover:to-purple-300 text-3xl font-bold text-purple-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-purple-200/50 hover:shadow-xl hover:shadow-purple-300/50 active:scale-95 active:shadow-md">2</button>
-                <button onclick="kioskPressKey('3')" class="kiosk-key bg-gradient-to-br from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 text-3xl font-bold text-blue-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-blue-200/50 hover:shadow-xl hover:shadow-blue-300/50 active:scale-95 active:shadow-md">3</button>
-                <button onclick="kioskPressKey('4')" class="kiosk-key bg-gradient-to-br from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 text-3xl font-bold text-green-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-green-200/50 hover:shadow-xl hover:shadow-green-300/50 active:scale-95 active:shadow-md">4</button>
-                <button onclick="kioskPressKey('5')" class="kiosk-key bg-gradient-to-br from-yellow-100 to-yellow-200 hover:from-yellow-200 hover:to-yellow-300 text-3xl font-bold text-yellow-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-yellow-200/50 hover:shadow-xl hover:shadow-yellow-300/50 active:scale-95 active:shadow-md">5</button>
-                <button onclick="kioskPressKey('6')" class="kiosk-key bg-gradient-to-br from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 text-3xl font-bold text-orange-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-orange-200/50 hover:shadow-xl hover:shadow-orange-300/50 active:scale-95 active:shadow-md">6</button>
-                <button onclick="kioskPressKey('7')" class="kiosk-key bg-gradient-to-br from-teal-100 to-teal-200 hover:from-teal-200 hover:to-teal-300 text-3xl font-bold text-teal-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 active:scale-95 active:shadow-md">7</button>
-                <button onclick="kioskPressKey('8')" class="kiosk-key bg-gradient-to-br from-indigo-100 to-indigo-200 hover:from-indigo-200 hover:to-indigo-300 text-3xl font-bold text-indigo-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-indigo-200/50 hover:shadow-xl hover:shadow-indigo-300/50 active:scale-95 active:shadow-md">8</button>
-                <button onclick="kioskPressKey('9')" class="kiosk-key bg-gradient-to-br from-rose-100 to-rose-200 hover:from-rose-200 hover:to-rose-300 text-3xl font-bold text-rose-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-rose-200/50 hover:shadow-xl hover:shadow-rose-300/50 active:scale-95 active:shadow-md">9</button>
-                <button onclick="kioskClearInput()" class="bg-gradient-to-br from-red-100 to-red-200 hover:from-red-200 hover:to-red-300 text-lg font-bold text-red-500 rounded-2xl py-2 transition-all duration-150 shadow-lg shadow-red-200/50 hover:shadow-xl hover:shadow-red-300/50 active:scale-95">지우기</button>
-                <button onclick="kioskPressKey('0')" class="kiosk-key bg-gradient-to-br from-cyan-100 to-cyan-200 hover:from-cyan-200 hover:to-cyan-300 text-3xl font-bold text-cyan-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-cyan-200/50 hover:shadow-xl hover:shadow-cyan-300/50 active:scale-95 active:shadow-md">0</button>
-                <button onclick="kioskBackspace()" class="bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-xl font-bold text-gray-500 rounded-2xl py-2 transition-all duration-150 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-300/50 active:scale-95">←</button>
+                <button onclick="kioskPressKey('1')"
+                    class="kiosk-key bg-gradient-to-br from-pink-100 to-pink-200 hover:from-pink-200 hover:to-pink-300 text-3xl font-bold text-pink-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-pink-200/50 hover:shadow-xl hover:shadow-pink-300/50 active:scale-95 active:shadow-md">1</button>
+                <button onclick="kioskPressKey('2')"
+                    class="kiosk-key bg-gradient-to-br from-purple-100 to-purple-200 hover:from-purple-200 hover:to-purple-300 text-3xl font-bold text-purple-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-purple-200/50 hover:shadow-xl hover:shadow-purple-300/50 active:scale-95 active:shadow-md">2</button>
+                <button onclick="kioskPressKey('3')"
+                    class="kiosk-key bg-gradient-to-br from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 text-3xl font-bold text-blue-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-blue-200/50 hover:shadow-xl hover:shadow-blue-300/50 active:scale-95 active:shadow-md">3</button>
+                <button onclick="kioskPressKey('4')"
+                    class="kiosk-key bg-gradient-to-br from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 text-3xl font-bold text-green-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-green-200/50 hover:shadow-xl hover:shadow-green-300/50 active:scale-95 active:shadow-md">4</button>
+                <button onclick="kioskPressKey('5')"
+                    class="kiosk-key bg-gradient-to-br from-yellow-100 to-yellow-200 hover:from-yellow-200 hover:to-yellow-300 text-3xl font-bold text-yellow-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-yellow-200/50 hover:shadow-xl hover:shadow-yellow-300/50 active:scale-95 active:shadow-md">5</button>
+                <button onclick="kioskPressKey('6')"
+                    class="kiosk-key bg-gradient-to-br from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 text-3xl font-bold text-orange-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-orange-200/50 hover:shadow-xl hover:shadow-orange-300/50 active:scale-95 active:shadow-md">6</button>
+                <button onclick="kioskPressKey('7')"
+                    class="kiosk-key bg-gradient-to-br from-teal-100 to-teal-200 hover:from-teal-200 hover:to-teal-300 text-3xl font-bold text-teal-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 active:scale-95 active:shadow-md">7</button>
+                <button onclick="kioskPressKey('8')"
+                    class="kiosk-key bg-gradient-to-br from-indigo-100 to-indigo-200 hover:from-indigo-200 hover:to-indigo-300 text-3xl font-bold text-indigo-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-indigo-200/50 hover:shadow-xl hover:shadow-indigo-300/50 active:scale-95 active:shadow-md">8</button>
+                <button onclick="kioskPressKey('9')"
+                    class="kiosk-key bg-gradient-to-br from-rose-100 to-rose-200 hover:from-rose-200 hover:to-rose-300 text-3xl font-bold text-rose-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-rose-200/50 hover:shadow-xl hover:shadow-rose-300/50 active:scale-95 active:shadow-md">9</button>
+                <button onclick="kioskClearInput()"
+                    class="bg-gradient-to-br from-red-100 to-red-200 hover:from-red-200 hover:to-red-300 text-lg font-bold text-red-500 rounded-2xl py-2 transition-all duration-150 shadow-lg shadow-red-200/50 hover:shadow-xl hover:shadow-red-300/50 active:scale-95">지우기</button>
+                <button onclick="kioskPressKey('0')"
+                    class="kiosk-key bg-gradient-to-br from-cyan-100 to-cyan-200 hover:from-cyan-200 hover:to-cyan-300 text-3xl font-bold text-cyan-600 rounded-2xl py-3 transition-all duration-150 shadow-lg shadow-cyan-200/50 hover:shadow-xl hover:shadow-cyan-300/50 active:scale-95 active:shadow-md">0</button>
+                <button onclick="kioskBackspace()"
+                    class="bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-xl font-bold text-gray-500 rounded-2xl py-2 transition-all duration-150 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-300/50 active:scale-95">←</button>
             </div>
 
             <!-- 등원/하원 버튼 (세로모드용) -->
@@ -380,7 +637,8 @@
 
             <!-- 메인으로 돌아가기 -->
             <div class="mt-8 text-center kiosk-home-link">
-                <a href="admin-main.html" class="inline-flex items-center gap-2 px-6 py-3 bg-white/60 text-gray-400 font-semibold rounded-xl hover:bg-white/80 transition-all duration-150">
+                <a href="admin-main.html"
+                    class="inline-flex items-center gap-2 px-6 py-3 bg-white/60 text-gray-400 font-semibold rounded-xl hover:bg-white/80 transition-all duration-150">
                     <span class="material-symbols-outlined">home</span>
                     메인으로 돌아가기
                 </a>
@@ -389,25 +647,29 @@
     </div>
 
     <!-- 알림 모달 -->
-    <div id="alert-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div id="alert-modal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
         <div class="bg-white rounded-3xl p-10 max-w-sm w-full mx-4 shadow-2xl text-center">
             <div id="alert-icon" class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span class="material-symbols-outlined text-5xl"></span>
             </div>
             <h3 id="alert-title" class="text-2xl font-bold text-gray-800 mb-3"></h3>
             <p id="alert-message" class="text-gray-600 mb-8"></p>
-            <button onclick="closeAlertModal()" class="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:shadow-lg transition">확인</button>
+            <button onclick="closeAlertModal()"
+                class="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:shadow-lg transition">확인</button>
         </div>
     </div>
 
     <!-- 학생 선택 모달 (같은 번호로 여러 학생이 있을 경우) -->
-    <div id="student-select-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div id="student-select-modal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
         <div class="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl">
             <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">학생 선택</h3>
             <div id="student-select-list" class="space-y-3 max-h-60 overflow-y-auto">
                 <!-- 학생 버튼들이 동적으로 추가됨 -->
             </div>
-            <button onclick="closeStudentSelectModal()" class="w-full mt-4 px-6 py-3 bg-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-300 transition">취소</button>
+            <button onclick="closeStudentSelectModal()"
+                class="w-full mt-4 px-6 py-3 bg-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-300 transition">취소</button>
         </div>
     </div>
 
@@ -418,6 +680,32 @@
     <script src="data-service.js"></script>
 
     <script>
+        // ===================================================================
+        // FCM 401 장애 해결: 빌드 태그 및 런타임 설정
+        // ===================================================================
+        const KIOSK_BUILD_TAG = 'kiosk-fcm-fix-2026-02-28';
+        const SESSION_REFRESH_THRESHOLD = 60; // 세션 갱신 임계값 (초)
+
+        // 페이지 로드 시 콘솔 출력 (즉시 실행 - 안전함)
+        console.log('[KIOSK] Build:', KIOSK_BUILD_TAG, 'Loaded at:', new Date().toISOString());
+
+        // window.supabase 런타임 설정 확인 (DOMContentLoaded 후 실행)
+        // supabase-config.js 로딩을 기다리기 위해 지연 실행
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof window !== 'undefined' && window.supabase) {
+                const authUrl = window.supabase.authUrl;
+                // authUrl가 URL 객체인 경우 처리
+                const authUrlStr = authUrl ? String(authUrl) : 'N/A';
+                const maskedUrl = authUrlStr.includes('@')
+                    ? authUrlStr.replace(/\/\/[^@]+@/, '//***@')
+                    : authUrlStr;
+                console.log('[KIOSK] Supabase client initialized:', maskedUrl);
+            } else {
+                console.error('[KIOSK] WARNING: window.supabase not found!');
+            }
+        });
+        // ===================================================================
+
         // Supabase 클라이언트 (DOMContentLoaded 후 할당)
         let sb = null;
 
@@ -581,6 +869,22 @@
             if (landscapeNameText) {
                 landscapeNameText.textContent = student.name;
             }
+
+            // parent_id 상태 배지 표시
+            const existingBadge = document.getElementById('parent-app-badge');
+            if (existingBadge) {
+                existingBadge.remove();
+            }
+
+            // parent_id가 없는 경우 배지 추가 (단일 학생 선택 시)
+            if (student && !student.parent_id && student.name) {
+                const badge = document.createElement('div');
+                badge.id = 'parent-app-badge';
+                badge.className = 'mt-2 px-3 py-1 bg-gray-200 text-gray-600 text-sm rounded-full inline-flex items-center';
+                badge.innerHTML = '<span class="material-symbols-outlined text-sm mr-1">link_off</span>부모 앱 미연동';
+                nameEl.parentNode.appendChild(badge);
+            }
+
             infoEl.classList.remove('hidden');
             landscapeNameEl.classList.remove('hidden');
         }
@@ -658,12 +962,21 @@
             const modal = document.getElementById('student-select-modal');
             const list = document.getElementById('student-select-list');
 
-            list.innerHTML = foundStudents.map(student => `
+            list.innerHTML = foundStudents.map(student => {
+                // parent_id 유무에 따른 배지 표시
+                const hasParent = !!student.parent_id;
+                const badgeHtml = hasParent
+                    ? ''
+                    : '<span class="ml-2 px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded-full">부모 앱 미연동</span>';
+
+                return `
                 <button onclick="selectStudent('${student.id}')"
-                    class="w-full px-6 py-4 bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-gray-700 font-bold rounded-xl transition-all">
-                    ${escapeHtml(student.name)}
+                    class="w-full px-6 py-4 bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 text-gray-700 font-bold rounded-xl transition-all flex items-center justify-between">
+                    <span>${escapeHtml(student.name)}</span>
+                    ${badgeHtml}
                 </button>
-            `).join('');
+                `;
+            }).join('');
 
             modal.style.display = 'flex';
             modal.classList.remove('hidden');
@@ -729,11 +1042,26 @@
                     const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
                     const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
+                    // FCM 알림용 학생 데이터 저장 (kioskClearInput 전에 복사)
+                    const studentForNotification = selectedStudent;
+
                     // 보강시간이 있으면 메시지에 표시
                     const makeupMsg = makeupMinutes > 0 ? `\n(보강 +${makeupMinutes}분 적용)` : '';
                     showAlert('success', '등원 완료',
                         `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}${makeupMsg}`);
                     kioskClearInput();
+
+                    // 등원 성공 후 FCM 알림 전송 (비차단)
+                    sendFcmAttendanceNotification(studentForNotification, 'check_in', now.toISOString())
+                        .then(fcmResult => {
+                            if (!fcmResult.success && fcmResult.skipReason !== 'session_missing') {
+                                // FCM 실패 시 추가 안내 (비차단 토스트 또는 모달)
+                                setTimeout(() => {
+                                    showAlert('info', '알림', `출결은 완료되었으나 부모 앱 알림 전송에 실패했습니다.\n\n${fcmResult.message || ''}`);
+                                }, 500);
+                            }
+                        })
+                        .catch(err => console.error('[FCM] unhandled send error:', err));
                 } else {
                     if (fetchResult.alreadyCheckedIn) {
                         showAlert('info', '알림', fetchResult.error);
@@ -756,8 +1084,8 @@
                 const existingAttendance = getLocalAttendance();
                 const existingRecord = existingAttendance.find(
                     a => a.student_id === selectedStudent.id &&
-                         (a.status === 'waiting' || a.status === 'seated') &&
-                         a.check_in_time && a.check_in_time.startsWith(today)
+                        (a.status === 'waiting' || a.status === 'seated') &&
+                        a.check_in_time && a.check_in_time.startsWith(today)
                 );
 
                 if (existingRecord) {
@@ -833,9 +1161,24 @@
                     const checkOutTime = new Date();
                     const timeStr = checkOutTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
+                    // FCM 알림용 학생 데이터 저장 (kioskClearInput 전에 복사)
+                    const studentForNotification = selectedStudent;
+
                     showAlert('success', '하원 완료',
                         `${selectedStudent.name}님, 하원 완료되었습니다!\n안녕히 가세요!\n\n하원시간: ${timeStr}`);
                     kioskClearInput();
+
+                    // 하원 성공 후 FCM 알림 전송 (비차단)
+                    sendFcmAttendanceNotification(studentForNotification, 'check_out', checkOutTime.toISOString())
+                        .then(fcmResult => {
+                            if (!fcmResult.success && fcmResult.skipReason !== 'session_missing') {
+                                // FCM 실패 시 추가 안내 (비차단 토스트 또는 모달)
+                                setTimeout(() => {
+                                    showAlert('info', '알림', `출결은 완료되었으나 부모 앱 알림 전송에 실패했습니다.\n\n${fcmResult.message || ''}`);
+                                }, 500);
+                            }
+                        })
+                        .catch(err => console.error('[FCM] unhandled send error:', err));
                 } else if (fetchResult.alreadyCheckedOut) {
                     showAlert('info', '알림', fetchResult.error);
                     kioskClearInput();
@@ -853,8 +1196,8 @@
                 // 이미 하원했는지 확인 (completed 상태) - 오늘 날짜만
                 const completedIndex = existingAttendance.findIndex(
                     a => a.student_id === selectedStudent.id &&
-                         a.status === 'completed' &&
-                         a.check_in_time && a.check_in_time.startsWith(today)
+                        a.status === 'completed' &&
+                        a.check_in_time && a.check_in_time.startsWith(today)
                 );
                 if (completedIndex !== -1) {
                     showAlert('info', '알림', `${selectedStudent.name}님은 이미 하원 처리되었습니다.`);
@@ -864,8 +1207,8 @@
 
                 const attendanceIndex = existingAttendance.findIndex(
                     a => a.student_id === selectedStudent.id &&
-                         (a.status === 'waiting' || a.status === 'seated') &&
-                         a.check_in_time && a.check_in_time.startsWith(today)
+                        (a.status === 'waiting' || a.status === 'seated') &&
+                        a.check_in_time && a.check_in_time.startsWith(today)
                 );
 
                 if (attendanceIndex === -1) {
@@ -945,10 +1288,10 @@
                     return;
                 }
 
-                console.log(`[Kiosk] Web Push 알림 전송 시도: student_id=${student.id}, name=${student.name}, parent_phone=${student.parent_phone}, type=${type}`);
+                console.log(`[Kiosk] Web Push 알림 전송 시도 (WebPush 전용, FCM과 별개): student_id=${student.id}, name=${student.name}, parent_phone=${student.parent_phone}, type=${type}`);
 
                 if (!student.parent_phone) {
-                    console.log('[Kiosk] 부모 전화번호가 없음 - 알림 스킵');
+                    console.log('[Kiosk] 부모 전화번호가 없음 - Web Push 알림 스킵 (FCM은 별도로 시도됨)');
                     return;
                 }
 
@@ -972,43 +1315,327 @@
             }
         }
 
-        // 직접 fetch로 Edge Function 호출 (폴백용)
+        // 직접 fetch로 Edge Function 호출 (폴백용) - 하드코딩된 키 제거, window.supabase 사용
         async function sendWebPushDirectFetch(requestBody) {
             try {
-                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
-                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
-
-                const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/send-web-push-notification`;
-                console.log('[Kiosk] Edge Function URL:', edgeFunctionUrl);
-
-                const response = await fetch(edgeFunctionUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'apikey': SUPABASE_ANON_KEY
-                    },
-                    body: JSON.stringify(requestBody)
+                // window.supabase 클라이언트 사용 (하드코딩된 키 제거)
+                const { data, error } = await window.supabase.functions.invoke('send-web-push-notification', {
+                    body: requestBody
                 });
 
-                console.log('[Kiosk] Edge Function 응답 상태:', response.status);
+                if (error) {
+                    console.error('[Kiosk] Edge Function 호출 실패:', error);
+                    console.error('[Kiosk] 에러 상세:', error.context);
+                    return;
+                }
 
-                const responseText = await response.text();
-                console.log('[Kiosk] Edge Function 응답:', responseText);
-
-                if (!response.ok) {
-                    console.error('[Kiosk] Edge Function 호출 실패:', response.status, responseText);
-                } else {
-                    try {
-                        const data = JSON.parse(responseText);
-                        console.log('[Kiosk] Web Push 알림 전송 성공 (직접 fetch):', data);
-                    } catch (e) {
-                        console.log('[Kiosk] 응답 파싱 실패, 원본:', responseText);
-                    }
+                if (data) {
+                    console.log('[Kiosk] Web Push 알림 전송 성공:', data);
                 }
 
             } catch (error) {
-                console.error('[Kiosk] 직접 fetch 오류:', error);
+                console.error('[Kiosk] 직접 invoke 오류:', error);
+            }
+        }
+
+        // ===================================================================
+        // FCM 401 장애 해결: 헬퍼 함수
+        // ===================================================================
+
+        // Trace ID 생성 (형식 통일, 멱등성 보장용)
+        function generateTraceId() {
+            return `fcm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        }
+
+        // Headers 객체에서 www-authenticate 안전 추출
+        function extractWwwAuthenticate(headers) {
+            if (!headers) return 'none';
+
+            // Headers 객체인 경우 (.get 메서드 확인)
+            if (typeof headers.get === 'function') {
+                return headers.get('www-authenticate') || headers.get('Www-Authenticate') || 'none';
+            }
+
+            // 일반 객체인 경우
+            return headers['www-authenticate'] || headers['Www-Authenticate'] || 'none';
+        }
+
+        // invoke 에러 상세 파싱 (result.error 1차 분기 지원)
+        function extractInvokeErrorDetail(invokeError, resultData) {
+            const detail = {
+                name: invokeError?.name || 'UnknownError',
+                message: invokeError?.message || 'No message',
+                status: invokeError?.context?.status || 'unknown',
+                headers: invokeError?.context?.headers || {},
+                bodyRaw: invokeError?.context?.body ? JSON.stringify(invokeError.context.body) : 'none',
+                wwwAuthenticate: extractWwwAuthenticate(invokeError?.context?.headers),
+                // result.data로부터 함수 내부 응답 추출
+                functionErrorCode: resultData?.error_code || null,
+                functionSuccess: resultData?.success ?? null
+            };
+            console.error('[FCM_ERROR] Invoke error detail:', detail);
+            return detail;
+        }
+
+        // 에러 코드 분류 (status, body, www-authenticate 조합)
+        function classifyFcmError(detail) {
+            const status = Number(detail.status) || 0;  // 숫자로 정규화
+            const bodyCode = detail.functionErrorCode;
+            const wwwAuth = detail.wwwAuthenticate;
+
+            // 0. CORS/네트워크 실패 (함수 미도달)
+            if (detail.name === 'TypeError' && detail.message?.includes('fetch')) {
+                return 'NETWORK_OR_CORS_BLOCKED';
+            }
+
+            // 1. 함수 내부에서 명시한 에러코드가 있으면 우선
+            if (bodyCode) {
+                return bodyCode; // INVALID_USER_JWT, USER_NOT_FOUND 등
+            }
+
+            // 2. 게이트웨이 401 판별 (www-authenticate 헤더 + response body 기반)
+            if (status === 401) {
+                // www-authenticate 헤더가 있으면 게이트웨이 차단 확실
+                if (wwwAuth && wwwAuth !== 'none') {
+                    return 'GATEWAY_AUTH_REQUIRED';
+                }
+                // body에 {"code":401,"message":"Invalid JWT"} 패턴이 있으면 게이트웨이지 가능성
+                if (detail.bodyRaw && (
+                    detail.bodyRaw.includes('"code":401') ||
+                    detail.bodyRaw.includes('Invalid JWT')
+                )) {
+                    return 'GATEWAY_JWT_INVALID';
+                }
+                // 그 외 401
+                return 'UNAUTHORIZED';
+            }
+
+            // 3. 기타 상태코드
+            if (status === 403) return 'FORBIDDEN';
+            if (status === 404) return 'NOT_FOUND';
+            if (status >= 500) return 'SERVER_ERROR';
+            if (status >= 400) return 'CLIENT_ERROR';
+
+            return 'UNKNOWN';
+        }
+
+        // 세션 만료 임박 시 선제 갱신
+        async function ensureSessionFresh(traceId) {
+            try {
+                const { data: { session }, error } = await window.supabase.auth.getSession();
+
+                if (error) {
+                    console.warn(`[FCM_PRE][${traceId}] getSession error:`, error.message);
+                    return false;
+                }
+
+                if (!session) {
+                    console.warn(`[FCM_PRE][${traceId}] No session found`);
+                    return false;
+                }
+
+                // 토큰 만료까지 남은 시간 계산
+                const now = Math.floor(Date.now() / 1000);
+                const expiresAt = session.expires_at;
+                const remainingSeconds = expiresAt - now;
+
+                console.log(`[FCM_PRE][${traceId}] Session expires in ${remainingSeconds}s`);
+
+                // 임계값 이내이면 선제 갱신
+                if (remainingSeconds < SESSION_REFRESH_THRESHOLD) {
+                    console.log(`[FCM_PRE][${traceId}] Session expiring soon, refreshing...`);
+                    const { data: refreshData, error: refreshError } =
+                        await window.supabase.auth.refreshSession();
+
+                    if (refreshError) {
+                        console.error(`[FCM_PRE][${traceId}] Refresh failed:`, refreshError.message);
+                        return false;
+                    }
+
+                    const newRemaining = refreshData.session?.expires_at
+                        ? refreshData.session.expires_at - Math.floor(Date.now() / 1000)
+                        : 0;
+                    console.log(`[FCM_PRE][${traceId}] Session refreshed, new expires in ${newRemaining}s`);
+                    return true;
+                }
+
+                return true;
+            } catch (e) {
+                console.error(`[FCM_PRE][${traceId}] ensureSessionFresh error:`, e);
+                return false;
+            }
+        }
+
+        // 에러 코드를 사용자 메시지로 변환
+        function getUserMessage(errorCode, defaultMsg = '알림 전송 실패') {
+            const ERROR_MESSAGES = {
+                // CORS/네트워크 (새로 추가)
+                'NETWORK_OR_CORS_BLOCKED': '네트워크 연결을 확인해주세요',
+
+                // 게이트웨이 관련
+                'GATEWAY_JWT_INVALID': '인증 토큰 갱신 중입니다...',
+                'GATEWAY_AUTH_REQUIRED': '인증이 필요합니다',
+                'SESSION_REFRESH_FAILED': '세션 갱신 실패: 다시 로그인해주세요',
+                'UNAUTHORIZED': '인증이 필요합니다',
+
+                // 함수 내부 인증 관련
+                'MISSING_AUTH_HEADER': '인증 헤더가 없습니다',
+                'INVALID_AUTH_FORMAT': '인증 형식 오류',
+                'INVALID_USER_JWT': '유효하지 않은 인증 정보입니다',
+                'MISSING_USER_JWT': '인증 정보가 없습니다',
+                'JWT_EXPIRED': '인증이 만료되었습니다. 다시 로그인해주세요',
+                'JWT_INVALID_SIGNATURE': '인증 서명 오류',
+                'USER_NOT_FOUND': '사용자를 찾을 수 없습니다',
+
+                // FCM 관련
+                'NO_ACTIVE_TOKEN': '부모 앱이 미설치이거나 알림이 비활성화되어 있습니다',
+                'FCM_NOT_CONFIGURED': 'FCM 설정 오류',
+                'FCM_SEND_FAILED': 'FCM 전송 실패',
+                'ALL_TOKENS_FAILED': '알림 전송에 실패했습니다. 기기 상태를 확인해주세요',
+
+                // 재시도 관련
+                'RETRY_EXCEPTION': '알림 전송 재시도 중 오류',
+                'RETRY_EXHAUSTED': '재시도 후에도 실패했습니다',
+                'GATEWAY_JWT_INVALID_AFTER_REFRESH': '토큰 갱신 후에도 인증 실패. 다시 로그인해주세요',
+
+                // HTTP 상태코드 기반
+                'HTTP_400': '요청 형식 오류',
+                'HTTP_401': '인증 실패',
+                'HTTP_403': '접근 권한 없음',
+                'HTTP_404': '요청 기능 찾기 실패',
+                'HTTP_500': '서버 오류',
+
+                // 기타
+                'UNKNOWN': '알림 전송 실패 (관리자에게 문의하세요)',
+                'UNKNOWN_RESPONSE': '알 수 없는 응답',
+                'UNEXPECTED_ERROR': '예기치 않은 오류',
+                'FORBIDDEN': '접근 권한이 없습니다',
+                'NOT_FOUND': '요청 기능을 찾을 수 없습니다',
+                'SERVER_ERROR': '서버 오류가 발생했습니다',
+                'CLIENT_ERROR': '요청 오류가 발생했습니다',
+                'DEFAULT': '알림 전송 실패 (관리자에게 문의하세요)'
+            };
+            return ERROR_MESSAGES[errorCode] || defaultMsg;
+        }
+        // ===================================================================
+
+        // FCM 알림 전송 함수 (모바일 앱용)
+        /**
+         * @param {Object} student - selectedStudent 객체 (parent_id 포함 필수)
+         * @param {string} actionType - 'check_in' 또는 'check_out'
+         * @param {string} attendanceTimeIso - 출결 시간 ISO 문자열
+         * @returns {Promise<Object>} - { success: boolean, message?: string, skipReason?: string }
+         */
+        async function sendFcmAttendanceNotification(student, actionType, attendanceTimeIso) {
+            // 헬퍼 함수로 traceId 생성
+            const traceId = generateTraceId();
+            console.log(`[FCM_SEND][${traceId}] Starting FCM notification for ${student?.name || 'unknown'}`);
+
+            // student null 체크 (안전장치)
+            if (!student) {
+                console.warn(`[FCM_SEND][${traceId}] 스킵 - student 파라미터가 null`);
+                return { success: false, skipReason: 'student_null', message: '학생 정보가 없습니다' };
+            }
+
+            // parent_id 확인
+            if (!student.parent_id) {
+                console.warn(`[FCM_SEND][${traceId}] 스킵 - parent_id 없음 (student_id: ${student.id}, name: ${student.name})`);
+                return { success: false, skipReason: 'no_parent_id', message: '부모 앱 미연동 상태입니다' };
+            }
+
+            // 0단계: 선제 세션 갱신 (401 예방)
+            const sessionFresh = await ensureSessionFresh(traceId);
+            if (!sessionFresh) {
+                console.warn(`[FCM_SEND][${traceId}] Session not fresh, continuing anyway...`);
+            }
+
+            // Payload 준비
+            const isCheckIn = actionType === 'check_in';
+            const timeStr = new Date(attendanceTimeIso).toLocaleTimeString('ko-KR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const payload = {
+                recipient_id: student.parent_id,
+                type: isCheckIn ? 'attendance_check_in' : 'attendance_check_out',
+                title: isCheckIn ? '등원 알림' : '하원 알림',
+                body: isCheckIn
+                    ? `${student.name}님이 등원했습니다`
+                    : `${student.name}님이 ${timeStr}에 하원했습니다`,
+                data: {
+                    student_id: student.id,
+                    student_name: student.name,
+                    attendance_time: attendanceTimeIso,
+                    time_display: timeStr,
+                    type: actionType
+                },
+                priority: 'high',
+                target_type: 'parent',
+                trace_id: traceId
+            };
+
+            // ✅ Supabase SDK functions.invoke() 사용 (인증 헤더 자동 처리)
+            try {
+                console.log(`[FCM_SEND][${traceId}] Calling fcm-send-notification via SDK invoke`);
+
+                const { data: responseData, error: invokeError } = await window.supabase.functions.invoke('fcm-send-notification', {
+                    body: payload
+                });
+
+                if (invokeError) {
+                    console.error(`[FCM_SEND][${traceId}] Invoke error:`, invokeError.message, invokeError);
+
+                    // invoke 에러의 상태코드 추출
+                    const status = invokeError.context?.status || invokeError.status;
+                    const errorCode = status === 401 ? 'GATEWAY_JWT_INVALID' : `INVOKE_ERROR`;
+
+                    console.error(`[FCM_SEND][${traceId}] Error code:`, errorCode, 'status:', status);
+
+                    return {
+                        success: false,
+                        error_code: errorCode,
+                        message: getUserMessage(errorCode, invokeError.message),
+                        traceId
+                    };
+                }
+
+                console.log(`[FCM_SEND][${traceId}] Response data:`, responseData);
+
+                // === 성공 응답 처리 ===
+                if (responseData && responseData.success) {
+                    console.log(`[FCM_SEND][${traceId}] Success!`);
+                    return { success: true, traceId };
+                }
+
+                // === 함수 내부 에러 처리 ===
+                if (responseData && responseData.error_code) {
+                    console.error(`[FCM_SEND][${traceId}] Function error:`, responseData.error_code);
+                    return {
+                        success: false,
+                        error_code: responseData.error_code,
+                        message: getUserMessage(responseData.error_code),
+                        traceId
+                    };
+                }
+
+                // === 알 수 없는 응답 ===
+                console.warn(`[FCM_SEND][${traceId}] Unknown response:`, responseData);
+                return {
+                    success: false,
+                    error_code: 'UNKNOWN_RESPONSE',
+                    message: getUserMessage('UNKNOWN_RESPONSE'),
+                    traceId
+                };
+
+            } catch (unexpectedError) {
+                console.error(`[FCM_SEND][${traceId}] Unexpected error:`, unexpectedError);
+                return {
+                    success: false,
+                    error_code: 'UNEXPECTED_ERROR',
+                    message: getUserMessage('UNEXPECTED_ERROR'),
+                    traceId
+                };
             }
         }
 
@@ -1192,38 +1819,39 @@
             }
         }
 
-        // 직접 fetch로 학생 검색 (빠른 응답을 위한 타임아웃 5초)
+        // 직접 fetch로 학생 검색 (빠른 응답을 위한 타임아웃 5초) - 하드코딩된 키 제거
         async function searchStudentsDirectFetch(phoneLast4) {
-            console.log('[searchStudentsDirectFetch] 직접 fetch 시도...');
+            console.log('[searchStudentsDirectFetch] window.supabase 클라이언트 사용...');
             try {
-                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
-                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+                // 현재 로그인한 관리자의 ID로 academy_id 필터링
+                const { data: { session }, error: sessionError } = await window.supabase.auth.getSession();
 
-                // 타임아웃 컨트롤러 (5초 - 빠른 응답)
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/students?parent_phone_last4=eq.${phoneLast4}&select=id,name,parent_id,parent_phone_last4,parent_phone`, {
-                    method: 'GET',
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'Content-Type': 'application/json'
-                    },
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeoutId);
-
-                console.log('[searchStudentsDirectFetch] 응답 상태:', response.status);
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('[searchStudentsDirectFetch] 에러 응답:', errorText);
-                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                // session null 가드
+                if (sessionError || !session?.user?.id) {
+                    alert('로그인이 필요합니다. 다시 로그인해주세요.');
+                    window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                    return { data: [], error: 'No session' };
                 }
 
-                const data = await response.json();
+                const currentAdminId = session.user.id;
+
+                // 디버깅: 요청 파라미터 로깅
+                console.log('[Kiosk Debug] currentAdminId:', currentAdminId);
+                console.log('[Kiosk Debug] phoneLast4:', phoneLast4);
+
+                // window.supabase 클라이언트로 학생 조회
+                const { data, error } = await window.supabase
+                    .from('students')
+                    .select('id,name,grade,school_name,parent_id,parent_phone_last4,parent_phone,full_phone')
+                    .eq('parent_phone_last4', phoneLast4)
+                    .eq('approval_status', 'approved')
+                    .eq('academy_id', currentAdminId);
+
+                if (error) {
+                    console.error('[searchStudentsDirectFetch] 에러:', error);
+                    return { data: null, error };
+                }
+
                 console.log('[searchStudentsDirectFetch] 성공, 데이터:', data);
                 return { data, error: null };
 
@@ -1233,45 +1861,30 @@
             }
         }
 
-        // 직접 fetch로 등원 처리 (Supabase 클라이언트 오류 시 폴백)
+        // 직접 fetch로 등원 처리 (하드코딩된 키 제거, window.supabase 클라이언트 사용)
         async function performCheckInDirectFetch() {
-            console.log('[performCheckInDirectFetch] 직접 fetch로 등원 처리 시도...');
+            console.log('[performCheckInDirectFetch] window.supabase 클라이언트로 등원 처리 시도...');
             try {
-                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
-                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
-
                 const today = new Date().toISOString().split('T')[0];
-
-                // 타임아웃 컨트롤러 (5초 - 빠른 응답)
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
 
                 // 1. 기존 등원 확인
                 console.log('[performCheckInDirectFetch] 기존 등원 확인 요청:', {
                     student_id: selectedStudent.id,
-                    date: today,
-                    url: `${SUPABASE_URL}/rest/v1/attendance?student_id=eq.${selectedStudent.id}&date=eq.${today}&status=in.(waiting,seated)&select=*`
+                    date: today
                 });
-                const checkResponse = await fetch(
-                    `${SUPABASE_URL}/rest/v1/attendance?student_id=eq.${selectedStudent.id}&date=eq.${today}&status=in.(waiting,seated)&select=*`,
-                    {
-                        method: 'GET',
-                        headers: {
-                            'apikey': SUPABASE_ANON_KEY,
-                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                            'Content-Type': 'application/json'
-                        },
-                        signal: controller.signal
-                    }
-                );
 
-                if (!checkResponse.ok) {
-                    const errorText = await checkResponse.text();
-                    console.error('[performCheckInDirectFetch] 기존 등원 확인 실패:', errorText);
-                    return { success: false, error: `기존 등원 확인 실패: ${errorText}` };
+                const { data: existingData, error: checkError } = await window.supabase
+                    .from('attendance')
+                    .select('*')
+                    .eq('student_id', selectedStudent.id)
+                    .eq('date', today)
+                    .in('status', ['waiting', 'seated']);
+
+                if (checkError) {
+                    console.error('[performCheckInDirectFetch] 기존 등원 확인 실패:', checkError);
+                    return { success: false, error: `기존 등원 확인 실패: ${checkError.message}` };
                 }
 
-                const existingData = await checkResponse.json();
                 console.log('[performCheckInDirectFetch] 기존 등원 확인 응답:', existingData);
                 if (existingData && existingData.length > 0) {
                     const statusText = existingData[0].status === 'seated' ? '이미 좌석에 배정되었습니다' : '이미 등원 처리되었습니다';
@@ -1288,16 +1901,9 @@
                 const alarmTime = new Date(now.getTime() + totalMinutes * 60 * 1000);
                 console.log(`[performCheckInDirectFetch] 알람시간 계산: 60분 + 보강${makeupMinutes}분 = ${totalMinutes}분`);
 
-                const insertResponse = await fetch(`${SUPABASE_URL}/rest/v1/attendance`, {
-                    method: 'POST',
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=representation'
-                    },
-                    signal: controller.signal,
-                    body: JSON.stringify({
+                const { data: insertData, error: insertError } = await window.supabase
+                    .from('attendance')
+                    .insert({
                         student_id: selectedStudent.id,
                         student_name: selectedStudent.name,
                         type: 'check_in',
@@ -1307,14 +1913,11 @@
                         alarm_time: alarmTime.toISOString(),
                         status: 'waiting'
                     })
-                });
+                    .select();
 
-                clearTimeout(timeoutId);
-
-                if (!insertResponse.ok) {
-                    const errorText = await insertResponse.text();
-                    console.error('[performCheckInDirectFetch] 등원 기록 추가 실패:', errorText);
-                    return { success: false, error: `등원 기록 추가 실패: ${errorText}` };
+                if (insertError) {
+                    console.error('[performCheckInDirectFetch] 등원 기록 추가 실패:', insertError);
+                    return { success: false, error: `등원 기록 추가 실패: ${insertError.message}` };
                 }
 
                 // 3. localStorage에도 저장 (좌석 모니터링 호환)
@@ -1355,44 +1958,30 @@
             }
         }
 
-        // 직접 fetch로 하원 처리 (Supabase SDK 오류 시 폴백)
+        // 직접 fetch로 하원 처리 (하드코딩된 키 제거, window.supabase 클라이언트 사용)
         async function performCheckOutDirectFetch() {
-            console.log('[performCheckOutDirectFetch] 직접 fetch로 하원 처리 시도...');
+            console.log('[performCheckOutDirectFetch] window.supabase 클라이언트로 하원 처리 시도...');
             try {
-                const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
-                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
-
                 const today = new Date().toISOString().split('T')[0];
-
-                // 타임아웃 컨트롤러 (5초 - 빠른 응답)
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
 
                 // 1. 이미 하원했는지 확인 (completed 상태)
                 console.log('[performCheckOutDirectFetch] 하원 확인 요청:', {
                     student_id: selectedStudent.id,
                     date: today
                 });
-                const completedResponse = await fetch(
-                    `${SUPABASE_URL}/rest/v1/attendance?student_id=eq.${selectedStudent.id}&date=eq.${today}&status=eq.completed&select=*`,
-                    {
-                        method: 'GET',
-                        headers: {
-                            'apikey': SUPABASE_ANON_KEY,
-                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                            'Content-Type': 'application/json'
-                        },
-                        signal: controller.signal
-                    }
-                );
 
-                if (!completedResponse.ok) {
-                    const errorText = await completedResponse.text();
-                    console.error('[performCheckOutDirectFetch] 하원 확인 실패:', errorText);
-                    return { success: false, error: `하원 확인 실패: ${errorText}` };
+                const { data: completedData, error: completedError } = await window.supabase
+                    .from('attendance')
+                    .select('*')
+                    .eq('student_id', selectedStudent.id)
+                    .eq('date', today)
+                    .eq('status', 'completed');
+
+                if (completedError) {
+                    console.error('[performCheckOutDirectFetch] 하원 확인 실패:', completedError);
+                    return { success: false, error: `하원 확인 실패: ${completedError.message}` };
                 }
 
-                const completedData = await completedResponse.json();
                 console.log('[performCheckOutDirectFetch] 하원 확인 응답:', completedData);
                 if (completedData && completedData.length > 0) {
                     return { success: false, error: `${selectedStudent.name}님은 이미 하원 처리되었습니다.`, alreadyCheckedOut: true };
@@ -1403,26 +1992,21 @@
                     student_id: selectedStudent.id,
                     date: today
                 });
-                const attendanceResponse = await fetch(
-                    `${SUPABASE_URL}/rest/v1/attendance?student_id=eq.${selectedStudent.id}&date=eq.${today}&status=in.(waiting,seated)&select=*&order=check_in_time.desc&limit=1`,
-                    {
-                        method: 'GET',
-                        headers: {
-                            'apikey': SUPABASE_ANON_KEY,
-                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                            'Content-Type': 'application/json'
-                        },
-                        signal: controller.signal
-                    }
-                );
 
-                if (!attendanceResponse.ok) {
-                    const errorText = await attendanceResponse.text();
-                    console.error('[performCheckOutDirectFetch] 등원 기록 찾기 실패:', errorText);
-                    return { success: false, error: `등원 기록 찾기 실패: ${errorText}` };
+                const { data: attendanceData, error: attendanceError } = await window.supabase
+                    .from('attendance')
+                    .select('*')
+                    .eq('student_id', selectedStudent.id)
+                    .eq('date', today)
+                    .in('status', ['waiting', 'seated'])
+                    .order('check_in_time', { ascending: false })
+                    .limit(1);
+
+                if (attendanceError) {
+                    console.error('[performCheckOutDirectFetch] 등원 기록 찾기 실패:', attendanceError);
+                    return { success: false, error: `등원 기록 찾기 실패: ${attendanceError.message}` };
                 }
 
-                const attendanceData = await attendanceResponse.json();
                 console.log('[performCheckOutDirectFetch] 등원 기록 응답:', attendanceData);
                 if (!attendanceData || attendanceData.length === 0) {
                     return { success: false, error: `${selectedStudent.name}님은 등원 기록이 없습니다.`, noCheckIn: true };
@@ -1432,45 +2016,31 @@
                 console.log('[performCheckOutDirectFetch] 찾은 등원 기록:', attendance);
 
                 // 3. 하원 처리 (상태 업데이트)
-                const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/attendance?id=eq.${attendance.id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=representation'
-                    },
-                    signal: controller.signal,
-                    body: JSON.stringify({
+                const now = new Date();  // FCM 알림용
+                const { data: updateResult, error: updateError } = await window.supabase
+                    .from('attendance')
+                    .update({
                         type: 'check_out',
                         status: 'completed',
-                        check_out: new Date().toISOString()
+                        check_out: now.toISOString()
                     })
-                });
+                    .eq('id', attendance.id)
+                    .select();
 
-                clearTimeout(timeoutId);
-
-                if (!updateResponse.ok) {
-                    const errorText = await updateResponse.text();
-                    console.error('[performCheckOutDirectFetch] 하원 처리 실패:', errorText);
-                    return { success: false, error: `하원 처리 실패: ${errorText}` };
+                if (updateError) {
+                    console.error('[performCheckOutDirectFetch] 하원 처리 실패:', updateError);
+                    return { success: false, error: `하원 처리 실패: ${updateError.message}` };
                 }
 
-                const updateResult = await updateResponse.json();
                 console.log('[performCheckOutDirectFetch] 하원 처리 성공:', updateResult);
 
                 // 4. 좌석 비우기 (Supabase + localStorage 둘 다)
                 // Supabase 좌석 비우기
                 if (attendance.seat_id) {
                     console.log('[performCheckOutDirectFetch] Supabase 좌석 비우기:', attendance.seat_id);
-                    const seatResponse = await fetch(`${SUPABASE_URL}/rest/v1/seats?id=eq.${attendance.seat_id}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'apikey': SUPABASE_ANON_KEY,
-                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
+                    const { error: seatError } = await window.supabase
+                        .from('seats')
+                        .update({
                             occupied: false,
                             student_id: null,
                             student_name: null,
@@ -1478,12 +2048,12 @@
                             alarming: false,
                             alarm_stopped: false
                         })
-                    });
+                        .eq('id', attendance.seat_id);
 
-                    if (seatResponse.ok) {
-                        console.log('[performCheckOutDirectFetch] Supabase 좌석 비우기 성공');
+                    if (seatError) {
+                        console.error('[performCheckOutDirectFetch] Supabase 좌석 비우기 실패:', seatError);
                     } else {
-                        console.error('[performCheckOutDirectFetch] Supabase 좌석 비우기 실패:', await seatResponse.text());
+                        console.log('[performCheckOutDirectFetch] Supabase 좌석 비우기 성공');
                     }
                 }
 
@@ -1538,7 +2108,7 @@
         }
 
         // 스크립트 로드 후 즉시 초기화 시도
-        (function() {
+        (function () {
             // 약간의 지연 후 실행 (다른 스크립트가 로드될 때까지 대기)
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', initKiosk);
@@ -1557,4 +2127,5 @@
         });
     </script>
 </body>
+
 </html>

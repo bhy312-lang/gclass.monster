@@ -9,7 +9,8 @@ class FCMService {
     this.messageListener = null;
     this.ackQueue = new Map(); // Queue for pending ACKs
     this.isInitialized = false;
-    this.isNative = window.Capacitor !== undefined;
+    this.isNative = window.Capacitor?.getPlatform() !== 'web';
+    this.currentToken = null; // ✅ 비인증 상태에서 수신된 토큰 저장용
   }
 
   /**
@@ -29,6 +30,12 @@ class FCMService {
     const { PushNotifications, LocalNotifications } = window.Capacitor.Plugins;
 
     try {
+      // Check plugin availability
+      if (!PushNotifications) {
+        console.error('[FCM Service] PushNotifications plugin not found');
+        return;
+      }
+
       // Request permission
       const result = await PushNotifications.requestPermissions();
       if (result.receive === 'granted') {
@@ -78,6 +85,15 @@ class FCMService {
    */
   async sendTokenToServer(fcmToken) {
     try {
+      this.currentToken = fcmToken; // ✅ 토큰 저장
+
+      // ✅ 세션 체크 추가 - 401 에러 방지
+      const { data: { session } } = await window.supabase.auth.getSession();
+      if (!session) {
+        console.warn('[FCM Service] No active session, skipping token registration. Will retry after login.');
+        return;
+      }
+
       const deviceInfo = await this.getDeviceInfo();
 
       // Supabase Edge Function 호출 (자동 인증)
@@ -102,6 +118,18 @@ class FCMService {
   }
 
   /**
+   * ✅ 로그인 후 수동으로 토큰 등록을 시도하는 메서드
+   */
+  async registerTokenAfterLogin() {
+    if (this.currentToken) {
+      console.log('[FCM Service] Retrying token registration with new session...');
+      await this.sendTokenToServer(this.currentToken);
+    } else {
+      console.log('[FCM Service] No cached token to register');
+    }
+  }
+
+  /**
    * Setup notification listeners
    */
   setupListeners() {
@@ -115,19 +143,23 @@ class FCMService {
       const messageId = data.message_id;
 
       // Schedule local notification for visibility
-      try {
-        await LocalNotifications.schedule({
-          notifications: [{
-            id: this.generateNotificationId(messageId),
-            title: notification.title,
-            body: notification.body,
-            data: data,
-            sound: 'default',
-            smallText: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-          }]
-        });
-      } catch (error) {
-        console.error('[FCM Service] Local notification error:', error);
+      if (LocalNotifications) {
+        try {
+          await LocalNotifications.schedule({
+            notifications: [{
+              id: this.generateNotificationId(messageId),
+              title: notification.title,
+              body: notification.body,
+              data: data,
+              sound: 'default',
+              smallText: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+            }]
+          });
+        } catch (error) {
+          console.error('[FCM Service] Local notification error:', error);
+        }
+      } else {
+        console.warn('[FCM Service] LocalNotifications plugin not available, skipping local schedule');
       }
 
       // Send ACK for delivered
@@ -158,16 +190,18 @@ class FCMService {
     });
 
     // Listen for local notification tap
-    LocalNotifications.addListener('localNotificationActionPerformed', async (action) => {
-      const data = action.notification.data || {};
-      const messageId = data.message_id;
+    if (LocalNotifications) {
+      LocalNotifications.addListener('localNotificationActionPerformed', async (action) => {
+        const data = action.notification.data || {};
+        const messageId = data.message_id;
 
-      if (messageId) {
-        await this.sendAck(messageId, 'read');
-      }
+        if (messageId) {
+          await this.sendAck(messageId, 'read');
+        }
 
-      this.handleNotificationNavigation(data);
-    });
+        this.handleNotificationNavigation(data);
+      });
+    }
 
     console.log('[FCM Service] Notification listeners setup complete');
   }
@@ -254,19 +288,25 @@ class FCMService {
 
     try {
       const { Device } = window.Capacitor.Plugins;
+      if (!Device) {
+        console.warn('[FCM Service] Device plugin not available');
+        return { platform: 'android', os_version: 'unknown' };
+      }
+
       const info = await Device.getInfo();
+      const id = await Device.getId();
 
       return {
         platform: info.platform,
         os_version: info.osVersion,
-        app_version: this.getAppVersion(),
-        device_id: await this.getDeviceId(),
+        app_version: this.getAppVersion ? this.getAppVersion() : '1.0.0',
+        device_id: id ? id.identifier : 'unknown',
         device_model: info.model,
         manufacturer: info.manufacturer
       };
     } catch (error) {
       console.error('[FCM Service] Error getting device info:', error);
-      return { platform: 'unknown' };
+      return { platform: 'android', error: error.message };
     }
   }
 

@@ -904,7 +904,7 @@
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/students?parent_phone_last4=eq.${phoneLast4}&select=id,name,parent_id,parent_phone_last4,parent_phone`, {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/students?parent_phone_last4=eq.${phoneLast4}&approval_status=eq.approved&select=id,name,grade,school_name,parent_id,parent_phone_last4,full_phone`, {
                     method: 'GET',
                     headers: {
                         'apikey': SUPABASE_ANON_KEY,

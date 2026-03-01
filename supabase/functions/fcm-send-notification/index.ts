@@ -6,10 +6,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import { createFCMClient } from '../shared/fcm-client.ts';
 import { generateMessageId } from '../shared/message-id-generator.ts';
 
+// 빌드 태그 (배포 버전 확인용)
+const FUNCTION_BUILD_TAG = 'fcm-cors-fix-2026-02-28';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, apikey, x-client-info, content-type, x-supabase-api-version, x-user-jwt',
+  'Access-Control-Allow-Headers': 'authorization, apikey, x-client-info, content-type, x-supabase-api-version, x-trace-id',
+  'x-fn-build': FUNCTION_BUILD_TAG,  // 배포 확인용
 };
 
 interface SendRequest {
@@ -20,6 +24,7 @@ interface SendRequest {
   data?: Record<string, string>;
   priority?: 'normal' | 'high';
   target_type?: 'parent' | 'admin';
+  trace_id?: string;  // 클라이언트에서 전송하는 추적 ID
 }
 
 const ACK_TIMEOUT_SECONDS = 10;
@@ -35,14 +40,39 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // [FCM_SEND_AUTH] 사용자 JWT 검증
+  // [FCM_SEND_AUTH] 사용자 JWT 검증 (Authorization 헤더 사용 - Supabase 표준)
   console.log('[FCM_SEND_AUTH] Starting user JWT verification...');
 
-  const userJwt = req.headers.get('x-user-jwt');
-  if (!userJwt) {
-    console.log('[FCM_SEND_AUTH] FAILED: x-user-jwt header missing');
+  // traceId 수집 (x-trace-id 헤더 fallback용)
+  const xTraceId = req.headers.get('x-trace-id');
+  let traceId = 'unknown';
+
+  // Authorization 헤더 확인 (Supabase 표준)
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) {
+    console.log('[FCM_SEND_AUTH] FAILED: Authorization header missing');
     return new Response(
-      JSON.stringify({ success: false, error_code: 'MISSING_USER_JWT', error: 'x-user-jwt header required' }),
+      JSON.stringify({
+        success: false,
+        error_code: 'MISSING_AUTH_HEADER',
+        error: 'Authorization header is required (Bearer <token>)',
+        trace_id: traceId
+      }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Bearer 토큰 추출
+  const userJwt = authHeader.replace('Bearer ', '');
+  if (!userJwt || userJwt === authHeader) {
+    console.log('[FCM_SEND_AUTH] FAILED: Invalid Authorization format (no Bearer token)');
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error_code: 'INVALID_AUTH_FORMAT',
+        error: 'Authorization header must be "Bearer <token>"',
+        trace_id: traceId
+      }),
       { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -52,10 +82,37 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   const { data: { user }, error: authError } = await supabase.auth.getUser(userJwt);
-  if (authError || !user) {
-    console.log('[FCM_SEND_AUTH] FAILED: Invalid user JWT', authError?.message);
+  if (authError) {
+    // 명시적 에러 코드 매핑
+    let errorCode = 'INVALID_USER_JWT';
+    if (authError.message.includes('JWT')) {
+      errorCode = 'INVALID_USER_JWT';
+    } else if (authError.message.includes('expired')) {
+      errorCode = 'JWT_EXPIRED';
+    } else if (authError.message.includes('signature')) {
+      errorCode = 'JWT_INVALID_SIGNATURE';
+    }
+    console.log(`[FCM_SEND_AUTH] FAILED: ${errorCode} - ${authError.message}`);
     return new Response(
-      JSON.stringify({ success: false, error_code: 'INVALID_USER_JWT', error: 'Invalid user token' }),
+      JSON.stringify({
+        success: false,
+        error_code: errorCode,
+        error: authError.message,
+        trace_id: traceId
+      }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (!user) {
+    console.log('[FCM_SEND_AUTH] FAILED: No user found in JWT');
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error_code: 'USER_NOT_FOUND',
+        error: 'No user found for provided token',
+        trace_id: traceId
+      }),
       { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -64,12 +121,11 @@ serve(async (req) => {
 
   // 디버깅: Request Headers 로깅
   console.log('[FCM_SEND_AUTH] === Request Headers ===');
-  const authHeader = req.headers.get('authorization');
   const apikeyHeader = req.headers.get('apikey');
   const contentType = req.headers.get('content-type');
   const clientInfo = req.headers.get('x-client-info');
   console.log('[FCM_SEND_AUTH] Authorization:', authHeader ? authHeader.substring(0, 30) + '...' : 'MISSING');
-  console.log('[FCM_SEND_AUTH] x-user-jwt:', userJwt ? userJwt.substring(0, 20) + '...' : 'MISSING');
+  console.log('[FCM_SEND_AUTH] x-trace-id:', xTraceId || 'none');
   console.log('[FCM_SEND_AUTH] apikey:', apikeyHeader ? apikeyHeader.substring(0, 20) + '...' : 'MISSING');
   console.log('[FCM_SEND_AUTH] content-type:', contentType);
   console.log('[FCM_SEND_AUTH] =========================');
@@ -82,8 +138,14 @@ serve(async (req) => {
       body,
       data = {},
       priority = 'normal',
-      target_type = 'parent'
+      target_type = 'parent',
+      trace_id: bodyTraceId
     }: SendRequest = await req.json();
+
+    // traceId 확정 (body.trace_id 우선, x-trace-id fallback)
+    traceId = bodyTraceId || xTraceId || 'unknown';
+    const logPrefix = traceId !== 'unknown' ? `[FCM_SEND][${traceId}]` : '[FCM_SEND]';
+    console.log(`${logPrefix} Processing notification: recipient=${recipient_id}, type=${type}`);
 
     // Validate input
     if (!recipient_id || !title || !body) {

@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="admim-app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-02-26T08:22:14.173094900Z">
+        <DropdownSelection timestamp="2026-02-28T13:40:28.941366300Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=R3CW8023RFT" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=R3CYA096J1L" />
             </handle>
           </Target>
         </DropdownSelection>
