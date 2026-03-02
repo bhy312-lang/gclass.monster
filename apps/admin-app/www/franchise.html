@@ -4615,21 +4615,9 @@
 
         // 학생을 좌석에 배정
         async function assignStudentToSeat(attendanceId, seatId) {
-            // localStorage에서 등원 데이터 로드
-            let demoAttendance = [];
-            try {
-                const stored = localStorage.getItem('demo_attendance');
-                demoAttendance = stored ? JSON.parse(stored) : [];
-            } catch (e) {
-                console.error('Error reading demo attendance:', e);
-                return;
-            }
-
-            const attendance = demoAttendance.find(a => a.id === attendanceId);
             const seat = seats.find(s => s.id == seatId);
-
-            if (!attendance || !seat) {
-                console.error('등원 정보 또는 좌석을 찾을 수 없습니다');
+            if (!seat) {
+                console.error('좌석을 찾을 수 없습니다:', seatId);
                 return;
             }
 
@@ -4638,26 +4626,99 @@
                 return;
             }
 
-            // 좌석 정보 업데이트
-            seat.name = attendance.student_name;
-            seat.occupied = true;
+            const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured() && typeof window.supabase !== 'undefined';
+            let attendance = null;
+            let demoAttendance = [];
 
-            // 알람 시간 설정 (ISO 시간을 그대로 저장 + HH:MM 형식도 저장)
+            if (sbOk) {
+                try {
+                    const { data, error } = await window.supabase
+                        .from('attendance')
+                        .select('*')
+                        .eq('id', attendanceId)
+                        .maybeSingle();
+
+                    if (error) {
+                        console.error('Supabase 등원 데이터 조회 실패:', error);
+                    } else {
+                        attendance = data;
+                    }
+                } catch (e) {
+                    console.error('Supabase 등원 데이터 조회 예외:', e);
+                }
+            }
+
+            if (!attendance) {
+                try {
+                    const stored = localStorage.getItem('demo_attendance');
+                    demoAttendance = stored ? JSON.parse(stored) : [];
+                    attendance = demoAttendance.find(a => a.id === attendanceId) || null;
+                } catch (e) {
+                    console.error('Error reading demo attendance:', e);
+                }
+            }
+
+            if (!attendance) {
+                console.error('등원 정보를 찾을 수 없습니다:', attendanceId);
+                return;
+            }
+
+            // Optimistic UI update so drag-drop feels immediate.
+            seat.name = attendance.student_name || '';
+            seat.occupied = true;
             if (attendance.alarm_time) {
                 const alarmDate = new Date(attendance.alarm_time);
-                seat.alarmTimeISO = attendance.alarm_time;  // ISO 시간 저장 (카운트다운 계산용)
-                seat.alarmTime = `${String(alarmDate.getHours()).padStart(2, '0')}:${String(alarmDate.getMinutes()).padStart(2, '0')}`;  // 표시용
+                seat.alarmTimeISO = attendance.alarm_time;
+                seat.alarmTime = `${String(alarmDate.getHours()).padStart(2, '0')}:${String(alarmDate.getMinutes()).padStart(2, '0')}`;
+            }
+            localStorage.setItem('seats', JSON.stringify(seats));
+            renderSeats();
+
+            let assignedOnServer = false;
+
+            if (sbOk) {
+                try {
+                    const { error: seatError } = await window.supabase
+                        .from('seats')
+                        .update({
+                            occupied: true,
+                            student_name: attendance.student_name,
+                            student_id: attendance.student_id,
+                            check_in_time: attendance.check_in_time,
+                            alarm_time: attendance.alarm_time
+                        })
+                        .eq('id', String(seatId));
+
+                    if (seatError) {
+                        console.error('Supabase 좌석 업데이트 실패:', seatError);
+                    }
+
+                    const { error: attendanceError } = await window.supabase
+                        .from('attendance')
+                        .update({
+                            status: 'seated',
+                            seat_id: String(seatId)
+                        })
+                        .eq('id', attendanceId);
+
+                    if (attendanceError) throw attendanceError;
+                    assignedOnServer = true;
+                } catch (e) {
+                    console.error('Supabase 좌석 배정 실패:', e);
+                    alert('좌석 배정 저장에 실패했습니다. 다시 시도해주세요.');
+                }
             }
 
-            // 등원 기록 상태 업데이트 (seated로 변경)
-            const idx = demoAttendance.findIndex(a => a.id === attendanceId);
-            if (idx !== -1) {
-                demoAttendance[idx].status = 'seated';
-                demoAttendance[idx].seat_id = String(seatId);
-                localStorage.setItem('demo_attendance', JSON.stringify(demoAttendance));
+            // Fallback for local/demo mode.
+            if (!assignedOnServer && demoAttendance.length > 0) {
+                const idx = demoAttendance.findIndex(a => a.id === attendanceId);
+                if (idx !== -1) {
+                    demoAttendance[idx].status = 'seated';
+                    demoAttendance[idx].seat_id = String(seatId);
+                    localStorage.setItem('demo_attendance', JSON.stringify(demoAttendance));
+                }
             }
 
-            // 등원 목록 알람 상태 초기화 및 알람 중지
             if (waitingAlarmState[attendanceId]) {
                 if (waitingAlarmState[attendanceId].alarming) {
                     stopBeep(`waiting_${attendanceId}`);
@@ -4665,16 +4726,9 @@
                 delete waitingAlarmState[attendanceId];
             }
 
-            // 좌석 저장 및 렌더링
-            localStorage.setItem('seats', JSON.stringify(seats));
-            renderSeats();
-
-            // 등원 목록 새로고침
             loadCheckInList();
-
-            console.log('✓ 좌석 배정 완료:', attendance.student_name, '→ 좌석', seat.number);
+            console.log('좌석 배정 완료:', attendance.student_name, '-> 좌석', seat.number);
         }
-
         // 좌석 추가
         function addSeat() {
             const container = document.getElementById('seat-container');
