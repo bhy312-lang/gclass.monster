@@ -783,6 +783,7 @@
 
                 console.log('[Login] Proceeding to approval status check...');
                 await handleParentApprovalRedirect(user.id);
+                hideLoginLoading();
             } catch (e) {
                 console.error('[Login] Unexpected login error:', e);
                 hideLoginLoading();
@@ -913,12 +914,14 @@
 
                 if (error) {
                     console.error('자녀 조회 실패:', error);
+                    hideLoginLoading();
                     showLoginScreen();
                     return;
                 }
 
                 // 자녀가 없으면 가입 페이지로
                 if (!children || children.length === 0) {
+                    hideLoginLoading();
                     window.location.href = 'parent-join.html';
                     return;
                 }
@@ -928,6 +931,7 @@
                 if (hasApprovedChild) {
                     showMainScreen();
                     updateUserInfo();
+                    hideLoginLoading();
 
                     // 푸시 알림 초기화
                     if (window.Capacitor && window.Capacitor.Plugins) {
@@ -937,9 +941,11 @@
                 }
 
                 // 승인 대기중이면 상태 페이지로
+                hideLoginLoading();
                 window.location.href = 'parent-status.html';
             } catch (error) {
-                console.error('승인 상태 확인 에러:', error);
+                console.error('[Approval] check failed:', error);
+                hideLoginLoading();
                 showLoginScreen();
             }
         }
