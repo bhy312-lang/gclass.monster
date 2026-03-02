@@ -1561,7 +1561,7 @@
                 type: isCheckIn ? 'attendance_check_in' : 'attendance_check_out',
                 title: isCheckIn ? '등원 알림' : '하원 알림',
                 body: isCheckIn
-                    ? `${student.name}님이 등원했습니다`
+                    ? `${student.name}님이 ${timeStr}에 등원했습니다`
                     : `${student.name}님이 ${timeStr}에 하원했습니다`,
                 data: {
                     student_id: student.id,
