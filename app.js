@@ -18,6 +18,12 @@ if (typeof currentSeatId === 'undefined') {
 if (typeof useSupabase === 'undefined') {
     var useSupabase = false; // Supabase 사용 여부
 }
+if (typeof saveSeatsSyncInFlight === 'undefined') {
+    var saveSeatsSyncInFlight = null;
+}
+if (typeof saveSeatsSyncQueued === 'undefined') {
+    var saveSeatsSyncQueued = false;
+}
 
 // XSS 방지를 위한 HTML 이스케이프 함수
 function escapeHtml(text) {
@@ -148,6 +154,14 @@ async function loadSeats() {
                 alarming: seat.alarming || false,
                 alarmStopped: seat.alarm_stopped || false
             }));
+
+            if (!seats.length) {
+                const localSeats = loadSeatsFromLocalStorage();
+                if (localSeats.length > 0) {
+                    console.log('Migrating local seats to Supabase...');
+                    await saveSeats();
+                }
+            }
         } catch (error) {
             console.error('좌석 로드 실패:', error);
             loadSeatsFromLocalStorage();
@@ -179,16 +193,70 @@ function loadSeatsFromLocalStorage() {
         x: (seat.x !== undefined && !isNaN(seat.x)) ? seat.x : 0,
         y: (seat.y !== undefined && !isNaN(seat.y)) ? seat.y : 0
     }));
+    return seats;
 }
 
 async function saveSeats() {
     console.log('saveSeats called. Seats:', seats);
+    localStorage.setItem('seats', JSON.stringify(seats));
 
-    if (useSupabase) {
-        // Supabase에서는 개별 업데이트로 처리
-        // 전체 저장은 필요시에만
-    } else {
-        localStorage.setItem('seats', JSON.stringify(seats));
+    if (!useSupabase) return;
+
+    saveSeatsSyncQueued = true;
+    if (saveSeatsSyncInFlight) return;
+
+    saveSeatsSyncInFlight = (async () => {
+        while (saveSeatsSyncQueued) {
+            saveSeatsSyncQueued = false;
+            await syncSeatsToSupabase();
+        }
+    })()
+        .catch((error) => {
+            console.error('Failed to sync seats to Supabase:', error);
+        })
+        .finally(() => {
+            saveSeatsSyncInFlight = null;
+        });
+}
+
+async function syncSeatsToSupabase() {
+    if (!useSupabase) return;
+
+    const seatRows = seats.map((seat) => ({
+        id: String(seat.id),
+        number: seat.number,
+        x: seat.x,
+        y: seat.y,
+        occupied: seat.occupied,
+        student_name: seat.name || null,
+        alarm_time: seat.alarmTime ? formatTimeToISO(seat.alarmTime) : null,
+        alarming: seat.alarming || false,
+        alarm_stopped: seat.alarmStopped || false
+    }));
+
+    if (seatRows.length > 0) {
+        const { error: upsertError } = await supabase
+            .from('seats')
+            .upsert(seatRows);
+        if (upsertError) throw upsertError;
+    }
+
+    const { data: existingSeats, error: existingError } = await supabase
+        .from('seats')
+        .select('id');
+    if (existingError) throw existingError;
+
+    const keepIds = new Set(seatRows.map((row) => row.id));
+    const deleteIds = (existingSeats || [])
+        .map((row) => String(row.id))
+        .filter((id) => !keepIds.has(id));
+
+    if (deleteIds.length > 0) {
+        const { error: deleteError } = await supabase
+            .from('seats')
+            .delete()
+            .in('id', deleteIds);
+        if (deleteError) throw deleteError;
     }
 }
 
