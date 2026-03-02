@@ -3412,6 +3412,8 @@
         let alarmAudioContext = null;
         let waitingAlarmState = {}; // 등원 목록 학생 알람 상태 (id: { alarming, alarmStopped })
         let currentSeatId = null;
+        let saveSeatsSyncInFlight = null;
+        let saveSeatsSyncQueued = false;
 
         // ========== 학생관리 전역 변수 ==========
         let currentStudentId = null;
@@ -3780,7 +3782,7 @@
         }
 
         // 로컬 스토리지에서 좌석 목록 불러오기
-        function loadSeats() {
+        async function loadSeats() {
             let savedSeats = [];
             try {
                 const storedSeats = localStorage.getItem('seats');
@@ -3790,6 +3792,41 @@
             } catch (e) {
                 console.error('Error parsing saved seats:', e);
                 localStorage.removeItem('seats');
+            }
+
+            const sbOk = typeof window.isSupabaseConfigured === 'function' &&
+                window.isSupabaseConfigured() &&
+                typeof window.supabase !== 'undefined';
+
+            if (sbOk) {
+                try {
+                    const { data, error } = await window.supabase
+                        .from('seats')
+                        .select('*')
+                        .order('number', { ascending: true });
+
+                    if (error) throw error;
+
+                    if (Array.isArray(data) && data.length > 0) {
+                        savedSeats = data.map(seat => ({
+                            id: seat.id,
+                            number: seat.number,
+                            name: seat.student_name || '',
+                            x: seat.x || 0,
+                            y: seat.y || 0,
+                            occupied: seat.occupied || false,
+                            alarmTime: seat.alarm_time ? new Date(seat.alarm_time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }) : null,
+                            alarmTimeISO: seat.alarm_time || null,
+                            alarming: seat.alarming === true,
+                            alarmStopped: seat.alarm_stopped === true,
+                            student_id: seat.student_id || null,
+                            check_in_time: seat.check_in_time || null
+                        }));
+                        localStorage.setItem('seats', JSON.stringify(savedSeats));
+                    }
+                } catch (e) {
+                    console.error('Supabase seats load failed, fallback to localStorage:', e);
+                }
             }
 
             seats = savedSeats.map(seat => ({
@@ -3808,9 +3845,71 @@
         // 로컬 스토리지에 좌석 목록 저장하기
         function saveSeats() {
             localStorage.setItem('seats', JSON.stringify(seats));
+
+            const sbOk = typeof window.isSupabaseConfigured === 'function' &&
+                window.isSupabaseConfigured() &&
+                typeof window.supabase !== 'undefined';
+            if (!sbOk) return;
+
+            saveSeatsSyncQueued = true;
+            if (saveSeatsSyncInFlight) return;
+
+            saveSeatsSyncInFlight = (async () => {
+                while (saveSeatsSyncQueued) {
+                    saveSeatsSyncQueued = false;
+                    await syncSeatsToSupabase();
+                }
+            })()
+                .catch((error) => {
+                    console.error('Failed to sync seats to Supabase:', error);
+                })
+                .finally(() => {
+                    saveSeatsSyncInFlight = null;
+                });
         }
 
         // 비프음 생성 및 재생
+        async function syncSeatsToSupabase() {
+            const seatRows = seats.map((seat) => ({
+                id: String(seat.id),
+                number: seat.number,
+                x: seat.x || 0,
+                y: seat.y || 0,
+                occupied: seat.occupied || false,
+                student_name: seat.name || null,
+                student_id: seat.student_id || null,
+                check_in_time: seat.check_in_time || null,
+                alarm_time: seat.alarmTimeISO || null,
+                alarming: seat.alarming === true,
+                alarm_stopped: seat.alarmStopped === true
+            }));
+
+            if (seatRows.length > 0) {
+                const { error: upsertError } = await window.supabase
+                    .from('seats')
+                    .upsert(seatRows);
+                if (upsertError) throw upsertError;
+            }
+
+            const { data: existingSeats, error: existingError } = await window.supabase
+                .from('seats')
+                .select('id');
+            if (existingError) throw existingError;
+
+            const keepIds = new Set(seatRows.map((row) => row.id));
+            const deleteIds = (existingSeats || [])
+                .map((row) => String(row.id))
+                .filter((id) => !keepIds.has(id));
+
+            if (deleteIds.length > 0) {
+                const { error: deleteError } = await window.supabase
+                    .from('seats')
+                    .delete()
+                    .in('id', deleteIds);
+                if (deleteError) throw deleteError;
+            }
+        }
+
         function playBeep(seatId) {
             if (!alarmAudioContext) {
                 alarmAudioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -5538,7 +5637,7 @@
 
             await loadStudents();
             renderAttendance();
-            loadSeats();
+            await loadSeats();
             renderSeats();
 
             // 시험 알람 복구
