@@ -3428,6 +3428,100 @@
 
         const SEAT_WIDTH = 128; // w-32 = 128px
         const SEAT_HEIGHT = 144; // h-36 = 144px
+        const SCOPED_STORAGE_KEYS = new Set(['students', 'todos', 'seats', 'demo_attendance']);
+        let currentDataScopeId = 'guest';
+        let storageScopePatched = false;
+
+        function getScopedStorageKey(baseKey) {
+            return `${baseKey}::${currentDataScopeId || 'guest'}`;
+        }
+
+        function getBaseStorageKey(storageKey) {
+            if (!storageKey) return '';
+            const parts = String(storageKey).split('::');
+            return parts[0] || '';
+        }
+
+        function getSeatScopePrefix() {
+            return `scope:${currentDataScopeId || 'guest'}::`;
+        }
+
+        function toScopedSeatId(rawId) {
+            const raw = String(rawId);
+            const prefix = getSeatScopePrefix();
+            return raw.startsWith(prefix) ? raw : `${prefix}${raw}`;
+        }
+
+        function isCurrentScopeStorageEvent(key) {
+            const baseKey = getBaseStorageKey(key);
+            if (!SCOPED_STORAGE_KEYS.has(baseKey)) return false;
+            return key === baseKey || key === getScopedStorageKey(baseKey);
+        }
+
+        function applyStorageScopePatch() {
+            if (storageScopePatched || typeof Storage === 'undefined') return;
+            storageScopePatched = true;
+
+            const originalGet = Storage.prototype.getItem;
+            const originalSet = Storage.prototype.setItem;
+            const originalRemove = Storage.prototype.removeItem;
+
+            Storage.prototype.getItem = function(key) {
+                if (this === localStorage && SCOPED_STORAGE_KEYS.has(String(key))) {
+                    const scopedKey = getScopedStorageKey(String(key));
+                    let scopedValue = originalGet.call(this, scopedKey);
+                    if (scopedValue === null) {
+                        const legacyValue = originalGet.call(this, String(key));
+                        if (legacyValue !== null) {
+                            originalSet.call(this, scopedKey, legacyValue);
+                        }
+                        return legacyValue;
+                    }
+                    return scopedValue;
+                }
+                return originalGet.call(this, key);
+            };
+
+            Storage.prototype.setItem = function(key, value) {
+                if (this === localStorage && SCOPED_STORAGE_KEYS.has(String(key))) {
+                    return originalSet.call(this, getScopedStorageKey(String(key)), value);
+                }
+                return originalSet.call(this, key, value);
+            };
+
+            Storage.prototype.removeItem = function(key) {
+                if (this === localStorage && SCOPED_STORAGE_KEYS.has(String(key))) {
+                    return originalRemove.call(this, getScopedStorageKey(String(key)));
+                }
+                return originalRemove.call(this, key);
+            };
+        }
+
+        async function initializeDataScope() {
+            let resolvedScopeId = 'guest';
+            try {
+                const sbOk = typeof window.isSupabaseConfigured === 'function' &&
+                    window.isSupabaseConfigured() &&
+                    typeof window.supabase !== 'undefined';
+                if (sbOk) {
+                    const { data: { session } } = await window.supabase.auth.getSession();
+                    if (session?.user?.id) {
+                        resolvedScopeId = session.user.id;
+                    }
+                }
+            } catch (e) {
+                console.warn('[scope] session resolve failed, using guest scope:', e);
+            }
+            currentDataScopeId = resolvedScopeId;
+        }
+
+        function filterAttendanceByScope(list) {
+            if (!Array.isArray(list)) return [];
+            const allowedStudentIds = new Set((students || []).map((s) => String(s.id)));
+            return list.filter((item) => allowedStudentIds.has(String(item.student_id)));
+        }
+
+        applyStorageScopePatch();
 
         // ========== 학생관리 삭제 함수 (전역) ==========
         // 메모 삭제
@@ -3809,6 +3903,7 @@
                     const { data, error } = await window.supabase
                         .from('seats')
                         .select('*')
+                        .like('id', `${getSeatScopePrefix()}%`)
                         .order('number', { ascending: true });
 
                     if (error) throw error;
@@ -3837,6 +3932,7 @@
 
             seats = savedSeats.map(seat => ({
                 ...seat,
+                id: toScopedSeatId(seat.id),
                 x: (seat.x !== undefined && !isNaN(seat.x)) ? seat.x : 0,
                 y: (seat.y !== undefined && !isNaN(seat.y)) ? seat.y : 0,
                 // 저장된 알람 상태 복원 ('false' 같은 비정상 값 오염 방지를 위해 === true 사용)
@@ -3876,19 +3972,23 @@
 
         // 비프음 생성 및 재생
         async function syncSeatsToSupabase() {
-            const seatRows = seats.map((seat) => ({
-                id: String(seat.id),
-                number: seat.number,
-                x: seat.x || 0,
-                y: seat.y || 0,
-                occupied: seat.occupied || false,
-                student_name: seat.name || null,
-                student_id: seat.student_id || null,
-                check_in_time: seat.check_in_time || null,
-                alarm_time: seat.alarmTimeISO || null,
-                alarming: seat.alarming === true,
-                alarm_stopped: seat.alarmStopped === true
-            }));
+            const seatRows = seats.map((seat) => {
+                const scopedId = toScopedSeatId(seat.id);
+                seat.id = scopedId;
+                return {
+                    id: scopedId,
+                    number: seat.number,
+                    x: seat.x || 0,
+                    y: seat.y || 0,
+                    occupied: seat.occupied || false,
+                    student_name: seat.name || null,
+                    student_id: seat.student_id || null,
+                    check_in_time: seat.check_in_time || null,
+                    alarm_time: seat.alarmTimeISO || null,
+                    alarming: seat.alarming === true,
+                    alarm_stopped: seat.alarmStopped === true
+                };
+            });
 
             if (seatRows.length > 0) {
                 const { error: upsertError } = await window.supabase
@@ -3899,7 +3999,8 @@
 
             const { data: existingSeats, error: existingError } = await window.supabase
                 .from('seats')
-                .select('id');
+                .select('id')
+                .like('id', `${getSeatScopePrefix()}%`);
             if (existingError) throw existingError;
 
             const keepIds = new Set(seatRows.map((row) => row.id));
@@ -4777,6 +4878,7 @@
 
             if (sbOk) {
                 try {
+                    const scopedSeatId = toScopedSeatId(seatId);
                     const { error: seatError } = await window.supabase
                         .from('seats')
                         .update({
@@ -4786,7 +4888,7 @@
                             check_in_time: attendance.check_in_time,
                             alarm_time: attendance.alarm_time
                         })
-                        .eq('id', String(seatId));
+                        .eq('id', scopedSeatId);
 
                     if (seatError) {
                         console.error('Supabase 좌석 업데이트 실패:', seatError);
@@ -4796,7 +4898,7 @@
                         .from('attendance')
                         .update({
                             status: 'seated',
-                            seat_id: String(seatId)
+                            seat_id: scopedSeatId
                         })
                         .eq('id', attendanceId);
 
@@ -4813,7 +4915,7 @@
                 const idx = demoAttendance.findIndex(a => a.id === attendanceId);
                 if (idx !== -1) {
                     demoAttendance[idx].status = 'seated';
-                    demoAttendance[idx].seat_id = String(seatId);
+                    demoAttendance[idx].seat_id = toScopedSeatId(seatId);
                     localStorage.setItem('demo_attendance', JSON.stringify(demoAttendance));
                 }
             }
@@ -4900,7 +5002,7 @@
             }
 
             const newSeat = {
-                id: Date.now(),
+                id: toScopedSeatId(Date.now()),
                 number: newSeatNumber,
                 name: '',
                 x: newX,
@@ -5690,6 +5792,7 @@
                 }
             });
 
+            await initializeDataScope();
             await loadStudents();
             renderAttendance();
             await loadSeats();
@@ -5733,7 +5836,7 @@
 
                         if (error) throw error;
 
-                        const waitingList = data || [];
+                        const waitingList = filterAttendanceByScope(data || []);
                         console.log('[등원 목록] Supabase waiting 데이터:', waitingList);
                         renderCheckInList(waitingList);
                         return;
@@ -5756,7 +5859,10 @@
                     const seatsData = localStorage.getItem('seats');
                     if (seatsData) {
                         try {
-                            const updatedSeats = JSON.parse(seatsData);
+                            const updatedSeats = JSON.parse(seatsData).map((seat) => ({
+                                ...seat,
+                                id: toScopedSeatId(seat.id)
+                            }));
                             // 좌석 데이터가 변경되었는지 확인
                             const seatsChanged = JSON.stringify(seats) !== JSON.stringify(updatedSeats);
                             if (seatsChanged) {
@@ -5907,16 +6013,22 @@
 
             // 다른 탭에서 localStorage 변경 시 자동 업데이트
             window.addEventListener('storage', (e) => {
-                if (e.key === 'demo_attendance') {
+                const changedKey = getBaseStorageKey(e.key);
+                if (!isCurrentScopeStorageEvent(e.key)) return;
+
+                if (changedKey === 'demo_attendance') {
                     console.log('[storage 이벤트] demo_attendance 변경됨');
                     loadCheckInList();
-                } else if (e.key === 'seats') {
+                } else if (changedKey === 'seats') {
                     console.log('[storage 이벤트] seats 변경됨');
                     // 좌석 데이터 다시 로드
                     const seatsData = localStorage.getItem('seats');
                     if (seatsData) {
                         try {
-                            const updatedSeats = JSON.parse(seatsData);
+                            const updatedSeats = JSON.parse(seatsData).map((seat) => ({
+                                ...seat,
+                                id: toScopedSeatId(seat.id)
+                            }));
                             seats.length = 0;
                             seats.push(...updatedSeats);
                             renderSeats();
@@ -5924,7 +6036,7 @@
                             console.error('[storage 이벤트] 좌석 동기화 실패:', e);
                         }
                     }
-                } else if (e.key === 'todos') {
+                } else if (changedKey === 'todos') {
                     console.log('[storage 이벤트] todos 변경됨 - 키오스크 등원 메모 추가');
                     // To-do 데이터 다시 로드
                     loadTodos();
