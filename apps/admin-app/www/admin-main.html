@@ -1532,6 +1532,11 @@
             console.log('[DOMContentLoaded] 페이지 로드됨');
             console.log('[DOMContentLoaded] Current URL:', window.location.href);
 
+            // 로그인 전 첫 진입 시점에 알림 권한 요청
+            if (window.Capacitor && window.Capacitor.Plugins) {
+                requestAdminPushPermissionOnLaunch();
+            }
+
             // 세션 스토리지에 앱 초기화 여부 확인 (뒤로가기 시 스플래시 건너뛰기)
             const isAlreadyInitialized = sessionStorage.getItem('appInitialized');
             const splashDelay = isAlreadyInitialized ? 0 : 1500;
@@ -1573,6 +1578,18 @@
 
         // 푸시 알림 초기화 및 FCM 토큰 등록
         let adminPushInitialized = false;  // 중복 리스너 등록 방지 플래그
+
+        async function requestAdminPushPermissionOnLaunch() {
+            try {
+                const PushNotifications = window.Capacitor?.Plugins?.PushNotifications;
+                if (!PushNotifications) return;
+
+                const permResult = await PushNotifications.requestPermissions();
+                console.log('[ADMIN_FCM_PERMISSION] launch permission result:', permResult?.receive);
+            } catch (e) {
+                console.error('[ADMIN_FCM_PERMISSION] launch permission request failed:', e);
+            }
+        }
 
         async function initAdminPushNotifications() {
             if (adminPushInitialized) {
