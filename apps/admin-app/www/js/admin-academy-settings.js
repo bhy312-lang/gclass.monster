@@ -383,26 +383,77 @@ function goBack() {
 
 // 전화번호 포맷 (010-0000-0000)
 function formatPhoneNumber(e) {
-    let value = e.target.value.replace(/[^0-9]/g, '');
+    const input = e.target;
+    const rawValue = input.value || '';
+    const rawCaret = input.selectionStart ?? rawValue.length;
+    const inputType = e.inputType || '';
+    const isDelete = inputType.startsWith('delete');
+    const prevValue = input.__prevPhoneValue || '';
+    const prevDigits = prevValue.replace(/\D/g, '');
 
-    // 010 유효성 검사 (첫 3자리가 010으로 시작하는지)
-    if (value.length > 0 && !value.startsWith('010')) {
-        // 010으로 시작하지 않으면 앞에 010 자동 추가
-        value = '010' + value;
+    const countDigitsBeforeCaret = (value, caret) =>
+        (value.slice(0, Math.max(0, caret)).match(/\d/g) || []).length;
+
+    const caretFromDigitIndex = (formatted, digitIndex) => {
+        if (digitIndex <= 0) return 0;
+        let seen = 0;
+        for (let i = 0; i < formatted.length; i++) {
+            if (/\d/.test(formatted[i])) {
+                seen++;
+                if (seen === digitIndex) return i + 1;
+            }
+        }
+        return formatted.length;
+    };
+
+    const formatDigits = (digits) => {
+        if (!digits) return '';
+        if (digits.length <= 3) return digits;
+        if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+        return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 11)}`;
+    };
+
+    let digits = rawValue.replace(/\D/g, '').slice(0, 11);
+    let digitIndex = countDigitsBeforeCaret(rawValue, rawCaret);
+
+    // 하이픈만 지워진 케이스에서는 인접 숫자를 실제로 삭제해 체감 삭제 동작 보정
+    if (isDelete && prevDigits.length === digits.length && digits.length > 0) {
+        if (inputType === 'deleteContentBackward') {
+            const removeIndex = Math.max(0, Math.min(digits.length - 1, digitIndex - 1));
+            digits = digits.slice(0, removeIndex) + digits.slice(removeIndex + 1);
+            digitIndex = removeIndex;
+        } else if (inputType === 'deleteContentForward') {
+            const removeIndex = Math.max(0, Math.min(digits.length - 1, digitIndex));
+            digits = digits.slice(0, removeIndex) + digits.slice(removeIndex + 1);
+            digitIndex = removeIndex;
+        }
     }
 
-    // 하이픈 추가
-    if (value.length >= 3) {
-        value = value.slice(0, 3) + '-' + value.slice(3);
-    }
-    if (value.length >= 8) {
-        value = value.slice(0, 8) + '-' + value.slice(8, 12);
-    }
-    if (value.length > 13) {
-        value = value.slice(0, 13);
+    // 010 정책 유지: 입력/붙여넣기 시점에만 보정하여 삭제 중 커서 점프 최소화
+    if (!isDelete && digits.length > 0 && !digits.startsWith('010')) {
+        const originalLength = digits.length;
+        if (digits.startsWith('01')) {
+            digits = `010${digits.slice(2)}`;
+        } else if (digits.startsWith('0')) {
+            digits = `010${digits.slice(1)}`;
+        } else {
+            digits = `010${digits}`;
+        }
+        digits = digits.slice(0, 11);
+        const prefixAdded = Math.max(0, digits.length - originalLength);
+        digitIndex = Math.min(digits.length, digitIndex + prefixAdded);
     }
 
-    e.target.value = value;
+    const formatted = formatDigits(digits);
+    input.value = formatted;
+
+    if (document.activeElement === input && typeof input.setSelectionRange === 'function') {
+        const nextCaret = caretFromDigitIndex(formatted, digitIndex);
+        input.setSelectionRange(nextCaret, nextCaret);
+    }
+
+    input.__prevPhoneValue = input.value;
+    input.__prevPhoneCaret = input.selectionStart ?? input.value.length;
 }
 
 // 토스트 메시지
