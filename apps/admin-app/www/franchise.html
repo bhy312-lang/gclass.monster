@@ -3657,6 +3657,39 @@
             return gradeMap[gradeText.trim()] || null;
         }
 
+        function isUuid(value) {
+            return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
+        }
+
+        function normalizeAdminUpsertResult(rpcResult) {
+            if (!rpcResult) {
+                return { ok: false, errorMessage: '?? ?? ??? ?? ?????.' };
+            }
+
+            if (rpcResult.success === false) {
+                return {
+                    ok: false,
+                    errorMessage: rpcResult.error || rpcResult.message || '?? ??? ??????.'
+                };
+            }
+
+            const studentData = (rpcResult.data && typeof rpcResult.data === 'object')
+                ? rpcResult.data
+                : rpcResult;
+
+            if (!studentData || !studentData.id) {
+                return { ok: false, errorMessage: '?? ?? ?? ??? ???? ????.' };
+            }
+
+            return {
+                ok: true,
+                student: studentData,
+                parentLinked: typeof rpcResult.parent_linked === 'boolean'
+                    ? rpcResult.parent_linked
+                    : !!studentData.parent_id
+            };
+        }
+
         // 로컬 스토리지에 학생 목록 저장하기
         function saveStudents() {
             localStorage.setItem('students', JSON.stringify(students));
@@ -5080,11 +5113,15 @@
 
             if (!isNaN(hour) && hour >= 0 && hour <= 23 && !isNaN(minute) && minute >= 0 && minute <= 59) {
                 seat.alarmTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                const alarmDate = new Date();
+                alarmDate.setHours(hour, minute, 0, 0);
+                seat.alarmTimeISO = alarmDate.toISOString();
                 // 알람 시간이 변경되면 알람 상태 플래그 리셋
                 seat.alarming = false;
                 seat.alarmStopped = false;
             } else {
                 seat.alarmTime = null;
+                seat.alarmTimeISO = null;
                 seat.alarming = false;
                 seat.alarmStopped = false;
             }
@@ -6322,7 +6359,7 @@
         // 학생 기본정보 저장
         async function saveStudentInfo() {
             if (!window.supabase) {
-                showAlertModal('에러', 'Supabase 연결이 필요합니다.', '⚠️');
+                showAlertModal('??', 'Supabase ??? ?????.', '??');
                 return;
             }
 
@@ -6330,9 +6367,15 @@
             const grade = document.getElementById('studentInfoGrade').value.trim();
             const school = document.getElementById('studentInfoSchool').value.trim();
             const parentPhone = document.getElementById('studentInfoPhone').value.trim();
+            const targetStudentId = isUuid(currentStudentId) ? currentStudentId : null;
+
+            if (!name) {
+                showAlertModal('?? ??', '?? ??? ??????.', '??');
+                return;
+            }
 
             const { data, error } = await window.supabase.rpc('admin_upsert_student', {
-                p_student_id: currentStudentId,
+                p_student_id: targetStudentId,
                 p_name: name,
                 p_school_name: school,
                 p_grade: convertGradeToNum(grade),
@@ -6340,18 +6383,25 @@
             });
 
             if (error) {
-                console.error('[saveStudentInfo] RPC 에러:', error);
-                showAlertModal('저장 실패', error.message || '학생 정보 저장에 실패했습니다.', '❌');
+                console.error('[saveStudentInfo] RPC ??:', error);
+                showAlertModal('?? ??', error.message || '?? ?? ??? ??????.', '?');
                 return;
             }
+
+            const normalized = normalizeAdminUpsertResult(data);
+            if (!normalized.ok) {
+                showAlertModal('?? ??', normalized.errorMessage, '?');
+                return;
+            }
+
+            currentStudentId = normalized.student.id;
 
             await loadStudents();
             document.getElementById('studentModalName').textContent = name;
             loadStudentManagementList();
-            showAlertModal('저장 완료', '학생 정보가 저장되었습니다.', '✅');
+            showAlertModal('?? ??', '?? ??? ???????.', '?');
         }
 
-        // 성적 목록 렌더링
         function renderGradesList(student) {
             const container = document.getElementById('gradesList');
             if (!student.grades || !student.grades.length) {
@@ -6791,59 +6841,76 @@
         }
 
         // 새 학생 생성
-        function createNewStudent() {
+        async function createNewStudent() {
             const name = document.getElementById('addStudentName').value.trim();
             const grade = document.getElementById('addStudentGrade').value.trim();
             const school = document.getElementById('addStudentSchool').value.trim();
             const parentPhone = document.getElementById('addStudentPhone').value.trim();
+            const phoneDigits = parentPhone.replace(/\D/g, '');
 
             if (!name) {
-                showAlertModal('입력 오류', '학생 이름을 입력해주세요.', '⚠️');
+                showAlertModal('?? ??', '?? ??? ??????.', '??');
                 return;
             }
 
-            const students = JSON.parse(localStorage.getItem('students') || '[]');
-            const newStudent = {
-                id: 'student-' + Date.now(),
-                name, grade, school, parentPhone,
-                memos: [],
-                makeupTimes: [],
-                grades: [],
-                feedbacks: []
-            };
+            if (!parentPhone || phoneDigits.length < 10 || phoneDigits.length > 11) {
+                showAlertModal('?? ??', '????? 10~11?? ??? ??????.', '??');
+                return;
+            }
 
-            students.push(newStudent);
-            localStorage.setItem('students', JSON.stringify(students));
+            if (!window.supabase) {
+                showAlertModal('??', 'Supabase ??? ?????.', '??');
+                return;
+            }
+
+            const { data, error } = await window.supabase.rpc('admin_upsert_student', {
+                p_student_id: null,
+                p_name: name,
+                p_school_name: school || null,
+                p_grade: convertGradeToNum(grade),
+                p_full_phone: parentPhone
+            });
+
+            if (error) {
+                console.error('[createNewStudent] RPC ??:', error);
+                showAlertModal('?? ??', error.message || '?? ??? ??????.', '?');
+                return;
+            }
+
+            const normalized = normalizeAdminUpsertResult(data);
+            if (!normalized.ok) {
+                showAlertModal('?? ??', normalized.errorMessage, '?');
+                return;
+            }
+
+            await loadStudents();
             loadStudentManagementList();
             closeAddStudentModal();
-            showAlertModal('추가 완료', '학생이 추가되었습니다.', '✅');
+            showAlertModal('?? ??', '??? DB? ???????.', '?');
         }
 
-        // 학생 삭제
         async function deleteStudent() {
             const confirmed = await showConfirmModal(
-                '학생 삭제',
-                '정말 이 학생을 삭제하시겠습니까?<br>모든 정보가 삭제됩니다.',
-                '🗑️',
-                '삭제',
-                '취소'
+                '?? ??',
+                '?? ? ??? ?????????<br>?? ??? ?????.',
+                '???',
+                '??',
+                '??'
             );
             if (!confirmed) return;
 
-            // RPC 호출: admin_delete_student (UUID 형식인 경우만)
-            if (window.supabase && currentStudentId && currentStudentId.includes('-')) {
-                const { data, error } = await window.supabase.rpc('admin_delete_student', {
+            if (window.supabase && isUuid(currentStudentId)) {
+                const { error } = await window.supabase.rpc('admin_delete_student', {
                     p_student_id: currentStudentId
                 });
 
                 if (error) {
-                    console.error('[deleteStudent] RPC 에러:', error);
-                    showAlertModal('삭제 실패', error.message || '학생 삭제에 실패했습니다.', '❌');
+                    console.error('[deleteStudent] RPC ??:', error);
+                    showAlertModal('?? ??', error.message || '?? ??? ??????.', '?');
                     return;
                 }
             }
 
-            // localStorage 캐시도 정리
             const students = JSON.parse(localStorage.getItem('students') || '[]');
             const filtered = students.filter(s => s.id !== currentStudentId);
             localStorage.setItem('students', JSON.stringify(filtered));
@@ -6851,8 +6918,9 @@
             closeStudentDetailModal();
             await loadStudents();
             loadStudentManagementList();
-            showAlertModal('삭제 완료', '학생이 삭제되었습니다.', '✅');
+            showAlertModal('?? ??', '??? ???????.', '?');
         }
+
 
         // switchTab 함수 수정 - 학생관리 탭 처리 추가
         const originalSwitchTab = switchTab;

@@ -4864,11 +4864,15 @@
 
             if (!isNaN(hour) && hour >= 0 && hour <= 23 && !isNaN(minute) && minute >= 0 && minute <= 59) {
                 seat.alarmTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                const alarmDate = new Date();
+                alarmDate.setHours(hour, minute, 0, 0);
+                seat.alarmTimeISO = alarmDate.toISOString();
                 // 알람 시간이 변경되면 알람 상태 플래그 리셋
                 seat.alarming = false;
                 seat.alarmStopped = false;
             } else {
                 seat.alarmTime = null;
+                seat.alarmTimeISO = null;
                 seat.alarming = false;
                 seat.alarmStopped = false;
             }
