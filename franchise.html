@@ -2921,6 +2921,29 @@
                                 <input type="tel" id="studentInfoPhone" placeholder="010-0000-0000"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#58d3d3] focus:border-transparent">
                             </div>
+                            <div class="mt-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h5 class="text-sm font-semibold text-gray-800">연락처/알림 수신</h5>
+                                    <button type="button" onclick="loadStudentNotificationContacts()" class="text-xs text-[#45b8b8] hover:underline">새로고침</button>
+                                </div>
+
+                                <div>
+                                    <p class="text-xs font-medium text-gray-600 mb-1">전화번호 연락처</p>
+                                    <div id="studentNotificationContactsList" class="space-y-2 text-xs text-gray-600"></div>
+                                    <div class="flex gap-2 mt-2 items-center">
+                                        <select id="notifContactRelationSelect" class="w-[24%] px-2 py-1.5 border border-gray-300 rounded-lg text-xs bg-white">
+                                            <option value="father">아버지</option>
+                                            <option value="mother">어머니</option>
+                                            <option value="grandfather">할아버지</option>
+                                            <option value="grandmother">할머니</option>
+                                            <option value="other">기타</option>
+                                        </select>
+                                        <input type="tel" id="notifContactPhoneInput" placeholder="010-0000-0000"
+                                            class="w-[56%] px-2 py-1.5 border border-gray-300 rounded-lg text-xs">
+                                        <button type="button" onclick="adminAddNotificationContactFromModal()" class="w-[20%] bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs py-1.5">추가</button>
+                                    </div>
+                                </div>
+                            </div>
                             <button onclick="saveStudentInfo()"
                                 class="mt-4 bg-[#58d3d3] hover:bg-[#45b8b8] text-white px-6 py-2 rounded-lg transition">
                                 저장
@@ -6215,7 +6238,7 @@
             document.getElementById('studentInfoName').value = student.name || '';
             document.getElementById('studentInfoGrade').value = student.grade || '';
             document.getElementById('studentInfoSchool').value = student.school || '';
-            document.getElementById('studentInfoPhone').value = student.parentPhone || '';
+            document.getElementById('studentInfoPhone').value = formatPhoneInputValue(student.parentPhone || '');
 
             // 기본 탭으로 리셋
             switchStudentTab('info');
@@ -6225,6 +6248,7 @@
             renderFeedbackList(student);
             renderMemosList(student);
             renderMakeupList(student);
+            loadStudentNotificationContacts();
 
             document.getElementById('studentDetailModal').classList.remove('hidden');
             document.getElementById('studentDetailModal').classList.add('flex');
@@ -6244,12 +6268,14 @@
                 grades: { from: 'from-amber-50', to: 'to-white', border: 'border-amber-400', text: 'text-amber-600' },
                 feedback: { from: 'from-violet-50', to: 'to-white', border: 'border-violet-400', text: 'text-violet-600' },
                 memos: { from: 'from-blue-50', to: 'to-white', border: 'border-blue-400', text: 'text-blue-600' },
-                makeup: { from: 'from-rose-50', to: 'to-white', border: 'border-rose-400', text: 'text-rose-600' }
+                makeup: { from: 'from-rose-50', to: 'to-white', border: 'border-rose-400', text: 'text-rose-600' },
+                approval: { from: 'from-emerald-50', to: 'to-white', border: 'border-emerald-400', text: 'text-emerald-600' }
             };
 
             document.querySelectorAll('.student-tab-btn').forEach(btn => {
                 const tab = btn.dataset.tab;
                 const colors = colorMap[tab];
+                if (!colors) return;
                 btn.classList.remove('active', 'font-semibold', 'shadow-sm', 'z-10',
                     colors.from, colors.to, colors.border, colors.text);
                 btn.classList.add('font-medium', 'from-gray-200', 'to-gray-100', 'border-gray-300', 'text-gray-500');
@@ -6257,6 +6283,7 @@
 
             const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
             const activeColors = colorMap[tabName];
+            if (!activeBtn || !activeColors) return;
             activeBtn.classList.remove('font-medium', 'from-gray-200', 'to-gray-100', 'border-gray-300', 'text-gray-500');
             activeBtn.classList.add('active', 'font-semibold', 'shadow-sm', 'z-10',
                 activeColors.from, activeColors.to, activeColors.border, activeColors.text);
@@ -6266,42 +6293,286 @@
         }
 
         // 학생 기본정보 저장
+        function parseAdminUpsertRpcResult(payload) {
+            const isEnvelope = payload && typeof payload === 'object' && ('success' in payload || 'error' in payload || 'data' in payload);
+            if (isEnvelope) {
+                if (payload.success === false || payload.error) {
+                    const detailParts = [];
+                    if (payload.error_code) detailParts.push(`code=${payload.error_code}`);
+                    if (payload.current_role !== undefined) detailParts.push(`role=${payload.current_role}`);
+                    if (payload.auth_uid) detailParts.push(`uid=${payload.auth_uid}`);
+                    const detail = detailParts.length ? ` (${detailParts.join(', ')})` : '';
+                    return {
+                        ok: false,
+                        message: (payload.error || payload.message || 'Failed to save student info.') + detail
+                    };
+                }
+                return {
+                    ok: true,
+                    row: payload.data || null
+                };
+            }
+
+            return {
+                ok: !!payload,
+                row: payload || null,
+                message: payload ? null : 'No data returned from RPC.'
+            };
+        }
+
+        function formatPhoneInputValue(value) {
+            const digits = (value || '').replace(/\D/g, '').slice(0, 11);
+            if (digits.length <= 3) return digits;
+            if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+            return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+        }
+
+        function normalizePhoneDigits(value) {
+            return (value || '').replace(/\D/g, '');
+        }
+
+        function setupStudentPhoneAutoFormat() {
+            ['addStudentPhone', 'studentInfoPhone', 'notifContactPhoneInput'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (!el || el.dataset.phoneFormatBound === '1') return;
+
+                const applyFormat = () => {
+                    el.value = formatPhoneInputValue(el.value);
+                };
+
+                el.addEventListener('input', applyFormat);
+                el.addEventListener('blur', applyFormat);
+                el.dataset.phoneFormatBound = '1';
+            });
+        }
+
+        setupStudentPhoneAutoFormat();
+
+        async function loadStudentNotificationContacts() {
+            if (!window.supabase || !currentStudentId) return;
+
+            const contactWrap = document.getElementById('studentNotificationContactsList');
+            if (!contactWrap) return;
+
+            contactWrap.innerHTML = '<p class="text-gray-400">로딩중...</p>';
+
+            const { data: contacts, error: contactErr } = await window.supabase
+                .from('student_notification_contacts')
+                .select('id,contact_name,relationship,phone,receive_check_in,receive_check_out,is_active')
+                .eq('student_id', currentStudentId)
+                .order('created_at', { ascending: true });
+
+            if (contactErr) {
+                if (/Could not find the table/i.test(contactErr.message || '')) {
+                    contactWrap.innerHTML = '<p class="text-amber-600">연락처 기능 초기화가 필요합니다. DB 마이그레이션(041~043)을 먼저 적용해주세요.</p>';
+                    return;
+                }
+                contactWrap.innerHTML = `<p class="text-red-500">연락처 목록 로드 실패: ${contactErr.message}</p>`;
+            } else if (!contacts || contacts.length === 0) {
+                contactWrap.innerHTML = '<p class="text-gray-400">등록된 전화번호 연락처가 없습니다.</p>';
+            } else {
+                let appInstallMap = {};
+                try {
+                    const phoneDigitsList = [...new Set(contacts.map((c) => normalizePhoneDigits(c.phone)).filter(Boolean))];
+                    if (phoneDigitsList.length > 0) {
+                        const { data: appStatusResult, error: appStatusErr } = await window.supabase.rpc('admin_get_contact_app_install_status', {
+                            p_phone_digits_list: phoneDigitsList
+                        });
+                        if (!appStatusErr && appStatusResult?.success) {
+                            appInstallMap = appStatusResult.data || {};
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[loadStudentNotificationContacts] app install status lookup failed:', e);
+                }
+
+                contactWrap.innerHTML = contacts.map((c) => `
+                    <div class="border border-gray-200 rounded-lg p-2 bg-white">
+                        <div class="flex items-center justify-between gap-2">
+                            <div>
+                                <p class="font-medium text-gray-700 flex items-center gap-2">
+                                    <span>${c.contact_name} ${c.relationship ? `(${c.relationship})` : ''}</span>
+                                    ${appInstallMap[normalizePhoneDigits(c.phone)] ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">앱 설치</span>' : '<span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">앱 미설치</span>'}
+                                </p>
+                                <p class="text-[11px] text-gray-500">${formatPhoneInputValue(c.phone || '')}</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <label class="inline-flex items-center gap-2 text-[11px] text-gray-600 cursor-pointer">
+                                    <span>등/하원 알림</span>
+                                    <span class="relative inline-flex items-center">
+                                        <input type="checkbox" class="peer sr-only" ${(c.receive_check_in && c.receive_check_out) ? 'checked' : ''} onchange="adminUpdateNotificationContactToggle('${c.id}', this.checked)">
+                                        <span class="w-9 h-5 bg-gray-300 peer-checked:bg-emerald-500 rounded-full transition-colors"></span>
+                                        <span class="absolute left-0.5 w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-4 transition-transform"></span>
+                                    </span>
+                                </label>
+                                <button onclick="adminRemoveNotificationContact('${c.id}')" class="text-red-500 hover:underline text-[11px]">삭제</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function adminAddNotificationContactFromModal() {
+            const relation = document.getElementById('notifContactRelationSelect')?.value || 'other';
+            const phone = document.getElementById('notifContactPhoneInput')?.value?.trim();
+            if (!currentStudentId || !phone) {
+                showAlertModal('입력 오류', '전화번호를 입력해주세요.', '⚠️');
+                return;
+            }
+
+            const relationNameMap = {
+                father: '아버지',
+                mother: '어머니',
+                grandfather: '할아버지',
+                grandmother: '할머니',
+                other: '기타'
+            };
+            const autoContactName = relationNameMap[relation] || '보호자';
+
+            let { data, error } = await window.supabase.rpc('admin_add_student_notification_contact', {
+                p_student_id: currentStudentId,
+                p_contact_name: autoContactName,
+                p_relationship: relation,
+                p_phone: phone,
+                p_receive_check_in: false,
+                p_receive_check_out: false
+            });
+
+            // RPC 스키마 캐시 불일치/함수 미반영 시 직접 insert fallback
+            if (error && /Could not find the function/i.test(error.message || '')) {
+                const fallback = await window.supabase
+                    .from('student_notification_contacts')
+                    .insert({
+                        student_id: currentStudentId,
+                        contact_name: autoContactName,
+                        relationship: relation,
+                        phone: phone,
+                        receive_check_in: false,
+                        receive_check_out: false
+                    })
+                    .select('id')
+                    .single();
+                data = fallback.data;
+                error = fallback.error;
+            }
+
+            if (error && /Could not find the table/i.test(error.message || '')) {
+                showAlertModal('추가 실패', '연락처 테이블이 아직 반영되지 않았습니다. DB 마이그레이션(041~043) 적용 후 다시 시도해주세요.', '❌');
+                return;
+            }
+
+            if (error || data?.success === false) {
+                showAlertModal('추가 실패', data?.error || error?.message || '연락처 추가 실패', '❌');
+                return;
+            }
+            document.getElementById('notifContactRelationSelect').value = 'father';
+            document.getElementById('notifContactPhoneInput').value = '';
+            await loadStudentNotificationContacts();
+        }
+
+        async function adminRemoveNotificationContact(contactId) {
+            const { data, error } = await window.supabase.rpc('admin_remove_student_notification_contact', {
+                p_contact_id: contactId
+            });
+            if (error || data?.success === false) {
+                showAlertModal('삭제 실패', data?.error || error?.message || '연락처 삭제 실패', '❌');
+                return;
+            }
+            await loadStudentNotificationContacts();
+        }
+
+        async function adminUpdateNotificationContactToggle(contactId, checked) {
+            const { data: rows } = await window.supabase
+                .from('student_notification_contacts')
+                .select('contact_name,relationship,phone,is_active,receive_check_in,receive_check_out')
+                .eq('id', contactId)
+                .limit(1);
+            const row = rows?.[0];
+            if (!row) return;
+
+            const { data, error } = await window.supabase.rpc('admin_update_student_notification_contact', {
+                p_contact_id: contactId,
+                p_contact_name: row.contact_name,
+                p_relationship: row.relationship,
+                p_phone: row.phone,
+                p_receive_check_in: checked,
+                p_receive_check_out: checked,
+                p_is_active: !!row.is_active
+            });
+
+            if (error || data?.success === false) {
+                showAlertModal('저장 실패', data?.error || error?.message || '연락처 알림 설정 저장 실패', '❌');
+                await loadStudentNotificationContacts();
+            }
+        }
+
         async function saveStudentInfo() {
             if (!window.supabase) {
-                showAlertModal('에러', 'Supabase 연결이 필요합니다.', '⚠️');
+                showAlertModal('Error', 'Supabase connection is required.', 'OK');
                 return;
             }
 
             const name = document.getElementById('studentInfoName').value.trim();
             const grade = document.getElementById('studentInfoGrade').value.trim();
             const school = document.getElementById('studentInfoSchool').value.trim();
-            const parentPhone = document.getElementById('studentInfoPhone').value.trim();
+            const parentPhoneRaw = document.getElementById('studentInfoPhone').value.trim();
+            const normalizedPhone = (parentPhoneRaw || '').replace(/\D/g, '');
 
-            // RPC 호출: admin_upsert_student
-            const { data, error } = await window.supabase.rpc('admin_upsert_student', {
+            if (!name) {
+                showAlertModal('Input Error', 'Student name is required.', 'OK');
+                return;
+            }
+
+            const rpcPayload = {
                 p_student_id: currentStudentId,
                 p_name: name,
                 p_school_name: school,
                 p_grade: convertGradeToNum(grade),
-                p_full_phone: parentPhone
-            });
+                p_full_phone: normalizedPhone || null,
+                p_parent_id: null
+            };
+
+            let { data, error } = await window.supabase.rpc('admin_upsert_student', rpcPayload);
+
+            if (error && /Could not find the function/.test(error.message || '')) {
+                const fallbackPayload = { ...rpcPayload };
+                delete fallbackPayload.p_parent_id;
+                const retry = await window.supabase.rpc('admin_upsert_student', fallbackPayload);
+                data = retry.data;
+                error = retry.error;
+            }
 
             if (error) {
-                console.error('[saveStudentInfo] RPC 에러:', error);
-                showAlertModal('저장 실패', error.message || '학생 정보 저장에 실패했습니다.', '❌');
+                console.error('[saveStudentInfo] RPC error:', error);
+                showAlertModal('Save Failed', error.message || 'Failed to save student info.', 'OK');
                 return;
             }
 
-            // DB에서 다시 로드
-            await loadStudents();
+            const parsed = parseAdminUpsertRpcResult(data);
+            if (!parsed.ok) {
+                console.error('[saveStudentInfo] RPC business error payload:', data);
+                showAlertModal('Save Failed', parsed.message || 'Failed to save student info.', 'OK');
+                return;
+            }
+            if (!parsed.row) {
+                showAlertModal('Save Failed', 'No student row was returned from RPC.', 'OK');
+                return;
+            }
 
-            // UI 업데이트
+            await loadStudents();
             document.getElementById('studentModalName').textContent = name;
             loadStudentManagementList();
-            showAlertModal('저장 완료', '학생 정보가 저장되었습니다.', '✅');
+
+            if (normalizedPhone && normalizedPhone.length < 4) {
+                showAlertModal('Saved', 'Saved. This phone has fewer than 4 digits, so kiosk last-4 search is unavailable.', 'OK');
+                return;
+            }
+
+            showAlertModal('Saved', 'Student info has been saved.', 'OK');
         }
 
-        // 성적 목록 렌더링
+        // 학생 성적 목록 렌더링
         function renderGradesList(student) {
             const container = document.getElementById('gradesList');
             if (!student.grades || !student.grades.length) {
@@ -6741,32 +7012,69 @@
         }
 
         // 새 학생 생성
-        function createNewStudent() {
+        async function createNewStudent() {
             const name = document.getElementById('addStudentName').value.trim();
             const grade = document.getElementById('addStudentGrade').value.trim();
             const school = document.getElementById('addStudentSchool').value.trim();
-            const parentPhone = document.getElementById('addStudentPhone').value.trim();
+            const parentPhoneRaw = document.getElementById('addStudentPhone').value.trim();
+            const normalizedPhone = (parentPhoneRaw || '').replace(/\D/g, '');
 
             if (!name) {
-                showAlertModal('입력 오류', '학생 이름을 입력해주세요.', '⚠️');
+                showAlertModal('Input Error', 'Student name is required.', 'OK');
                 return;
             }
 
-            const students = JSON.parse(localStorage.getItem('students') || '[]');
-            const newStudent = {
-                id: 'student-' + Date.now(),
-                name, grade, school, parentPhone,
-                memos: [],
-                makeupTimes: [],
-                grades: [],
-                feedbacks: []
+            if (!window.supabase) {
+                showAlertModal('Error', 'Supabase connection is required.', 'OK');
+                return;
+            }
+
+            const rpcPayload = {
+                p_student_id: null,
+                p_name: name,
+                p_school_name: school,
+                p_grade: convertGradeToNum(grade),
+                p_full_phone: normalizedPhone || null,
+                p_parent_id: null
             };
 
-            students.push(newStudent);
-            localStorage.setItem('students', JSON.stringify(students));
+            let { data, error } = await window.supabase.rpc('admin_upsert_student', rpcPayload);
+
+            if (error && /Could not find the function/.test(error.message || '')) {
+                const fallbackPayload = { ...rpcPayload };
+                delete fallbackPayload.p_parent_id;
+                const retry = await window.supabase.rpc('admin_upsert_student', fallbackPayload);
+                data = retry.data;
+                error = retry.error;
+            }
+
+            if (error) {
+                console.error('[createNewStudent] RPC error:', error);
+                showAlertModal('Create Failed', error.message || 'Failed to create student.', 'OK');
+                return;
+            }
+
+            const parsed = parseAdminUpsertRpcResult(data);
+            if (!parsed.ok) {
+                console.error('[createNewStudent] RPC business error payload:', data);
+                showAlertModal('Create Failed', parsed.message || 'Failed to create student.', 'OK');
+                return;
+            }
+            if (!parsed.row) {
+                showAlertModal('Create Failed', 'No student row was returned from RPC.', 'OK');
+                return;
+            }
+
+            await loadStudents();
             loadStudentManagementList();
             closeAddStudentModal();
-            showAlertModal('추가 완료', '학생이 추가되었습니다.', '✅');
+
+            if (normalizedPhone && normalizedPhone.length < 4) {
+                showAlertModal('Created', 'Student created. This phone has fewer than 4 digits, so kiosk last-4 search is unavailable.', 'OK');
+                return;
+            }
+
+            showAlertModal('Created', 'Student has been created.', 'OK');
         }
 
         // 학생 삭제

@@ -1,4 +1,4 @@
-// 프로필 설정 페이지 로직
+﻿// 프로필 설정 페이지 로직
 let currentUser = null;
 let currentProfile = null;
 
@@ -145,6 +145,37 @@ async function saveProfile() {
     }
 
     // 2. 자녀 정보 저장
+    // 1.5 사전등록 학생 자동연동 (전화번호 exact match)
+    let linkedCount = 0;
+    try {
+      const { data: claimResult, error: claimError } = await supabase.rpc('parent_claim_students_by_phone');
+      if (claimError) {
+        console.warn('[Setup] parent_claim_students_by_phone error:', claimError);
+      } else if (claimResult?.success) {
+        linkedCount = claimResult.linked_count || 0;
+        const conflictCount = Array.isArray(claimResult.conflict_candidates) ? claimResult.conflict_candidates.length : 0;
+        if (linkedCount > 0 || conflictCount > 0) {
+          showSuccess(`사전등록 자동연동: 연결 ${linkedCount}건, 충돌 ${conflictCount}건`);
+        }
+      }
+    } catch (claimEx) {
+      console.warn('[Setup] parent_claim_students_by_phone exception:', claimEx);
+    }
+
+    const { data: existingLinkedStudents } = await supabase
+      .from('students')
+      .select('id,name')
+      .eq('parent_id', currentUser.id)
+      .eq('name', studentName)
+      .limit(1);
+
+    if (existingLinkedStudents && existingLinkedStudents.length > 0) {
+      showSuccess(linkedCount > 0 ? '자동연동이 완료되었습니다.' : '기존 학생 정보가 이미 연결되어 있습니다.');
+      setTimeout(() => {
+        window.location.href = '/parent/';
+      }, 1000);
+      return;
+    }
     const studentData = {
       name: studentName,
       parent_id: currentUser.id,
@@ -214,3 +245,4 @@ function showError(message) {
 
   setTimeout(() => alert.remove(), 3000);
 }
+

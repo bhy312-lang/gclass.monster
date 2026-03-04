@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>키오스크 - 꿈터공부방</title>
+    <title>?ㅼ삤?ㅽ겕 - 轅덊꽣怨듬?諛?/title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
@@ -26,11 +26,11 @@
             <div class="w-24 h-24 bg-gradient-to-br from-pink-200 to-purple-200 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-200/50">
                 <span class="material-symbols-outlined text-pink-600 text-6xl">touch_app</span>
             </div>
-            <h1 class="text-4xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-3">키오스크</h1>
-            <p class="text-gray-400 text-lg">부모님 휴대폰 번호 뒷자리 4자리</p>
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-3">?ㅼ삤?ㅽ겕</h1>
+            <p class="text-gray-400 text-lg">遺紐⑤떂 ?대???踰덊샇 ?룹옄由?4?먮━</p>
         </div>
 
-        <!-- 학생 정보 표시 영역 -->
+        <!-- ?숈깮 ?뺣낫 ?쒖떆 ?곸뿭 -->
         <div id="student-info" class="hidden mb-2">
             <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-2 border-2 border-emerald-200">
                 <div class="text-center">
@@ -39,7 +39,7 @@
             </div>
         </div>
 
-        <!-- 번호 입력 표시 -->
+        <!-- 踰덊샇 ?낅젰 ?쒖떆 -->
         <div class="mb-10">
             <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-8 text-center shadow-inner border-2 border-purple-100">
                 <div class="flex justify-center gap-4 mb-3">
@@ -51,7 +51,7 @@
             </div>
         </div>
 
-        <!-- 숫자 키패드 -->
+        <!-- ?レ옄 ?ㅽ뙣??-->
         <div class="grid grid-cols-3 gap-5 mb-10">
             <button onclick="kioskPressKey('1')" class="kiosk-key bg-gradient-to-br from-pink-100 to-pink-200 hover:from-pink-200 hover:to-pink-300 text-3xl font-bold text-pink-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-pink-200/50 hover:shadow-xl hover:shadow-pink-300/50 active:scale-95 active:shadow-md">1</button>
             <button onclick="kioskPressKey('2')" class="kiosk-key bg-gradient-to-br from-purple-100 to-purple-200 hover:from-purple-200 hover:to-purple-300 text-3xl font-bold text-purple-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-purple-200/50 hover:shadow-xl hover:shadow-purple-300/50 active:scale-95 active:shadow-md">2</button>
@@ -62,35 +62,35 @@
             <button onclick="kioskPressKey('7')" class="kiosk-key bg-gradient-to-br from-teal-100 to-teal-200 hover:from-teal-200 hover:to-teal-300 text-3xl font-bold text-teal-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-300/50 active:scale-95 active:shadow-md">7</button>
             <button onclick="kioskPressKey('8')" class="kiosk-key bg-gradient-to-br from-indigo-100 to-indigo-200 hover:from-indigo-200 hover:to-indigo-300 text-3xl font-bold text-indigo-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-indigo-200/50 hover:shadow-xl hover:shadow-indigo-300/50 active:scale-95 active:shadow-md">8</button>
             <button onclick="kioskPressKey('9')" class="kiosk-key bg-gradient-to-br from-rose-100 to-rose-200 hover:from-rose-200 hover:to-rose-300 text-3xl font-bold text-rose-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-rose-200/50 hover:shadow-xl hover:shadow-rose-300/50 active:scale-95 active:shadow-md">9</button>
-            <button onclick="kioskClearInput()" class="bg-gradient-to-br from-red-100 to-red-200 hover:from-red-200 hover:to-red-300 text-xl font-bold text-red-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-red-200/50 hover:shadow-xl hover:shadow-red-300/50 active:scale-95">지우기</button>
+            <button onclick="kioskClearInput()" class="bg-gradient-to-br from-red-100 to-red-200 hover:from-red-200 hover:to-red-300 text-xl font-bold text-red-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-red-200/50 hover:shadow-xl hover:shadow-red-300/50 active:scale-95">吏?곌린</button>
             <button onclick="kioskPressKey('0')" class="kiosk-key bg-gradient-to-br from-cyan-100 to-cyan-200 hover:from-cyan-200 hover:to-cyan-300 text-3xl font-bold text-cyan-600 rounded-2xl py-6 transition-all duration-150 shadow-lg shadow-cyan-200/50 hover:shadow-xl hover:shadow-cyan-300/50 active:scale-95 active:shadow-md">0</button>
-            <button onclick="kioskBackspace()" class="bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-2xl font-bold text-gray-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-300/50 active:scale-95">←</button>
+            <button onclick="kioskBackspace()" class="bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-2xl font-bold text-gray-500 rounded-2xl py-5 transition-all duration-150 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-300/50 active:scale-95">??/button>
         </div>
 
-        <!-- 등원/하원 버튼 -->
+        <!-- ?깆썝/?섏썝 踰꾪듉 -->
         <div class="flex gap-5">
             <button onclick="kioskCheckIn()"
                 class="flex-1 px-8 py-6 bg-gradient-to-br from-emerald-300 to-emerald-400 text-white font-bold rounded-2xl shadow-lg shadow-emerald-200/50 hover:shadow-xl hover:shadow-emerald-300/50 transition-all duration-150 text-xl active:scale-95">
                 <span class="material-symbols-outlined inline align-middle mr-2 text-2xl">login</span>
-                등원
+                ?깆썝
             </button>
             <button onclick="kioskCheckOut()"
                 class="flex-1 px-8 py-6 bg-gradient-to-br from-amber-300 to-orange-400 text-white font-bold rounded-2xl shadow-lg shadow-orange-200/50 hover:shadow-xl hover:shadow-orange-300/50 transition-all duration-150 text-xl active:scale-95">
                 <span class="material-symbols-outlined inline align-middle mr-2 text-2xl">logout</span>
-                하원
+                ?섏썝
             </button>
         </div>
 
-        <!-- 메인으로 돌아가기 -->
+        <!-- 硫붿씤?쇰줈 ?뚯븘媛湲?-->
         <div class="mt-8 text-center">
             <a href="admin-main.html" class="inline-flex items-center gap-2 px-6 py-3 bg-white/60 text-gray-400 font-semibold rounded-xl hover:bg-white/80 transition-all duration-150">
                 <span class="material-symbols-outlined">home</span>
-                메인으로 돌아가기
+                硫붿씤?쇰줈 ?뚯븘媛湲?
             </a>
         </div>
     </div>
 
-    <!-- 알림 모달 -->
+    <!-- ?뚮┝ 紐⑤떖 -->
     <div id="alert-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
         <div class="bg-white rounded-3xl p-10 max-w-sm w-full mx-4 shadow-2xl text-center">
             <div id="alert-icon" class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -98,18 +98,18 @@
             </div>
             <h3 id="alert-title" class="text-2xl font-bold text-gray-800 mb-3"></h3>
             <p id="alert-message" class="text-gray-600 mb-8"></p>
-            <button onclick="closeAlertModal()" class="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:shadow-lg transition">확인</button>
+            <button onclick="closeAlertModal()" class="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:shadow-lg transition">?뺤씤</button>
         </div>
     </div>
 
-    <!-- 학생 선택 모달 (같은 번호로 여러 학생이 있을 경우) -->
+    <!-- ?숈깮 ?좏깮 紐⑤떖 (媛숈? 踰덊샇濡??щ윭 ?숈깮???덉쓣 寃쎌슦) -->
     <div id="student-select-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
         <div class="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl">
-            <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">학생 선택</h3>
+            <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">?숈깮 ?좏깮</h3>
             <div id="student-select-list" class="space-y-3 max-h-60 overflow-y-auto">
-                <!-- 학생 버튼들이 동적으로 추가됨 -->
+                <!-- ?숈깮 踰꾪듉?ㅼ씠 ?숈쟻?쇰줈 異붽???-->
             </div>
-            <button onclick="closeStudentSelectModal()" class="w-full mt-4 px-6 py-3 bg-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-300 transition">취소</button>
+            <button onclick="closeStudentSelectModal()" class="w-full mt-4 px-6 py-3 bg-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-300 transition">痍⑥냼</button>
         </div>
     </div>
 
@@ -120,18 +120,18 @@
     <script src="data-service.js"></script>
 
     <script>
-        // Supabase 클라이언트 (DOMContentLoaded 후 할당)
+        // Supabase ?대씪?댁뼵??(DOMContentLoaded ???좊떦)
         let sb = null;
 
-        // 페이지 로드 시 로그인 체크
+        // ?섏씠吏 濡쒕뱶 ??濡쒓렇??泥댄겕
         async function checkKioskAuth() {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.user) {
-                alert('키오스크를 사용하려면 로그인이 필요합니다.');
+                alert('?ㅼ삤?ㅽ겕瑜??ъ슜?섎젮硫?濡쒓렇?몄씠 ?꾩슂?⑸땲??');
                 window.location.href = `login.html?redirect=${encodeURIComponent(window.location.pathname)}`;
                 return false;
             }
-            console.log('[Kiosk] 로그인 확인됨:', session.user.email);
+            console.log('[Kiosk] 濡쒓렇???뺤씤??', session.user.email);
             return true;
         }
 
@@ -142,81 +142,81 @@
 
         // Demo mode students (local testing without Supabase)
         const DEMO_STUDENTS = [
-            { id: 'demo-1', name: '강지민', parent_phone_last4: '5100' },
-            { id: 'demo-2', name: '강서준', parent_phone_last4: '4397' }
+            { id: 'demo-1', name: '媛뺤?誘?, parent_phone_last4: '5100' },
+            { id: 'demo-2', name: '媛뺤꽌以', parent_phone_last4: '4397' }
         ];
 
-        // ===== 학생별 보강시간/메모 조회 함수 =====
-        // 학생 찾기 (ID 또는 이름으로 매칭)
+        // ===== ?숈깮蹂?蹂닿컯?쒓컙/硫붾え 議고쉶 ?⑥닔 =====
+        // ?숈깮 李얘린 (ID ?먮뒗 ?대쫫?쇰줈 留ㅼ묶)
         function findStudentInManagement(studentId, studentName) {
             const students = JSON.parse(localStorage.getItem('students') || '[]');
-            // 먼저 ID로 찾기
+            // 癒쇱? ID濡?李얘린
             let student = students.find(s => s.id === studentId);
-            // ID로 못 찾으면 이름으로 찾기
+            // ID濡?紐?李얠쑝硫??대쫫?쇰줈 李얘린
             if (!student && studentName) {
                 student = students.find(s => s.name === studentName);
             }
             return student;
         }
 
-        // 해당 날짜의 보강시간(분) 조회
+        // ?대떦 ?좎쭨??蹂닿컯?쒓컙(遺? 議고쉶
         function getMakeupMinutesForStudent(studentId, dateStr = null, studentName = null) {
             const student = findStudentInManagement(studentId, studentName || (selectedStudent ? selectedStudent.name : null));
             if (!student || !student.makeupTimes) return 0;
 
             const today = dateStr || new Date().toISOString().split('T')[0];
             const activeMakeup = student.makeupTimes.find(m => m.startDate <= today && m.endDate >= today);
-            console.log(`[보강시간 조회] 학생: ${student.name}, 날짜: ${today}, 보강시간: ${activeMakeup ? activeMakeup.additionalMinutes : 0}분`);
+            console.log(`[蹂닿컯?쒓컙 議고쉶] ?숈깮: ${student.name}, ?좎쭨: ${today}, 蹂닿컯?쒓컙: ${activeMakeup ? activeMakeup.additionalMinutes : 0}遺?);
             return activeMakeup ? activeMakeup.additionalMinutes : 0;
         }
 
-        // 해당 날짜의 활성 메모 목록 조회
+        // ?대떦 ?좎쭨???쒖꽦 硫붾え 紐⑸줉 議고쉶
         function getMemosForStudent(studentId, dateStr = null, studentName = null) {
             const student = findStudentInManagement(studentId, studentName || (selectedStudent ? selectedStudent.name : null));
-            console.log(`[메모 조회] 학생 검색: id=${studentId}, name=${studentName}, 찾음=${student ? student.name : 'null'}`);
+            console.log(`[硫붾え 議고쉶] ?숈깮 寃?? id=${studentId}, name=${studentName}, 李얠쓬=${student ? student.name : 'null'}`);
 
             if (!student || !student.memos) {
-                console.log(`[메모 조회] 학생 없음 또는 메모 없음`);
+                console.log(`[硫붾え 議고쉶] ?숈깮 ?놁쓬 ?먮뒗 硫붾え ?놁쓬`);
                 return [];
             }
 
             const today = dateStr || new Date().toISOString().split('T')[0];
             const activeMemos = student.memos.filter(m => m.startDate <= today && m.endDate >= today);
-            console.log(`[메모 조회] 날짜: ${today}, 전체 메모: ${student.memos.length}개, 활성 메모: ${activeMemos.length}개`);
+            console.log(`[硫붾え 議고쉶] ?좎쭨: ${today}, ?꾩껜 硫붾え: ${student.memos.length}媛? ?쒖꽦 硫붾え: ${activeMemos.length}媛?);
             return activeMemos;
         }
 
-        // 학생 메모를 To-do 리스트에 추가 (franchise.html과 동일한 구조 사용)
-        // franchise.html todos 구조: { "2026-02-05": [{ text, completed, color, studentId, memoId }], ... }
+        // ?숈깮 硫붾え瑜?To-do 由ъ뒪?몄뿉 異붽? (franchise.html怨??숈씪??援ъ“ ?ъ슜)
+        // franchise.html todos 援ъ“: { "2026-02-05": [{ text, completed, color, studentId, memoId }], ... }
         function addStudentMemosToTodo(studentId, studentName, dateStr = null) {
-            console.log(`[To-do 추가] 호출됨: studentId=${studentId}, studentName=${studentName}`);
+            console.log(`[To-do 異붽?] ?몄텧?? studentId=${studentId}, studentName=${studentName}`);
             const memos = getMemosForStudent(studentId, dateStr, studentName);
-            console.log(`[To-do 추가] 조회된 메모 수: ${memos.length}`);
+            console.log(`[To-do 異붽?] 議고쉶??硫붾え ?? ${memos.length}`);
             if (!memos.length) {
-                console.log(`[To-do 추가] 추가할 메모가 없음`);
+                console.log(`[To-do 異붽?] 異붽???硫붾え媛 ?놁쓬`);
                 return;
             }
 
-            // todos는 날짜별 객체 구조 (franchise.html과 동일)
+            // todos???좎쭨蹂?媛앹껜 援ъ“ (franchise.html怨??숈씪)
             let todos = {};
             try {
                 const stored = JSON.parse(localStorage.getItem('todos') || '{}');
-                // 객체인지 확인 (배열이면 빈 객체로 초기화)
+                // 媛앹껜?몄? ?뺤씤 (諛곗뿴?대㈃ 鍮?媛앹껜濡?珥덇린??
                 todos = (stored && typeof stored === 'object' && !Array.isArray(stored)) ? stored : {};
             } catch (e) {
-                console.warn('[addStudentMemosToTodo] todos 파싱 실패, 빈 객체로 초기화');
+                console.warn('[addStudentMemosToTodo] todos ?뚯떛 ?ㅽ뙣, 鍮?媛앹껜濡?珥덇린??);
                 todos = {};
             }
 
             const today = dateStr || new Date().toISOString().split('T')[0];
 
-            // 해당 날짜의 할일 배열 초기화
+            // ?대떦 ?좎쭨???좎씪 諛곗뿴 珥덇린??
             if (!todos[today]) {
                 todos[today] = [];
             }
 
             memos.forEach(memo => {
-                // 이미 추가된 메모인지 확인 (같은 학생, 같은 메모 ID)
+                // ?대? 異붽???硫붾え?몄? ?뺤씤 (媛숈? ?숈깮, 媛숈? 硫붾え ID)
                 const alreadyExists = todos[today].some(t =>
                     t && t.studentId === studentId && t.memoId === memo.id
                 );
@@ -225,17 +225,17 @@
                     todos[today].push({
                         text: `[${studentName}] ${memo.content}`,
                         completed: false,
-                        color: 'hsl(200, 85%, 92%)', // 하늘색 파스텔톤
+                        color: 'hsl(200, 85%, 92%)', // ?섎뒛???뚯뒪?뷀넠
                         studentId: studentId,
                         memoId: memo.id
                     });
-                    console.log(`[To-do 추가] 메모 추가됨: [${studentName}] ${memo.content}`);
+                    console.log(`[To-do 異붽?] 硫붾え 異붽??? [${studentName}] ${memo.content}`);
                 }
             });
 
             localStorage.setItem('todos', JSON.stringify(todos));
 
-            console.log(`[Kiosk] ${studentName}의 메모 ${memos.length}개가 To-do에 추가됨 (storage 이벤트 자동 발생됨)`);
+            console.log(`[Kiosk] ${studentName}??硫붾え ${memos.length}媛쒓? To-do??異붽???(storage ?대깽???먮룞 諛쒖깮??`);
         }
 
         function kioskPressKey(key) {
@@ -243,7 +243,7 @@
                 kioskInput += key;
                 updateKioskDisplay();
 
-                // 4자리 입력 완료 시 자동 검색
+                // 4?먮━ ?낅젰 ?꾨즺 ???먮룞 寃??
                 if (kioskInput.length === 4) {
                     searchStudents();
                 }
@@ -285,69 +285,69 @@
             document.getElementById('student-info').classList.add('hidden');
         }
 
-        // Supabase에서 학생 검색 (직접 fetch만 사용 - 빠른 응답)
+        // Supabase?먯꽌 ?숈깮 寃??(吏곸젒 fetch留??ъ슜 - 鍮좊Ⅸ ?묐떟)
         async function searchStudents() {
-            console.log('[searchStudents] 시작, 입력값:', kioskInput);
+            console.log('[searchStudents] ?쒖옉, ?낅젰媛?', kioskInput);
 
-            // isSupabaseConfigured 함수가 없으면 항상 false 처리 (데모 모드)
+            // isSupabaseConfigured ?⑥닔媛 ?놁쑝硫???긽 false 泥섎━ (?곕え 紐⑤뱶)
             const hasConfigFunction = typeof window.isSupabaseConfigured === 'function';
             const sbOk = hasConfigFunction && window.isSupabaseConfigured();
-            console.log('[searchStudents] 데모 모드:', !sbOk);
+            console.log('[searchStudents] ?곕え 紐⑤뱶:', !sbOk);
 
             if (sbOk) {
-                // 직접 fetch로 바로 검색 (SDK 거치지 않음 - 더 빠름)
-                console.log('[searchStudents] 직접 fetch로 검색 시작...');
+                // 吏곸젒 fetch濡?諛붾줈 寃??(SDK 嫄곗튂吏 ?딆쓬 - ??鍮좊쫫)
+                console.log('[searchStudents] 吏곸젒 fetch濡?寃???쒖옉...');
                 const { data: fetchData, error: fetchError } = await searchStudentsDirectFetch(kioskInput);
 
                 if (fetchError) {
-                    console.error('학생 검색 오류 (직접 fetch):', fetchError);
-                    showAlert('error', '오류', `검색 중 오류가 발생했습니다.\n${fetchError.message || 'Unknown error'}`);
+                    console.error('?숈깮 寃???ㅻ쪟 (吏곸젒 fetch):', fetchError);
+                    showAlert('error', '?ㅻ쪟', `寃??以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.\n${fetchError.message || 'Unknown error'}`);
                     return;
                 }
 
                 if (fetchData && fetchData.length > 0) {
                     foundStudents = fetchData;
                     if (fetchData.length === 1) {
-                        // 학생이 1명이면 바로 선택
+                        // ?숈깮??1紐낆씠硫?諛붾줈 ?좏깮
                         selectedStudent = fetchData[0];
-                        showStudentInfo(selectedStudent, '학생을 찾았습니다');
+                        showStudentInfo(selectedStudent, '?숈깮??李얠븯?듬땲??);
                     } else {
-                        // 여러 명이면 선택 모달 표시 (등원/하원 버튼 클릭 시)
+                        // ?щ윭 紐낆씠硫??좏깮 紐⑤떖 ?쒖떆 (?깆썝/?섏썝 踰꾪듉 ?대┃ ??
                         selectedStudent = null;
-                        showStudentInfo({ name: `${fetchData.length}명의 학생` }, '등원/하원 버튼을 눌러주세요');
+                        showStudentInfo({ name: `${fetchData.length}紐낆쓽 ?숈깮` }, '?깆썝/?섏썝 踰꾪듉???뚮윭二쇱꽭??);
                     }
                 } else {
                     foundStudents = [];
                     selectedStudent = null;
-                    showAlert('error', '검색 결과 없음', '등록되지 않은 번호입니다.\n회원가입 후 이용해주세요.');
+                    showAlert('error', '寃??寃곌낵 ?놁쓬', '?깅줉?섏? ?딆? 踰덊샇?낅땲??\n?뚯썝媛?????댁슜?댁＜?몄슂.');
                     kioskClearInput();
                 }
             } else {
-                // 데모 모드 - 로컬 학생 데이터 검색
-                console.log('[searchStudents] 데모 모드 실행, DEMO_STUDENTS:', DEMO_STUDENTS);
+                // ?곕え 紐⑤뱶 - 濡쒖뺄 ?숈깮 ?곗씠??寃??
+                console.log('[searchStudents] ?곕え 紐⑤뱶 ?ㅽ뻾, DEMO_STUDENTS:', DEMO_STUDENTS);
                 const matched = DEMO_STUDENTS.filter(s => s.parent_phone_last4 === kioskInput);
-                console.log('[searchStudents] matched 결과:', matched);
+                console.log('[searchStudents] matched 寃곌낵:', matched);
 
                 if (matched.length > 0) {
                     foundStudents = matched;
                     if (matched.length === 1) {
                         selectedStudent = matched[0];
-                        showStudentInfo(selectedStudent, '학생을 찾았습니다 (데모 모드)');
+                        showStudentInfo(selectedStudent, '?숈깮??李얠븯?듬땲??(?곕え 紐⑤뱶)');
                     } else {
                         selectedStudent = null;
-                        showStudentInfo({ name: `${matched.length}명의 학생` }, '등원/하원 버튼을 눌러주세요 (데모 모드)');
+                        showStudentInfo({ name: `${matched.length}紐낆쓽 ?숈깮` }, '?깆썝/?섏썝 踰꾪듉???뚮윭二쇱꽭??(?곕え 紐⑤뱶)');
                     }
                 } else {
                     foundStudents = [];
                     selectedStudent = null;
-                    showAlert('error', '검색 결과 없음', '등록되지 않은 번호입니다.\n데모 모드: 5100(강지민), 4397(강서준)');
+                    showAlert('error', '寃??寃곌낵 ?놁쓬', '?깅줉?섏? ?딆? 踰덊샇?낅땲??\n?곕え 紐⑤뱶: 5100(媛뺤?誘?, 4397(媛뺤꽌以)');
                     kioskClearInput();
                 }
             }
-            console.log('[searchStudents] 완료, foundStudents:', foundStudents, 'selectedStudent:', selectedStudent);
+            console.log('[searchStudents] ?꾨즺, foundStudents:', foundStudents, 'selectedStudent:', selectedStudent);
         }
 
-        // 학생 선택 모달 표시
+        // ?숈깮 ?좏깮 紐⑤떖 ?쒖떆
         function showStudentSelectModal(action) {
             pendingAction = action;
             const modal = document.getElementById('student-select-modal');
@@ -382,20 +382,20 @@
             }
         }
 
-        // 등원 처리
+        // ?깆썝 泥섎━
         async function kioskCheckIn() {
-            console.log('[kioskCheckIn] 시작');
+            console.log('[kioskCheckIn] ?쒖옉');
             console.log('[kioskCheckIn] kioskInput:', kioskInput, 'length:', kioskInput.length);
             console.log('[kioskCheckIn] foundStudents:', foundStudents);
             console.log('[kioskCheckIn] selectedStudent:', selectedStudent);
 
             if (kioskInput.length !== 4) {
-                showAlert('warning', '알림', '번호 4자리를 모두 입력해주세요.');
+                showAlert('warning', '?뚮┝', '踰덊샇 4?먮━瑜?紐⑤몢 ?낅젰?댁＜?몄슂.');
                 return;
             }
 
             if (foundStudents.length === 0) {
-                showAlert('error', '오류', '학생을 먼저 검색해주세요.');
+                showAlert('error', '?ㅻ쪟', '?숈깮??癒쇱? 寃?됲빐二쇱꽭??');
                 return;
             }
 
@@ -415,8 +415,8 @@
             const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
 
             if (sbOk) {
-                // 직접 fetch로 바로 등원 처리 (SDK 거치지 않음 - 더 빠름)
-                console.log('[performCheckIn] 직접 fetch로 등원 처리 시작...');
+                // 吏곸젒 fetch濡?諛붾줈 ?깆썝 泥섎━ (SDK 嫄곗튂吏 ?딆쓬 - ??鍮좊쫫)
+                console.log('[performCheckIn] 吏곸젒 fetch濡??깆썝 泥섎━ ?쒖옉...');
                 const fetchResult = await performCheckInDirectFetch();
 
                 if (fetchResult.success) {
@@ -424,33 +424,33 @@
                     const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
                     const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
-                    // FCM 알림 전송
+                    // FCM ?뚮┝ ?꾩넚
                     sendCheckInNotification(selectedStudent.id, selectedStudent.name, timeStr);
 
-                    // 보강시간이 있으면 메시지에 표시
-                    const makeupMsg = makeupMinutes > 0 ? `\n(보강 +${makeupMinutes}분 적용)` : '';
-                    showAlert('success', '등원 완료',
-                        `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}${makeupMsg}`);
+                    // 蹂닿컯?쒓컙???덉쑝硫?硫붿떆吏???쒖떆
+                    const makeupMsg = makeupMinutes > 0 ? `\n(蹂닿컯 +${makeupMinutes}遺??곸슜)` : '';
+                    showAlert('success', '?깆썝 ?꾨즺',
+                        `${selectedStudent.name}?? ?깆썝???꾨즺?섏뿀?듬땲??\n\n?깆썝?쒓컙: ${timeStr}\n?뚮엺?쒓컙: ${alarmStr}${makeupMsg}`);
                     kioskClearInput();
                 } else {
                     if (fetchResult.alreadyCheckedIn) {
-                        showAlert('info', '알림', fetchResult.error);
+                        showAlert('info', '?뚮┝', fetchResult.error);
                     } else {
-                        showAlert('error', '오류', `등원 처리 중 오류가 발생했습니다.\n${fetchResult.error || 'Unknown error'}`);
+                        showAlert('error', '?ㅻ쪟', `?깆썝 泥섎━ 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.\n${fetchResult.error || 'Unknown error'}`);
                     }
                 }
             } else {
-                // 데모 모드 - localStorage에 저장
+                // ?곕え 紐⑤뱶 - localStorage?????
                 const now = new Date();
                 const today = now.toISOString().split('T')[0];
 
-                // 보강시간 조회 (기본 60분 + 보강시간) - 학생 이름으로도 매칭
+                // 蹂닿컯?쒓컙 議고쉶 (湲곕낯 60遺?+ 蹂닿컯?쒓컙) - ?숈깮 ?대쫫?쇰줈??留ㅼ묶
                 const makeupMinutes = getMakeupMinutesForStudent(selectedStudent.id, today, selectedStudent.name);
                 const totalMinutes = 60 + makeupMinutes;
                 const alarmTime = new Date(now.getTime() + totalMinutes * 60 * 1000);
-                console.log(`[Kiosk] 알람시간 계산: 60분 + 보강${makeupMinutes}분 = ${totalMinutes}분`);
+                console.log(`[Kiosk] ?뚮엺?쒓컙 怨꾩궛: 60遺?+ 蹂닿컯${makeupMinutes}遺?= ${totalMinutes}遺?);
 
-                // 이미 등원했는지 확인 (waiting 또는 seated 상태) - 오늘 날짜만
+                // ?대? ?깆썝?덈뒗吏 ?뺤씤 (waiting ?먮뒗 seated ?곹깭) - ?ㅻ뒛 ?좎쭨留?
                 const existingAttendance = getLocalAttendance();
                 const existingRecord = existingAttendance.find(
                     a => a.student_id === selectedStudent.id &&
@@ -459,13 +459,13 @@
                 );
 
                 if (existingRecord) {
-                    const statusText = existingRecord.status === 'seated' ? '이미 좌석에 배정되었습니다' : '이미 등원 처리되었습니다';
-                    showAlert('info', '알림', `${selectedStudent.name}님은 ${statusText}.`);
+                    const statusText = existingRecord.status === 'seated' ? '?대? 醫뚯꽍??諛곗젙?섏뿀?듬땲?? : '?대? ?깆썝 泥섎━?섏뿀?듬땲??;
+                    showAlert('info', '?뚮┝', `${selectedStudent.name}?섏? ${statusText}.`);
                     kioskClearInput();
                     return;
                 }
 
-                // 새 등원 기록 생성
+                // ???깆썝 湲곕줉 ?앹꽦
                 const attendanceId = `demo-attendance-${Date.now()}`;
                 const newAttendance = {
                     id: attendanceId,
@@ -478,33 +478,33 @@
                     status: 'waiting'
                 };
 
-                // localStorage에 저장
+                // localStorage?????
                 existingAttendance.push(newAttendance);
                 localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
 
-                // 학생 메모를 To-do 리스트에 추가
+                // ?숈깮 硫붾え瑜?To-do 由ъ뒪?몄뿉 異붽?
                 addStudentMemosToTodo(selectedStudent.id, selectedStudent.name, today);
 
                 const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
                 const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
-                // 보강시간이 있으면 메시지에 표시
-                const makeupMsg = makeupMinutes > 0 ? `\n(보강 +${makeupMinutes}분 적용)` : '';
-                showAlert('success', '등원 완료 (데모 모드)',
-                    `${selectedStudent.name}님, 등원이 완료되었습니다!\n\n등원시간: ${timeStr}\n알람시간: ${alarmStr}${makeupMsg}`);
+                // 蹂닿컯?쒓컙???덉쑝硫?硫붿떆吏???쒖떆
+                const makeupMsg = makeupMinutes > 0 ? `\n(蹂닿컯 +${makeupMinutes}遺??곸슜)` : '';
+                showAlert('success', '?깆썝 ?꾨즺 (?곕え 紐⑤뱶)',
+                    `${selectedStudent.name}?? ?깆썝???꾨즺?섏뿀?듬땲??\n\n?깆썝?쒓컙: ${timeStr}\n?뚮엺?쒓컙: ${alarmStr}${makeupMsg}`);
                 kioskClearInput();
             }
         }
 
-        // 하원 처리
+        // ?섏썝 泥섎━
         async function kioskCheckOut() {
             if (kioskInput.length !== 4) {
-                showAlert('warning', '알림', '번호 4자리를 모두 입력해주세요.');
+                showAlert('warning', '?뚮┝', '踰덊샇 4?먮━瑜?紐⑤몢 ?낅젰?댁＜?몄슂.');
                 return;
             }
 
             if (foundStudents.length === 0) {
-                showAlert('error', '오류', '학생을 먼저 검색해주세요.');
+                showAlert('error', '?ㅻ쪟', '?숈깮??癒쇱? 寃?됲빐二쇱꽭??');
                 return;
             }
 
@@ -524,41 +524,41 @@
             const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
 
             if (sbOk) {
-                console.log('[performCheckOut] 직접 fetch로 하원 처리 시작...');
+                console.log('[performCheckOut] 吏곸젒 fetch濡??섏썝 泥섎━ ?쒖옉...');
                 const fetchResult = await performCheckOutDirectFetch();
 
                 if (fetchResult.success) {
                     const checkOutTime = new Date();
                     const timeStr = checkOutTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
-                    // FCM 알림 전송
+                    // FCM ?뚮┝ ?꾩넚
                     sendCheckOutNotification(selectedStudent.id, selectedStudent.name, timeStr);
 
-                    showAlert('success', '하원 완료',
-                        `${selectedStudent.name}님, 하원 완료되었습니다!\n안녕히 가세요!\n\n하원시간: ${timeStr}`);
+                    showAlert('success', '?섏썝 ?꾨즺',
+                        `${selectedStudent.name}?? ?섏썝 ?꾨즺?섏뿀?듬땲??\n?덈뀞??媛?몄슂!\n\n?섏썝?쒓컙: ${timeStr}`);
                     kioskClearInput();
                 } else if (fetchResult.alreadyCheckedOut) {
-                    showAlert('info', '알림', fetchResult.error);
+                    showAlert('info', '?뚮┝', fetchResult.error);
                     kioskClearInput();
                 } else if (fetchResult.noCheckIn) {
-                    showAlert('info', '알림', fetchResult.error);
+                    showAlert('info', '?뚮┝', fetchResult.error);
                     kioskClearInput();
                 } else {
-                    showAlert('error', '오류', `하원 처리 중 오류가 발생했습니다.\n${fetchResult.error}`);
+                    showAlert('error', '?ㅻ쪟', `?섏썝 泥섎━ 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.\n${fetchResult.error}`);
                 }
             } else {
-                // 데모 모드 - localStorage 업데이트
+                // ?곕え 紐⑤뱶 - localStorage ?낅뜲?댄듃
                 const existingAttendance = getLocalAttendance();
                 const today = new Date().toISOString().split('T')[0];
 
-                // 이미 하원했는지 확인 (completed 상태) - 오늘 날짜만
+                // ?대? ?섏썝?덈뒗吏 ?뺤씤 (completed ?곹깭) - ?ㅻ뒛 ?좎쭨留?
                 const completedIndex = existingAttendance.findIndex(
                     a => a.student_id === selectedStudent.id &&
                          a.status === 'completed' &&
                          a.check_in_time && a.check_in_time.startsWith(today)
                 );
                 if (completedIndex !== -1) {
-                    showAlert('info', '알림', `${selectedStudent.name}님은 이미 하원 처리되었습니다.`);
+                    showAlert('info', '?뚮┝', `${selectedStudent.name}?섏? ?대? ?섏썝 泥섎━?섏뿀?듬땲??`);
                     kioskClearInput();
                     return;
                 }
@@ -570,38 +570,38 @@
                 );
 
                 if (attendanceIndex === -1) {
-                    showAlert('info', '알림', `${selectedStudent.name}님은 등원 기록이 없습니다.`);
+                    showAlert('info', '?뚮┝', `${selectedStudent.name}?섏? ?깆썝 湲곕줉???놁뒿?덈떎.`);
                     kioskClearInput();
                     return;
                 }
 
                 const attendance = existingAttendance[attendanceIndex];
 
-                // 상태를 completed로 업데이트
+                // ?곹깭瑜?completed濡??낅뜲?댄듃
                 existingAttendance[attendanceIndex].status = 'completed';
                 existingAttendance[attendanceIndex].type = 'check_out';
 
                 localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
 
-                // 좌석에 배정되어 있었다면 좌석 비우기 (seat_id 또는 학생 이름으로 찾기)
+                // 醫뚯꽍??諛곗젙?섏뼱 ?덉뿀?ㅻ㈃ 醫뚯꽍 鍮꾩슦湲?(seat_id ?먮뒗 ?숈깮 ?대쫫?쇰줈 李얘린)
                 try {
                     const seatsData = localStorage.getItem('seats');
                     if (seatsData) {
                         const seats = JSON.parse(seatsData);
                         let seatIndex = -1;
 
-                        // 1. seat_id로 찾기
+                        // 1. seat_id濡?李얘린
                         if (attendance.seat_id) {
                             seatIndex = seats.findIndex(s => s.id == attendance.seat_id);
                         }
 
-                        // 2. seat_id가 없거나 못 찾으면 학생 이름으로 찾기
+                        // 2. seat_id媛 ?녾굅??紐?李얠쑝硫??숈깮 ?대쫫?쇰줈 李얘린
                         if (seatIndex === -1) {
                             seatIndex = seats.findIndex(s => s.name === selectedStudent.name);
                         }
 
                         if (seatIndex !== -1) {
-                            console.log(`[하원] 좌석 비우기: ${seats[seatIndex].name} -> 빈 좌석`);
+                            console.log(`[?섏썝] 醫뚯꽍 鍮꾩슦湲? ${seats[seatIndex].name} -> 鍮?醫뚯꽍`);
                             seats[seatIndex].name = '';
                             seats[seatIndex].occupied = false;
                             seats[seatIndex].alarmTime = null;
@@ -609,7 +609,7 @@
                             seats[seatIndex].alarmStopped = false;
                             localStorage.setItem('seats', JSON.stringify(seats));
 
-                            // storage 이벤트 발생하여 다른 탭에 알림
+                            // storage ?대깽??諛쒖깮?섏뿬 ?ㅻⅨ ??뿉 ?뚮┝
                             window.dispatchEvent(new StorageEvent('storage', {
                                 key: 'seats',
                                 newValue: JSON.stringify(seats)
@@ -623,33 +623,33 @@
                 const now = new Date();
                 const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 
-                showAlert('success', '하원 완료 (데모 모드)',
-                    `${selectedStudent.name}님, 하원 완료되었습니다!\n안녕히 가세요!\n\n하원시간: ${timeStr}`);
+                showAlert('success', '?섏썝 ?꾨즺 (?곕え 紐⑤뱶)',
+                    `${selectedStudent.name}?? ?섏썝 ?꾨즺?섏뿀?듬땲??\n?덈뀞??媛?몄슂!\n\n?섏썝?쒓컙: ${timeStr}`);
                 kioskClearInput();
             }
         }
 
-        // Web Push 알림 전송 함수
-        // student 객체를 직접 받아서 불필요한 DB 조회 제거
+        // Web Push ?뚮┝ ?꾩넚 ?⑥닔
+        // student 媛앹껜瑜?吏곸젒 諛쏆븘??遺덊븘?뷀븳 DB 議고쉶 ?쒓굅
         async function sendWebPushNotification(student, type) {
             try {
-                // Supabase가 구성되어 있는지 확인
+                // Supabase媛 援ъ꽦?섏뼱 ?덈뒗吏 ?뺤씤
                 const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured();
 
                 if (!sbOk) {
-                    console.log('[Kiosk] 데모 모드 - Push 알림 스킵');
+                    console.log('[Kiosk] ?곕え 紐⑤뱶 - Push ?뚮┝ ?ㅽ궢');
                     return;
                 }
 
                 if (!student) {
-                    console.error('[Kiosk] 학생 정보가 없음');
+                    console.error('[Kiosk] ?숈깮 ?뺣낫媛 ?놁쓬');
                     return;
                 }
 
-                console.log(`[Kiosk] Web Push 알림 전송 시도: student_id=${student.id}, name=${student.name}, parent_phone=${student.parent_phone}, type=${type}`);
+                console.log(`[Kiosk] Web Push ?뚮┝ ?꾩넚 ?쒕룄: student_id=${student.id}, name=${student.name}, parent_phone=${student.parent_phone}, type=${type}`);
 
                 if (!student.parent_phone) {
-                    console.log('[Kiosk] 부모 전화번호가 없음 - 알림 스킵');
+                    console.log('[Kiosk] 遺紐??꾪솕踰덊샇媛 ?놁쓬 - ?뚮┝ ?ㅽ궢');
                     return;
                 }
 
@@ -660,20 +660,20 @@
                     student_name: student.name
                 };
 
-                console.log('[Kiosk] Edge Function 요청 body:', JSON.stringify(requestBody));
+                console.log('[Kiosk] Edge Function ?붿껌 body:', JSON.stringify(requestBody));
 
-                // SDK 대신 직접 fetch만 사용 (FunctionsFetchError 방지)
-                console.log('[Kiosk] 직접 fetch로 Web Push 전송 시도...');
+                // SDK ???吏곸젒 fetch留??ъ슜 (FunctionsFetchError 諛⑹?)
+                console.log('[Kiosk] 吏곸젒 fetch濡?Web Push ?꾩넚 ?쒕룄...');
                 await sendWebPushDirectFetch(requestBody);
 
             } catch (error) {
-                console.error('[Kiosk] Push 알림 전송 중 오류:', error);
-                console.error('[Kiosk] 오류 상세:', error.message, error.stack);
-                // 키오스크 동작에는 영향 없음
+                console.error('[Kiosk] Push ?뚮┝ ?꾩넚 以??ㅻ쪟:', error);
+                console.error('[Kiosk] ?ㅻ쪟 ?곸꽭:', error.message, error.stack);
+                // ?ㅼ삤?ㅽ겕 ?숈옉?먮뒗 ?곹뼢 ?놁쓬
             }
         }
 
-        // 직접 fetch로 Edge Function 호출 (폴백용)
+        // 吏곸젒 fetch濡?Edge Function ?몄텧 (?대갚??
         async function sendWebPushDirectFetch(requestBody) {
             try {
                 const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
@@ -692,24 +692,24 @@
                     body: JSON.stringify(requestBody)
                 });
 
-                console.log('[Kiosk] Edge Function 응답 상태:', response.status);
+                console.log('[Kiosk] Edge Function ?묐떟 ?곹깭:', response.status);
 
                 const responseText = await response.text();
-                console.log('[Kiosk] Edge Function 응답:', responseText);
+                console.log('[Kiosk] Edge Function ?묐떟:', responseText);
 
                 if (!response.ok) {
-                    console.error('[Kiosk] Edge Function 호출 실패:', response.status, responseText);
+                    console.error('[Kiosk] Edge Function ?몄텧 ?ㅽ뙣:', response.status, responseText);
                 } else {
                     try {
                         const data = JSON.parse(responseText);
-                        console.log('[Kiosk] Web Push 알림 전송 성공 (직접 fetch):', data);
+                        console.log('[Kiosk] Web Push ?뚮┝ ?꾩넚 ?깃났 (吏곸젒 fetch):', data);
                     } catch (e) {
-                        console.log('[Kiosk] 응답 파싱 실패, 원본:', responseText);
+                        console.log('[Kiosk] ?묐떟 ?뚯떛 ?ㅽ뙣, ?먮낯:', responseText);
                     }
                 }
 
             } catch (error) {
-                console.error('[Kiosk] 직접 fetch 오류:', error);
+                console.error('[Kiosk] 吏곸젒 fetch ?ㅻ쪟:', error);
             }
         }
 
@@ -733,7 +733,7 @@
             titleEl.textContent = title;
             messageEl.innerHTML = message.replace(/\n/g, '<br>');
 
-            // 아이콘 스타일 설정
+            // ?꾩씠肄??ㅽ????ㅼ젙
             if (type === 'success') {
                 icon.className = 'w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6';
                 icon.innerHTML = '<span class="material-symbols-outlined text-green-600 text-5xl">check_circle</span>';
@@ -758,25 +758,25 @@
             modal.classList.add('hidden');
         }
 
-        // XSS 방지
+        // XSS 諛⑹?
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // 초기화
+        // 珥덇린??
         function initKiosk() {
-            // Supabase 클라이언트 할당
+            // Supabase ?대씪?댁뼵???좊떦
             sb = window.supabase || window.supabaseClient;
 
-            // 디버깅용 로그
-            console.log('[Kiosk] Supabase 클라이언트:', sb ? '로드됨' : '로드 실패');
-            console.log('[Kiosk] sb.from 함수:', typeof sb?.from);
-            console.log('[Kiosk] isSupabaseConfigured:', typeof window.isSupabaseConfigured === 'function' ? window.isSupabaseConfigured() : '함수 없음');
-            console.log('[Kiosk] SUPABASE_URL:', typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '정의되지 않음');
+            // ?붾쾭源낆슜 濡쒓렇
+            console.log('[Kiosk] Supabase ?대씪?댁뼵??', sb ? '濡쒕뱶?? : '濡쒕뱶 ?ㅽ뙣');
+            console.log('[Kiosk] sb.from ?⑥닔:', typeof sb?.from);
+            console.log('[Kiosk] isSupabaseConfigured:', typeof window.isSupabaseConfigured === 'function' ? window.isSupabaseConfigured() : '?⑥닔 ?놁쓬');
+            console.log('[Kiosk] SUPABASE_URL:', typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '?뺤쓽?섏? ?딆쓬');
 
-            // Supabase 클라이언트 내부 확인
+            // Supabase ?대씪?댁뼵???대? ?뺤씤
             if (sb) {
                 console.log('[Kiosk] sb.auth:', typeof sb.auth);
                 console.log('[Kiosk] sb.storage:', typeof sb.storage);
@@ -789,20 +789,20 @@
 
             updateKioskDisplay();
 
-            // 옛날 출결 기록 정리 (비동기 실행)
+            // ?쏅궇 異쒓껐 湲곕줉 ?뺣━ (鍮꾨룞湲??ㅽ뻾)
             cleanupOldAttendance();
         }
 
-        // 옛날 미완료 출결 기록 정리
+        // ?쏅궇 誘몄셿猷?異쒓껐 湲곕줉 ?뺣━
         async function cleanupOldAttendance() {
             const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured() && sb;
 
             if (sbOk) {
-                // Supabase 모드 - 어제 및 그 이전 미완료 기록을 completed로 변경
+                // Supabase 紐⑤뱶 - ?댁젣 諛?洹??댁쟾 誘몄셿猷?湲곕줉??completed濡?蹂寃?
                 try {
                     const today = new Date().toISOString().split('T')[0];
 
-                    // 어제 및 그 이전의 waiting/seated 상태 기록 찾기
+                    // ?댁젣 諛?洹??댁쟾??waiting/seated ?곹깭 湲곕줉 李얘린
                     const { data: oldRecords, error } = await sb
                         .from('attendance')
                         .select('id, student_id, student_name, check_in_time, date')
@@ -810,7 +810,7 @@
                         .lt('date', today);
 
                     if (error) {
-                        // 타임아웃/AbortError는 치명적이지 않으므로 조용히 처리
+                        // ??꾩븘??AbortError??移섎챸?곸씠吏 ?딆쑝誘濡?議곗슜??泥섎━
                         const isTimeoutError =
                             error.message?.includes('timeout') ||
                             error.message?.includes('AbortError') ||
@@ -819,17 +819,17 @@
                             error.hint?.includes('aborted');
 
                         if (isTimeoutError) {
-                            console.warn('[정리] 옛날 기록 조회 타임아웃 (무시)');
+                            console.warn('[?뺣━] ?쏅궇 湲곕줉 議고쉶 ??꾩븘??(臾댁떆)');
                         } else {
-                            console.error('[정리] 옛날 기록 조회 실패:', error);
+                            console.error('[?뺣━] ?쏅궇 湲곕줉 議고쉶 ?ㅽ뙣:', error);
                         }
                         return;
                     }
 
                     if (oldRecords && oldRecords.length > 0) {
-                        console.log('[정리] 미완료 기록', oldRecords.length, '개 발견, 정리 시작...');
+                        console.log('[?뺣━] 誘몄셿猷?湲곕줉', oldRecords.length, '媛?諛쒓껄, ?뺣━ ?쒖옉...');
 
-                        // 모두 completed 상태로 변경
+                        // 紐⑤몢 completed ?곹깭濡?蹂寃?
                         const { error: updateError } = await sb
                             .from('attendance')
                             .update({
@@ -840,29 +840,29 @@
                             .in('id', oldRecords.map(r => r.id));
 
                         if (updateError) {
-                            console.error('[정리] 기록 업데이트 실패:', updateError);
+                            console.error('[?뺣━] 湲곕줉 ?낅뜲?댄듃 ?ㅽ뙣:', updateError);
                         } else {
-                            console.log('[정리] 미완료 기록', oldRecords.length, '개를 완료 처리했습니다.');
+                            console.log('[?뺣━] 誘몄셿猷?湲곕줉', oldRecords.length, '媛쒕? ?꾨즺 泥섎━?덉뒿?덈떎.');
                         }
                     } else {
-                        console.log('[정리] 정리할 미완료 기록이 없습니다.');
+                        console.log('[?뺣━] ?뺣━??誘몄셿猷?湲곕줉???놁뒿?덈떎.');
                     }
 
                 } catch (e) {
-                    // 타임아웃/AbortError는 치명적이지 않으므로 조용히 처리
+                    // ??꾩븘??AbortError??移섎챸?곸씠吏 ?딆쑝誘濡?議곗슜??泥섎━
                     const isTimeoutError =
                         e.message?.includes('timeout') ||
                         e.message?.includes('AbortError') ||
                         e.message?.includes('aborted');
 
                     if (isTimeoutError) {
-                        console.warn('[정리] 타임아웃 오류 (무시)');
+                        console.warn('[?뺣━] ??꾩븘???ㅻ쪟 (臾댁떆)');
                     } else {
-                        console.error('[정리] 오류:', e);
+                        console.error('[?뺣━] ?ㅻ쪟:', e);
                     }
                 }
             } else {
-                // 데모 모드 - localStorage 정리
+                // ?곕え 紐⑤뱶 - localStorage ?뺣━
                 try {
                     const today = new Date().toISOString().split('T')[0];
                     const existingAttendance = getLocalAttendance();
@@ -873,7 +873,7 @@
                     );
 
                     if (needsUpdate) {
-                        console.log('[정리] 데모 모드: 미완료 기록 정리...');
+                        console.log('[?뺣━] ?곕え 紐⑤뱶: 誘몄셿猷?湲곕줉 ?뺣━...');
 
                         existingAttendance.forEach(a => {
                             if ((a.status === 'waiting' || a.status === 'seated') &&
@@ -884,31 +884,38 @@
                         });
 
                         localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
-                        console.log('[정리] 데모 모드: 정리 완료');
+                        console.log('[?뺣━] ?곕え 紐⑤뱶: ?뺣━ ?꾨즺');
                     }
 
                 } catch (e) {
-                    console.error('[정리] 데모 모드 오류:', e);
+                    console.error('[?뺣━] ?곕え 紐⑤뱶 ?ㅻ쪟:', e);
                 }
             }
         }
 
-        // 직접 fetch로 학생 검색 (빠른 응답을 위한 타임아웃 5초)
+        // 吏곸젒 fetch濡??숈깮 寃??(鍮좊Ⅸ ?묐떟???꾪븳 ??꾩븘??5珥?
         async function searchStudentsDirectFetch(phoneLast4) {
-            console.log('[searchStudentsDirectFetch] 직접 fetch 시도...');
+            console.log('[searchStudentsDirectFetch] 吏곸젒 fetch ?쒕룄...');
             try {
                 const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
                 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
+                const { data: { session } } = await sb.auth.getSession();
+                const academyId = session?.user?.id;
+                const authToken = session?.access_token || SUPABASE_ANON_KEY;
 
-                // 타임아웃 컨트롤러 (5초 - 빠른 응답)
+                if (!academyId) {
+                    throw new Error('濡쒓렇???몄뀡???놁뒿?덈떎.');
+                }
+
+                // ??꾩븘??而⑦듃濡ㅻ윭 (5珥?- 鍮좊Ⅸ ?묐떟)
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/students?parent_phone_last4=eq.${phoneLast4}&approval_status=eq.approved&select=id,name,grade,school_name,parent_id,parent_phone_last4,full_phone`, {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/students?parent_phone_last4=eq.${phoneLast4}&approval_status=eq.approved&academy_id=eq.${academyId}&select=id,name,grade,school_name,parent_id,parent_phone_last4,full_phone`, {
                     method: 'GET',
                     headers: {
                         'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Authorization': `Bearer ${authToken}`,
                         'Content-Type': 'application/json'
                     },
                     signal: controller.signal
@@ -916,39 +923,39 @@
 
                 clearTimeout(timeoutId);
 
-                console.log('[searchStudentsDirectFetch] 응답 상태:', response.status);
+                console.log('[searchStudentsDirectFetch] ?묐떟 ?곹깭:', response.status);
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.error('[searchStudentsDirectFetch] 에러 응답:', errorText);
+                    console.error('[searchStudentsDirectFetch] ?먮윭 ?묐떟:', errorText);
                     throw new Error(`HTTP ${response.status}: ${errorText}`);
                 }
 
                 const data = await response.json();
-                console.log('[searchStudentsDirectFetch] 성공, 데이터:', data);
+                console.log('[searchStudentsDirectFetch] ?깃났, ?곗씠??', data);
                 return { data, error: null };
 
             } catch (error) {
-                console.error('[searchStudentsDirectFetch] 오류:', error);
+                console.error('[searchStudentsDirectFetch] ?ㅻ쪟:', error);
                 return { data: null, error };
             }
         }
 
-        // 직접 fetch로 등원 처리 (Supabase 클라이언트 오류 시 폴백)
+        // 吏곸젒 fetch濡??깆썝 泥섎━ (Supabase ?대씪?댁뼵???ㅻ쪟 ???대갚)
         async function performCheckInDirectFetch() {
-            console.log('[performCheckInDirectFetch] 직접 fetch로 등원 처리 시도...');
+            console.log('[performCheckInDirectFetch] 吏곸젒 fetch濡??깆썝 泥섎━ ?쒕룄...');
             try {
                 const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
                 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
 
                 const today = new Date().toISOString().split('T')[0];
 
-                // 타임아웃 컨트롤러 (5초 - 빠른 응답)
+                // ??꾩븘??而⑦듃濡ㅻ윭 (5珥?- 鍮좊Ⅸ ?묐떟)
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-                // 1. 기존 등원 확인
-                console.log('[performCheckInDirectFetch] 기존 등원 확인 요청:', {
+                // 1. 湲곗〈 ?깆썝 ?뺤씤
+                console.log('[performCheckInDirectFetch] 湲곗〈 ?깆썝 ?뺤씤 ?붿껌:', {
                     student_id: selectedStudent.id,
                     date: today,
                     url: `${SUPABASE_URL}/rest/v1/attendance?student_id=eq.${selectedStudent.id}&date=eq.${today}&status=in.(waiting,seated)&select=*`
@@ -968,26 +975,26 @@
 
                 if (!checkResponse.ok) {
                     const errorText = await checkResponse.text();
-                    console.error('[performCheckInDirectFetch] 기존 등원 확인 실패:', errorText);
-                    return { success: false, error: `기존 등원 확인 실패: ${errorText}` };
+                    console.error('[performCheckInDirectFetch] 湲곗〈 ?깆썝 ?뺤씤 ?ㅽ뙣:', errorText);
+                    return { success: false, error: `湲곗〈 ?깆썝 ?뺤씤 ?ㅽ뙣: ${errorText}` };
                 }
 
                 const existingData = await checkResponse.json();
-                console.log('[performCheckInDirectFetch] 기존 등원 확인 응답:', existingData);
+                console.log('[performCheckInDirectFetch] 湲곗〈 ?깆썝 ?뺤씤 ?묐떟:', existingData);
                 if (existingData && existingData.length > 0) {
-                    const statusText = existingData[0].status === 'seated' ? '이미 좌석에 배정되었습니다' : '이미 등원 처리되었습니다';
-                    console.log('[performCheckInDirectFetch] 기존 기록 발견:', existingData[0]);
+                    const statusText = existingData[0].status === 'seated' ? '?대? 醫뚯꽍??諛곗젙?섏뿀?듬땲?? : '?대? ?깆썝 泥섎━?섏뿀?듬땲??;
+                    console.log('[performCheckInDirectFetch] 湲곗〈 湲곕줉 諛쒓껄:', existingData[0]);
                     return { success: false, error: statusText, alreadyCheckedIn: true };
                 }
 
-                // 2. 등원 기록 추가
+                // 2. ?깆썝 湲곕줉 異붽?
                 const now = new Date();
 
-                // 보강시간 조회 (기본 60분 + 보강시간) - 학생 이름으로도 매칭
+                // 蹂닿컯?쒓컙 議고쉶 (湲곕낯 60遺?+ 蹂닿컯?쒓컙) - ?숈깮 ?대쫫?쇰줈??留ㅼ묶
                 const makeupMinutes = getMakeupMinutesForStudent(selectedStudent.id, today, selectedStudent.name);
                 const totalMinutes = 60 + makeupMinutes;
                 const alarmTime = new Date(now.getTime() + totalMinutes * 60 * 1000);
-                console.log(`[performCheckInDirectFetch] 알람시간 계산: 60분 + 보강${makeupMinutes}분 = ${totalMinutes}분`);
+                console.log(`[performCheckInDirectFetch] ?뚮엺?쒓컙 怨꾩궛: 60遺?+ 蹂닿컯${makeupMinutes}遺?= ${totalMinutes}遺?);
 
                 const insertResponse = await fetch(`${SUPABASE_URL}/rest/v1/attendance`, {
                     method: 'POST',
@@ -1014,11 +1021,11 @@
 
                 if (!insertResponse.ok) {
                     const errorText = await insertResponse.text();
-                    console.error('[performCheckInDirectFetch] 등원 기록 추가 실패:', errorText);
-                    return { success: false, error: `등원 기록 추가 실패: ${errorText}` };
+                    console.error('[performCheckInDirectFetch] ?깆썝 湲곕줉 異붽? ?ㅽ뙣:', errorText);
+                    return { success: false, error: `?깆썝 湲곕줉 異붽? ?ㅽ뙣: ${errorText}` };
                 }
 
-                // 3. localStorage에도 저장 (좌석 모니터링 호환)
+                // 3. localStorage?먮룄 ???(醫뚯꽍 紐⑤땲?곕쭅 ?명솚)
                 const attendanceId = `attendance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                 const newAttendance = {
                     id: attendanceId,
@@ -1034,43 +1041,38 @@
                 existingAttendance.push(newAttendance);
                 localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
 
-                // storage 이벤트 발생
+                // storage ?대깽??諛쒖깮
                 window.dispatchEvent(new StorageEvent('storage', {
                     key: 'demo_attendance',
                     newValue: JSON.stringify(existingAttendance)
                 }));
 
-                // 4. Web Push 알림 전송 (비동기 - 팝업 지연 방지)
-                sendWebPushNotification(selectedStudent, 'check_in').catch(err => {
-                    console.error('[Kiosk] Push 알림 백그라운드 에러:', err);
-                });
-
-                // 5. 학생 메모를 To-do 리스트에 추가
+                // 4. ?숈깮 硫붾え瑜?To-do 由ъ뒪?몄뿉 異붽?
                 addStudentMemosToTodo(selectedStudent.id, selectedStudent.name, today);
 
                 return { success: true, now, alarmTime, makeupMinutes };
 
             } catch (error) {
-                console.error('[performCheckInDirectFetch] 오류:', error);
+                console.error('[performCheckInDirectFetch] ?ㅻ쪟:', error);
                 return { success: false, error: error.message };
             }
         }
 
-        // 직접 fetch로 하원 처리 (Supabase SDK 오류 시 폴백)
+        // 吏곸젒 fetch濡??섏썝 泥섎━ (Supabase SDK ?ㅻ쪟 ???대갚)
         async function performCheckOutDirectFetch() {
-            console.log('[performCheckOutDirectFetch] 직접 fetch로 하원 처리 시도...');
+            console.log('[performCheckOutDirectFetch] 吏곸젒 fetch濡??섏썝 泥섎━ ?쒕룄...');
             try {
                 const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
                 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
 
                 const today = new Date().toISOString().split('T')[0];
 
-                // 타임아웃 컨트롤러 (5초 - 빠른 응답)
+                // ??꾩븘??而⑦듃濡ㅻ윭 (5珥?- 鍮좊Ⅸ ?묐떟)
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-                // 1. 이미 하원했는지 확인 (completed 상태)
-                console.log('[performCheckOutDirectFetch] 하원 확인 요청:', {
+                // 1. ?대? ?섏썝?덈뒗吏 ?뺤씤 (completed ?곹깭)
+                console.log('[performCheckOutDirectFetch] ?섏썝 ?뺤씤 ?붿껌:', {
                     student_id: selectedStudent.id,
                     date: today
                 });
@@ -1089,18 +1091,18 @@
 
                 if (!completedResponse.ok) {
                     const errorText = await completedResponse.text();
-                    console.error('[performCheckOutDirectFetch] 하원 확인 실패:', errorText);
-                    return { success: false, error: `하원 확인 실패: ${errorText}` };
+                    console.error('[performCheckOutDirectFetch] ?섏썝 ?뺤씤 ?ㅽ뙣:', errorText);
+                    return { success: false, error: `?섏썝 ?뺤씤 ?ㅽ뙣: ${errorText}` };
                 }
 
                 const completedData = await completedResponse.json();
-                console.log('[performCheckOutDirectFetch] 하원 확인 응답:', completedData);
+                console.log('[performCheckOutDirectFetch] ?섏썝 ?뺤씤 ?묐떟:', completedData);
                 if (completedData && completedData.length > 0) {
-                    return { success: false, error: `${selectedStudent.name}님은 이미 하원 처리되었습니다.`, alreadyCheckedOut: true };
+                    return { success: false, error: `${selectedStudent.name}?섏? ?대? ?섏썝 泥섎━?섏뿀?듬땲??`, alreadyCheckedOut: true };
                 }
 
-                // 2. 등원 기록 찾기 (waiting, seated 상태)
-                console.log('[performCheckOutDirectFetch] 등원 기록 찾기 요청:', {
+                // 2. ?깆썝 湲곕줉 李얘린 (waiting, seated ?곹깭)
+                console.log('[performCheckOutDirectFetch] ?깆썝 湲곕줉 李얘린 ?붿껌:', {
                     student_id: selectedStudent.id,
                     date: today
                 });
@@ -1119,20 +1121,20 @@
 
                 if (!attendanceResponse.ok) {
                     const errorText = await attendanceResponse.text();
-                    console.error('[performCheckOutDirectFetch] 등원 기록 찾기 실패:', errorText);
-                    return { success: false, error: `등원 기록 찾기 실패: ${errorText}` };
+                    console.error('[performCheckOutDirectFetch] ?깆썝 湲곕줉 李얘린 ?ㅽ뙣:', errorText);
+                    return { success: false, error: `?깆썝 湲곕줉 李얘린 ?ㅽ뙣: ${errorText}` };
                 }
 
                 const attendanceData = await attendanceResponse.json();
-                console.log('[performCheckOutDirectFetch] 등원 기록 응답:', attendanceData);
+                console.log('[performCheckOutDirectFetch] ?깆썝 湲곕줉 ?묐떟:', attendanceData);
                 if (!attendanceData || attendanceData.length === 0) {
-                    return { success: false, error: `${selectedStudent.name}님은 등원 기록이 없습니다.`, noCheckIn: true };
+                    return { success: false, error: `${selectedStudent.name}?섏? ?깆썝 湲곕줉???놁뒿?덈떎.`, noCheckIn: true };
                 }
 
                 const attendance = attendanceData[0];
-                console.log('[performCheckOutDirectFetch] 찾은 등원 기록:', attendance);
+                console.log('[performCheckOutDirectFetch] 李얠? ?깆썝 湲곕줉:', attendance);
 
-                // 3. 하원 처리 (상태 업데이트)
+                // 3. ?섏썝 泥섎━ (?곹깭 ?낅뜲?댄듃)
                 const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/attendance?id=eq.${attendance.id}`, {
                     method: 'PATCH',
                     headers: {
@@ -1153,17 +1155,17 @@
 
                 if (!updateResponse.ok) {
                     const errorText = await updateResponse.text();
-                    console.error('[performCheckOutDirectFetch] 하원 처리 실패:', errorText);
-                    return { success: false, error: `하원 처리 실패: ${errorText}` };
+                    console.error('[performCheckOutDirectFetch] ?섏썝 泥섎━ ?ㅽ뙣:', errorText);
+                    return { success: false, error: `?섏썝 泥섎━ ?ㅽ뙣: ${errorText}` };
                 }
 
                 const updateResult = await updateResponse.json();
-                console.log('[performCheckOutDirectFetch] 하원 처리 성공:', updateResult);
+                console.log('[performCheckOutDirectFetch] ?섏썝 泥섎━ ?깃났:', updateResult);
 
-                // 4. 좌석 비우기 (Supabase + localStorage 둘 다)
-                // Supabase 좌석 비우기
+                // 4. 醫뚯꽍 鍮꾩슦湲?(Supabase + localStorage ????
+                // Supabase 醫뚯꽍 鍮꾩슦湲?
                 if (attendance.seat_id) {
-                    console.log('[performCheckOutDirectFetch] Supabase 좌석 비우기:', attendance.seat_id);
+                    console.log('[performCheckOutDirectFetch] Supabase 醫뚯꽍 鍮꾩슦湲?', attendance.seat_id);
                     const seatResponse = await fetch(`${SUPABASE_URL}/rest/v1/seats?id=eq.${attendance.seat_id}`, {
                         method: 'PATCH',
                         headers: {
@@ -1182,31 +1184,31 @@
                     });
 
                     if (seatResponse.ok) {
-                        console.log('[performCheckOutDirectFetch] Supabase 좌석 비우기 성공');
+                        console.log('[performCheckOutDirectFetch] Supabase 醫뚯꽍 鍮꾩슦湲??깃났');
                     } else {
-                        console.error('[performCheckOutDirectFetch] Supabase 좌석 비우기 실패:', await seatResponse.text());
+                        console.error('[performCheckOutDirectFetch] Supabase 醫뚯꽍 鍮꾩슦湲??ㅽ뙣:', await seatResponse.text());
                     }
                 }
 
-                // localStorage 좌석 비우기 (seat_id 또는 학생 이름으로 찾기)
+                // localStorage 醫뚯꽍 鍮꾩슦湲?(seat_id ?먮뒗 ?숈깮 ?대쫫?쇰줈 李얘린)
                 try {
                     const seatsData = localStorage.getItem('seats');
                     if (seatsData) {
                         const seats = JSON.parse(seatsData);
                         let seatIndex = -1;
 
-                        // 1. seat_id로 찾기
+                        // 1. seat_id濡?李얘린
                         if (attendance.seat_id) {
                             seatIndex = seats.findIndex(s => s.id == attendance.seat_id);
                         }
 
-                        // 2. seat_id가 없거나 못 찾으면 학생 이름으로 찾기
+                        // 2. seat_id媛 ?녾굅??紐?李얠쑝硫??숈깮 ?대쫫?쇰줈 李얘린
                         if (seatIndex === -1) {
                             seatIndex = seats.findIndex(s => s.name === selectedStudent.name);
                         }
 
                         if (seatIndex !== -1) {
-                            console.log(`[performCheckOutDirectFetch] localStorage 좌석 비우기: ${seats[seatIndex].name}`);
+                            console.log(`[performCheckOutDirectFetch] localStorage 醫뚯꽍 鍮꾩슦湲? ${seats[seatIndex].name}`);
                             seats[seatIndex].name = '';
                             seats[seatIndex].occupied = false;
                             seats[seatIndex].alarmTime = null;
@@ -1214,7 +1216,7 @@
                             seats[seatIndex].alarmStopped = false;
                             localStorage.setItem('seats', JSON.stringify(seats));
 
-                            // storage 이벤트 발생
+                            // storage ?대깽??諛쒖깮
                             window.dispatchEvent(new StorageEvent('storage', {
                                 key: 'seats',
                                 newValue: JSON.stringify(seats)
@@ -1222,34 +1224,29 @@
                         }
                     }
                 } catch (e) {
-                    console.error('[performCheckOutDirectFetch] localStorage 좌석 비우기 실패:', e);
+                    console.error('[performCheckOutDirectFetch] localStorage 醫뚯꽍 鍮꾩슦湲??ㅽ뙣:', e);
                 }
-
-                // 5. Web Push 알림 전송 (비동기 - 팝업 지연 방지)
-                sendWebPushNotification(selectedStudent, 'check_out').catch(err => {
-                    console.error('[Kiosk] Push 알림 백그라운드 에러:', err);
-                });
 
                 return { success: true, attendance };
 
             } catch (error) {
-                console.error('[performCheckOutDirectFetch] 오류:', error);
+                console.error('[performCheckOutDirectFetch] ?ㅻ쪟:', error);
                 return { success: false, error: error.message };
             }
         }
 
-        // 스크립트 로드 후 즉시 초기화 시도
+        // ?ㅽ겕由쏀듃 濡쒕뱶 ??利됱떆 珥덇린???쒕룄
         (function() {
-            // 약간의 지연 후 실행 (다른 스크립트가 로드될 때까지 대기)
+            // ?쎄컙??吏?????ㅽ뻾 (?ㅻⅨ ?ㅽ겕由쏀듃媛 濡쒕뱶???뚭퉴吏 ?湲?
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', initKiosk);
             } else {
-                // 이미 로드된 경우 즉시 실행
+                // ?대? 濡쒕뱶??寃쎌슦 利됱떆 ?ㅽ뻾
                 initKiosk();
             }
         })();
 
-        // ESC 키로 모달 닫기
+        // ESC ?ㅻ줈 紐⑤떖 ?リ린
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeAlertModal();
@@ -1257,14 +1254,14 @@
             }
         });
 
-        // ===== 알림 전송 함수 (Web Push + FCM 지원) =====
-        // 등원 알림 전송
+        // ===== ?뚮┝ ?꾩넚 ?⑥닔 (Web Push + FCM 吏?? =====
+        // ?깆썝 ?뚮┝ ?꾩넚
         async function sendCheckInNotification(studentId, studentName, timeStr) {
             const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
 
             try {
-                // 학부모 ID 가져오기
+                // ?숇?紐?ID 媛?몄삤湲?
                 const parentResponse = await fetch(
                     `${SUPABASE_URL}/rest/v1/students?id=eq.${studentId}&select=parent_id`,
                     {
@@ -1277,34 +1274,34 @@
                 );
 
                 if (!parentResponse.ok) {
-                    console.error('[알림] 학부모 조회 실패');
+                    console.error('[?뚮┝] ?숇?紐?議고쉶 ?ㅽ뙣');
                     return;
                 }
 
                 const parentData = await parentResponse.json();
                 if (!parentData || parentData.length === 0 || !parentData[0].parent_id) {
-                    console.log('[알림] 연결된 학부모 없음');
+                    console.log('[?뚮┝] ?곌껐???숇?紐??놁쓬');
                     return;
                 }
 
                 const parentId = parentData[0].parent_id;
 
-                // Web Push 알림 전송 (기존 방식 - 웹 브라우저용)
+                // Web Push ?뚮┝ ?꾩넚 (湲곗〈 諛⑹떇 - ??釉뚮씪?곗???
                 sendWebPushNotification(studentId, parentId, 'check_in', studentName);
 
-                // FCM 알림 전송 (새 방식 - 모바일 앱용)
-                sendFCMNotification(parentId, 'attendance_check_in', `${studentName}님이 등원했습니다`, `${timeStr}에 등원 완료`, {
+                // FCM ?뚮┝ ?꾩넚 (??諛⑹떇 - 紐⑤컮???깆슜)
+                sendFCMNotification(parentId, 'attendance_check_in', `${studentName}?섏씠 ?깆썝?덉뒿?덈떎`, `${timeStr}???깆썝 ?꾨즺`, {
                     student_id: studentId,
                     student_name: studentName,
                     check_in_time: new Date().toISOString()
                 });
 
             } catch (error) {
-                console.error('[알림] 등원 알림 전송 오류:', error);
+                console.error('[?뚮┝] ?깆썝 ?뚮┝ ?꾩넚 ?ㅻ쪟:', error);
             }
         }
 
-        // Web Push 알림 전송 (기존 방식)
+        // Web Push ?뚮┝ ?꾩넚 (湲곗〈 諛⑹떇)
         async function sendWebPushNotification(studentId, parentId, type, studentName) {
             const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
             const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/send-web-push-notification`;
@@ -1326,16 +1323,16 @@
 
                 if (response.ok) {
                     const result = await response.json();
-                    console.log('[Web Push] 알림 전송 성공:', result);
+                    console.log('[Web Push] ?뚮┝ ?꾩넚 ?깃났:', result);
                 } else {
-                    console.log('[Web Push] 알림 전송 응답:', await response.text());
+                    console.log('[Web Push] ?뚮┝ ?꾩넚 ?묐떟:', await response.text());
                 }
             } catch (error) {
-                console.error('[Web Push] 알림 전송 오류:', error);
+                console.error('[Web Push] ?뚮┝ ?꾩넚 ?ㅻ쪟:', error);
             }
         }
 
-        // FCM 알림 전송 (새 방식 - 모바일 앱용)
+        // FCM ?뚮┝ ?꾩넚 (??諛⑹떇 - 紐⑤컮???깆슜)
         async function sendFCMNotification(parentId, type, title, body, data) {
             const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
@@ -1364,30 +1361,30 @@
 
                 if (fcmResponse.ok) {
                     const result = await fcmResponse.json();
-                    console.log('[FCM] 알림 전송 성공:', result);
+                    console.log('[FCM] ?뚮┝ ?꾩넚 ?깃났:', result);
                 } else {
                     const errorText = await fcmResponse.text();
-                    // FCM이 설정되지 않은 경우는 무시 (선택적 기능)
+                    // FCM???ㅼ젙?섏? ?딆? 寃쎌슦??臾댁떆 (?좏깮??湲곕뒫)
                     if (fcmResponse.status === 404 || fcmResponse.status === 500) {
-                        console.log('[FCM] FCM Edge Function을 찾을 수 없거나 설정되지 않음 (무시)');
+                        console.log('[FCM] FCM Edge Function??李얠쓣 ???녾굅???ㅼ젙?섏? ?딆쓬 (臾댁떆)');
                     } else {
-                        console.log('[FCM] 알림 전송 응답:', errorText);
+                        console.log('[FCM] ?뚮┝ ?꾩넚 ?묐떟:', errorText);
                     }
                 }
             } catch (error) {
-                console.log('[FCM] 알림 전송 오류 (무시):', error.message);
+                console.log('[FCM] ?뚮┝ ?꾩넚 ?ㅻ쪟 (臾댁떆):', error.message);
             }
         }
 
-        // 하원 알림 전송
+        // ?섏썝 ?뚮┝ ?꾩넚
         async function sendCheckOutNotification(studentId, studentName, timeStr) {
             try {
-                // Web Push 알림 전송 (기존 방식 - 웹 브라우저용)
-                // 학부모 ID 가져오기는 Web Push 함수 내에서 처리
+                // Web Push ?뚮┝ ?꾩넚 (湲곗〈 諛⑹떇 - ??釉뚮씪?곗???
+                // ?숇?紐?ID 媛?몄삤湲곕뒗 Web Push ?⑥닔 ?댁뿉??泥섎━
                 const SUPABASE_URL = 'https://xpgvtkakbyxbhwuyqpxg.supabase.co';
                 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwZ3Z0a2FrYnl4Ymh3dXlxcHhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTE0MDMsImV4cCI6MjA4NTQyNzQwM30.iiKr9NjysYVibwWLjPTD6wcfEGA6OzCH_bNmVjSMwgo';
 
-                // 학부모 ID 가져오기
+                // ?숇?紐?ID 媛?몄삤湲?
                 const parentResponse = await fetch(
                     `${SUPABASE_URL}/rest/v1/students?id=eq.${studentId}&select=parent_id`,
                     {
@@ -1400,32 +1397,174 @@
                 );
 
                 if (!parentResponse.ok) {
-                    console.error('[알림] 학부모 조회 실패');
+                    console.error('[?뚮┝] ?숇?紐?議고쉶 ?ㅽ뙣');
                     return;
                 }
 
                 const parentData = await parentResponse.json();
                 if (!parentData || parentData.length === 0 || !parentData[0].parent_id) {
-                    console.log('[알림] 연결된 학부모 없음');
+                    console.log('[?뚮┝] ?곌껐???숇?紐??놁쓬');
                     return;
                 }
 
                 const parentId = parentData[0].parent_id;
 
-                // Web Push 알림 전송 (기존 방식 - 웹 브라우저용)
+                // Web Push ?뚮┝ ?꾩넚 (湲곗〈 諛⑹떇 - ??釉뚮씪?곗???
                 sendWebPushNotification(studentId, parentId, 'check_out', studentName);
 
-                // FCM 알림 전송 (새 방식 - 모바일 앱용)
-                sendFCMNotification(parentId, 'attendance_check_out', `${studentName}님이 하원했습니다`, `${timeStr}에 하원 완료`, {
+                // FCM ?뚮┝ ?꾩넚 (??諛⑹떇 - 紐⑤컮???깆슜)
+                sendFCMNotification(parentId, 'attendance_check_out', `${studentName}?섏씠 ?섏썝?덉뒿?덈떎`, `${timeStr}???섏썝 ?꾨즺`, {
                     student_id: studentId,
                     student_name: studentName,
                     check_out_time: new Date().toISOString()
                 });
 
             } catch (error) {
-                console.error('[알림] 하원 알림 전송 오류:', error);
+                console.error('[?뚮┝] ?섏썝 ?뚮┝ ?꾩넚 ?ㅻ쪟:', error);
+            }
+        }
+            // ===== Override: multi-recipient notification path =====
+        async function sendCheckInNotification(studentId, studentName, timeStr) {
+            await sendAttendanceNotifications('check_in', studentId, studentName, timeStr);
+        }
+
+        async function sendCheckOutNotification(studentId, studentName, timeStr) {
+            await sendAttendanceNotifications('check_out', studentId, studentName, timeStr);
+        }
+
+        async function sendAttendanceNotifications(eventType, studentId, studentName, timeStr) {
+            try {
+                if (!sb) {
+                    console.warn('[Kiosk] Supabase client not ready; skip notifications.');
+                    return;
+                }
+
+                let recipients = null;
+                const { data, error } = await sb.rpc('get_student_notification_recipients', {
+                    p_student_id: studentId,
+                    p_event_type: eventType
+                });
+
+                if (error || data?.success === false) {
+                    console.warn('[Kiosk] recipient RPC failed; fallback to legacy parent_id.', error || data);
+                    recipients = await getLegacySingleRecipient(studentId);
+                } else {
+                    recipients = data;
+                }
+
+                const accountRecipients = Array.isArray(recipients?.account_recipients) ? recipients.account_recipients : [];
+                for (const account of accountRecipients) {
+                    const parentId = account?.parent_id;
+                    if (!parentId) continue;
+                    await sendWebPushByParentId(studentId, parentId, eventType, studentName);
+                    await sendFCMNotification(
+                        parentId,
+                        eventType === 'check_in' ? 'attendance_check_in' : 'attendance_check_out',
+                        `${studentName}님이 ${eventType === 'check_in' ? '등원' : '하원'}했습니다`,
+                        `${timeStr}에 ${eventType === 'check_in' ? '등원' : '하원'} 완료`,
+                        eventType === 'check_in'
+                            ? { student_id: studentId, student_name: studentName, check_in_time: new Date().toISOString() }
+                            : { student_id: studentId, student_name: studentName, check_out_time: new Date().toISOString() }
+                    );
+                }
+
+                const queuePayload = {
+                    student_id: studentId,
+                    student_name: studentName,
+                    event_type: eventType,
+                    event_time: new Date().toISOString()
+                };
+                const { error: queueError } = await sb.rpc('enqueue_student_phone_notifications', {
+                    p_student_id: studentId,
+                    p_event_type: eventType,
+                    p_payload: queuePayload
+                });
+                if (queueError) {
+                    console.warn('[Kiosk] phone queue enqueue failed:', queueError);
+                }
+            } catch (error) {
+                console.error('[Kiosk] sendAttendanceNotifications error:', error);
+            }
+        }
+
+        async function getLegacySingleRecipient(studentId) {
+            try {
+                const { data: row, error } = await sb
+                    .from('students')
+                    .select('parent_id')
+                    .eq('id', studentId)
+                    .maybeSingle();
+                if (error || !row?.parent_id) {
+                    return { account_recipients: [], phone_recipients: [] };
+                }
+                return {
+                    account_recipients: [{ parent_id: row.parent_id, channels: ['web_push', 'fcm'] }],
+                    phone_recipients: []
+                };
+            } catch (e) {
+                console.warn('[Kiosk] legacy recipient fallback failed:', e);
+                return { account_recipients: [], phone_recipients: [] };
+            }
+        }
+
+        async function sendWebPushByParentId(studentId, parentId, type, studentName) {
+            try {
+                const { data: { session } } = await sb.auth.getSession();
+                if (!session?.access_token) return;
+
+                const res = await fetch(`${SUPABASE_URL}/functions/v1/send-web-push-notification`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        student_id: studentId,
+                        parent_id: parentId,
+                        type: type,
+                        student_name: studentName
+                    })
+                });
+
+                if (!res.ok) {
+                    console.warn('[Kiosk] Web push response:', res.status, await res.text());
+                }
+            } catch (error) {
+                console.warn('[Kiosk] Web push error:', error);
+            }
+        }
+
+        async function sendFCMNotification(parentId, type, title, body, data) {
+            try {
+                const { data: { session } } = await sb.auth.getSession();
+                if (!session?.access_token) return;
+
+                const fcmResponse = await fetch(`${SUPABASE_URL}/functions/v1/fcm-send-notification`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        recipient_id: parentId,
+                        type,
+                        title,
+                        body,
+                        data,
+                        priority: 'high',
+                        target_type: 'parent'
+                    })
+                });
+
+                if (!fcmResponse.ok && ![404, 500].includes(fcmResponse.status)) {
+                    console.warn('[Kiosk] FCM response:', fcmResponse.status, await fcmResponse.text());
+                }
+            } catch (error) {
+                console.log('[Kiosk] FCM error (ignored):', error.message);
             }
         }
     </script>
 </body>
 </html>
+
+

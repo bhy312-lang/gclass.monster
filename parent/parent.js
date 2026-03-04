@@ -1,4 +1,4 @@
-// 학부모 포털 메인 로직
+﻿// 학부모 포털 메인 로직
 // 전역 변수
 let currentUser = null;
 let childrenData = [];
@@ -45,6 +45,9 @@ async function initializeParentPortal() {
     // 사용자 정보 표시
     await displayUserInfo();
 
+    // 사전등록 학생 자동연동
+    await tryClaimStudentsByPhone();
+
     // 자녀 데이터 로드
     await loadChildrenData();
 
@@ -63,6 +66,7 @@ async function initializeParentPortal() {
 
     // 학습 피드백 로드
     await loadFeedbacks();
+    await renderParentContactManager();
 
     console.log('[Parent Portal] 초기화 완료');
 
@@ -73,7 +77,25 @@ async function initializeParentPortal() {
 }
 
 // 사용자 정보 표시
-async function displayUserInfo() {
+
+async function tryClaimStudentsByPhone() {
+  try {
+    const { data, error } = await supabase.rpc('parent_claim_students_by_phone');
+    if (error) {
+      console.warn('[Parent Portal] parent_claim_students_by_phone error:', error);
+      return;
+    }
+    if (data?.success) {
+      const linkedCount = data.linked_count || 0;
+      const conflictCount = Array.isArray(data.conflict_candidates) ? data.conflict_candidates.length : 0;
+      if (linkedCount > 0 || conflictCount > 0) {
+        showSuccess(`자동연동 결과: 연결 ${linkedCount}건, 충돌 ${conflictCount}건`);
+      }
+    }
+  } catch (e) {
+    console.warn('[Parent Portal] parent_claim_students_by_phone exception:', e);
+  }
+}async function displayUserInfo() {
   try {
     const { data: profile } = await supabase
       .from('profiles')
@@ -597,6 +619,159 @@ async function markNotificationAsRead(notificationId) {
 }
 
 // 로그아웃
+
+async function renderParentContactManager() {
+  const container = document.getElementById('parent-contact-manager');
+  if (!container) return;
+
+  if (!childrenData || childrenData.length === 0) {
+    container.innerHTML = '<p class="text-sm text-gray-500">연결된 학생이 없습니다.</p>';
+    return;
+  }
+
+  const blocks = [];
+  for (const child of childrenData) {
+    const { data: contacts, error } = await supabase
+      .from('student_notification_contacts')
+      .select('id,contact_name,relationship,phone,receive_check_in,receive_check_out')
+      .eq('student_id', child.id)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      blocks.push(`
+        <div class="border border-red-200 rounded-lg p-3 bg-red-50">
+          <p class="text-sm font-semibold text-red-600">${child.name}</p>
+          <p class="text-xs text-red-500 mt-1">연락처 조회 실패: ${error.message}</p>
+        </div>
+      `);
+      continue;
+    }
+
+    const relationLabel = (relation) => {
+      const map = {
+        father: '아버지',
+        mother: '어머니',
+        grandfather: '할아버지',
+        grandmother: '할머니',
+        other: '기타'
+      };
+      return map[relation] || relation || '기타';
+    };
+
+    const rows = (contacts || []).map((c) => `
+      <div class="border border-gray-200 rounded-lg p-2 bg-white">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <p class="text-sm font-medium text-gray-800">${c.contact_name} (${relationLabel(c.relationship)})</p>
+            <p class="text-xs text-gray-500">${c.phone || ''}</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <label class="inline-flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+              <span>등/하원 알림</span>
+              <span class="relative inline-flex items-center">
+                <input type="checkbox" class="peer sr-only" ${(c.receive_check_in && c.receive_check_out) ? 'checked' : ''} onchange="parentToggleNotificationContact('${c.id}', this.checked)">
+                <span class="w-9 h-5 bg-gray-300 peer-checked:bg-emerald-500 rounded-full transition-colors"></span>
+                <span class="absolute left-0.5 w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-4 transition-transform"></span>
+              </span>
+            </label>
+            <button onclick="parentRemoveNotificationContact('${c.id}')" class="text-xs text-red-500 hover:underline">삭제</button>
+          </div>
+        </div>
+      </div>
+    `).join('') || '<p class="text-xs text-gray-400">등록된 연락처가 없습니다.</p>';
+
+    blocks.push(`
+      <div class="border border-pink-100 rounded-xl p-3 bg-pink-50/50">
+        <p class="font-semibold text-gray-800 mb-2">${child.name}</p>
+        <div class="space-y-2">${rows}</div>
+        <div class="flex gap-2 mt-2 items-center">
+          <input id="contact-name-${child.id}" type="text" placeholder="이름" class="w-[24%] px-2 py-1.5 border border-gray-300 rounded-lg text-xs">
+          <select id="contact-rel-${child.id}" class="w-[24%] px-2 py-1.5 border border-gray-300 rounded-lg text-xs bg-white">
+            <option value="father">아버지</option>
+            <option value="mother">어머니</option>
+            <option value="grandfather">할아버지</option>
+            <option value="grandmother">할머니</option>
+            <option value="other">기타</option>
+          </select>
+          <input id="contact-phone-${child.id}" type="tel" placeholder="010-0000-0000" class="w-[32%] px-2 py-1.5 border border-gray-300 rounded-lg text-xs">
+          <button onclick="parentAddNotificationContact('${child.id}')" class="w-[20%] bg-pink-500 hover:bg-pink-600 text-white rounded-lg text-xs py-1.5">추가</button>
+        </div>
+      </div>
+    `);
+  }
+
+  container.innerHTML = blocks.join('');
+}
+
+async function parentAddNotificationContact(studentId) {
+  const nameEl = document.getElementById(`contact-name-${studentId}`);
+  const relEl = document.getElementById(`contact-rel-${studentId}`);
+  const phoneEl = document.getElementById(`contact-phone-${studentId}`);
+  const name = nameEl?.value?.trim();
+  const relationship = relEl?.value || 'other';
+  const phone = phoneEl?.value?.trim();
+
+  if (!name || !phone) {
+    showError('연락처 이름과 전화번호를 입력해주세요.');
+    return;
+  }
+
+  const { data, error } = await supabase.rpc('parent_add_student_notification_contact', {
+    p_student_id: studentId,
+    p_contact_name: name,
+    p_relationship: relationship,
+    p_phone: phone,
+    p_receive_check_in: false,
+    p_receive_check_out: false
+  });
+
+  if (error || data?.success === false) {
+    showError(data?.error || error?.message || '연락처 추가 실패');
+    return;
+  }
+
+  if (nameEl) nameEl.value = '';
+  if (relEl) relEl.value = 'father';
+  if (phoneEl) phoneEl.value = '';
+  await renderParentContactManager();
+}
+
+async function parentToggleNotificationContact(contactId, checked) {
+  const { data: rowData } = await supabase
+    .from('student_notification_contacts')
+    .select('contact_name,relationship,phone,is_active,receive_check_in,receive_check_out')
+    .eq('id', contactId)
+    .limit(1);
+  const row = rowData?.[0];
+  if (!row) return;
+
+  const { data, error } = await supabase.rpc('parent_update_student_notification_contact', {
+    p_contact_id: contactId,
+    p_contact_name: row.contact_name,
+    p_relationship: row.relationship,
+    p_phone: row.phone,
+    p_receive_check_in: checked,
+    p_receive_check_out: checked,
+    p_is_active: !!row.is_active
+  });
+
+  if (error || data?.success === false) {
+    showError(data?.error || error?.message || '연락처 토글 저장 실패');
+    await renderParentContactManager();
+  }
+}
+
+async function parentRemoveNotificationContact(contactId) {
+  const { data, error } = await supabase.rpc('parent_remove_student_notification_contact', {
+    p_contact_id: contactId
+  });
+  if (error || data?.success === false) {
+    showError(data?.error || error?.message || '연락처 삭제 실패');
+    return;
+  }
+  await renderParentContactManager();
+}
+
 async function logout() {
   try {
     await supabase.auth.signOut();
@@ -777,3 +952,4 @@ window.addEventListener('beforeunload', () => {
     supabase.removeChannel(realtimeChannel);
   }
 });
+

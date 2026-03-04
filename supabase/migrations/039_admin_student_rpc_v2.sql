@@ -13,7 +13,7 @@
 -- 기존 함수를 대체하는 새 버전
 CREATE OR REPLACE FUNCTION admin_upsert_student(
     p_student_id UUID DEFAULT NULL,
-    p_name TEXT,
+    p_name TEXT DEFAULT NULL,
     p_birth_date DATE DEFAULT NULL,
     p_school_name TEXT DEFAULT NULL,
     p_grade INTEGER DEFAULT NULL,
@@ -25,14 +25,32 @@ DECLARE
     v_result JSONB;
     v_student students%ROWTYPE;
     v_parent_role TEXT;
+    v_current_role TEXT;
 BEGIN
+    -- 필수값 검증
+    IF p_name IS NULL OR btrim(p_name) = '' THEN
+        RETURN jsonb_build_object(
+            'error', '학생 이름은 필수입니다',
+            'error_code', 'INVALID_STUDENT_NAME'
+        );
+    END IF;
+
     -- 관리자 권한 검증
+    SELECT role INTO v_current_role
+    FROM profiles
+    WHERE id = auth.uid();
+
     IF NOT EXISTS (
-        SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+        SELECT 1
+        FROM profiles
+        WHERE id = auth.uid()
+          AND LOWER(role) IN ('admin', 'super_admin')
     ) THEN
         RETURN jsonb_build_object(
             'error', '관리자 권한이 필요합니다',
-            'error_code', 'INSUFFICIENT_PERMISSIONS'
+            'error_code', 'INSUFFICIENT_PERMISSIONS',
+            'auth_uid', auth.uid(),
+            'current_role', v_current_role
         );
     END IF;
 
@@ -52,7 +70,7 @@ BEGIN
             );
         END IF;
 
-        IF v_parent_role != 'parent' THEN
+        IF LOWER(v_parent_role) != 'parent' THEN
             RETURN jsonb_build_object(
                 'error', '지정된 계정은 부모 계정이 아닙니다',
                 'error_code', 'NOT_A_PARENT_ACCOUNT',
@@ -118,14 +136,24 @@ CREATE OR REPLACE FUNCTION admin_search_parents(
 DECLARE
     v_academy_id UUID;
     v_results JSONB;
+    v_current_role TEXT;
 BEGIN
     -- 관리자 권한 검증
+    SELECT role INTO v_current_role
+    FROM profiles
+    WHERE id = auth.uid();
+
     IF NOT EXISTS (
-        SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+        SELECT 1
+        FROM profiles
+        WHERE id = auth.uid()
+          AND LOWER(role) IN ('admin', 'super_admin')
     ) THEN
         RETURN jsonb_build_object(
             'error', '관리자 권한이 필요합니다',
-            'error_code', 'INSUFFICIENT_PERMISSIONS'
+            'error_code', 'INSUFFICIENT_PERMISSIONS',
+            'auth_uid', auth.uid(),
+            'current_role', v_current_role
         );
     END IF;
 
@@ -139,7 +167,7 @@ BEGIN
         )
     ) INTO v_results
     FROM profiles p
-    WHERE p.role = 'parent'
+    WHERE LOWER(p.role) = 'parent'
       AND (
           p_search_term IS NULL
           OR p.name ILIKE '%' || p_search_term || '%'
@@ -170,14 +198,24 @@ DECLARE
     v_student_name TEXT;
     v_parent_name TEXT;
     v_parent_role TEXT;
+    v_current_role TEXT;
 BEGIN
     -- 관리자 권한 검증
+    SELECT role INTO v_current_role
+    FROM profiles
+    WHERE id = auth.uid();
+
     IF NOT EXISTS (
-        SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+        SELECT 1
+        FROM profiles
+        WHERE id = auth.uid()
+          AND LOWER(role) IN ('admin', 'super_admin')
     ) THEN
         RETURN jsonb_build_object(
             'error', '관리자 권한이 필요합니다',
-            'error_code', 'INSUFFICIENT_PERMISSIONS'
+            'error_code', 'INSUFFICIENT_PERMISSIONS',
+            'auth_uid', auth.uid(),
+            'current_role', v_current_role
         );
     END IF;
 
@@ -195,7 +233,7 @@ BEGIN
         );
     END IF;
 
-    IF v_parent_role != 'parent' THEN
+    IF LOWER(v_parent_role) != 'parent' THEN
         RETURN jsonb_build_object(
             'error', '지정된 계정은 부모 계정이 아닙니다',
             'error_code', 'NOT_A_PARENT_ACCOUNT',
@@ -236,6 +274,22 @@ $$;
 GRANT EXECUTE ON FUNCTION admin_upsert_student TO authenticated;
 GRANT EXECUTE ON FUNCTION admin_search_parents TO authenticated;
 GRANT EXECUTE ON FUNCTION admin_link_student_parent TO authenticated;
+
+-- 역할 문자열 정규화 (Admin/ADMIN -> admin, Parent/PARENT -> parent)
+UPDATE profiles
+SET role = 'admin'
+WHERE role IS NOT NULL
+  AND LOWER(role) = 'admin'
+  AND role <> 'admin';
+
+UPDATE profiles
+SET role = 'parent'
+WHERE role IS NOT NULL
+  AND LOWER(role) = 'parent'
+  AND role <> 'parent';
+
+-- PostgREST 스키마 캐시 갱신 (RPC 시그니처 변경 반영)
+NOTIFY pgrst, 'reload schema';
 
 -- 롤백:
 -- DROP FUNCTION IF EXISTS admin_upsert_student CASCADE;

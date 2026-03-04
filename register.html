@@ -242,6 +242,22 @@
 
                 if (profileError) throw profileError;
 
+                // 사전등록 학생 자동연동 시도 (전화번호 exact match)
+                try {
+                    const { data: claimResult, error: claimError } = await supabase.rpc('parent_claim_students_by_phone');
+                    if (claimError) {
+                        console.warn('[register] parent_claim_students_by_phone error:', claimError);
+                    } else if (claimResult?.success) {
+                        const linkedCount = claimResult.linked_count || 0;
+                        const conflictCount = Array.isArray(claimResult.conflict_candidates) ? claimResult.conflict_candidates.length : 0;
+                        if (linkedCount > 0 || conflictCount > 0) {
+                            alert(`사전등록 학생 자동연동 결과: 연결 ${linkedCount}건, 충돌 ${conflictCount}건`);
+                        }
+                    }
+                } catch (claimEx) {
+                    console.warn('[register] parent_claim_students_by_phone exception:', claimEx);
+                }
+
                 // 기존 자녀 삭제 (ID가 없는 것들)
                 const existingIds = children.filter(c => c.id).map(c => c.id);
 

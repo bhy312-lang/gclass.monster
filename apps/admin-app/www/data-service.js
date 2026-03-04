@@ -22,6 +22,16 @@ const DataService = {
     // 학생 데이터는 public.students 테이블을 원본으로 사용
 
     // 학생 목록 불러오기
+    isUuid: function(value) {
+        return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
+    },
+
+    normalizeAdminUpsertResult: function(rpcResult) {
+        if (!rpcResult || rpcResult.success === false) return null;
+        if (rpcResult.data && typeof rpcResult.data === 'object') return rpcResult.data;
+        return rpcResult;
+    },
+
     loadStudents: async function() {
         const sb = this.getSupabase();
         const userId = this.getCurrentUserId();
@@ -69,7 +79,7 @@ const DataService = {
         const userId = this.getCurrentUserId();
 
         if (!sb || !userId) {
-            console.log('[DataService] localStorage에 저장');
+            console.log('[DataService] localStorage fallback save');
             const students = JSON.parse(localStorage.getItem('students') || '[]');
             const idx = students.findIndex(s => s.id === student.id);
             if (idx >= 0) {
@@ -83,7 +93,7 @@ const DataService = {
 
         try {
             const { data, error } = await sb.rpc('admin_upsert_student', {
-                p_student_id: (student.id && student.id.includes('-')) ? student.id : null,
+                p_student_id: this.isUuid(student.id) ? student.id : null,
                 p_name: student.name,
                 p_school_name: student.school || null,
                 p_grade: this.convertGradeTextToNum(student.grade || ''),
@@ -91,32 +101,37 @@ const DataService = {
             });
 
             if (error) {
-                console.error('[DataService] RPC 에러:', error);
+                console.error('[DataService] RPC error:', error);
                 throw error;
             }
 
-            console.log('[DataService] 학생 저장 성공:', data.name);
+            const studentData = this.normalizeAdminUpsertResult(data);
+            if (!studentData) {
+                throw new Error(data?.error || data?.message || 'Invalid RPC response');
+            }
+
+            console.log('[DataService] saveStudent success:', studentData.name);
             await this.loadStudents();
 
             return {
-                id: data.id,
-                name: data.name,
-                grade: data.grade ? this.convertGradeNumToText(data.grade) : '',
-                school: data.school_name || '',
-                parentPhone: data.full_phone || '',
-                parentPhoneLast4: data.parent_phone_last4 || '',
-                memos: data.memos || [],
-                makeupTimes: data.makeup_times || [],
-                grades: data.grades || [],
-                feedbacks: data.feedbacks || []
+                id: studentData.id,
+                name: studentData.name,
+                grade: studentData.grade ? this.convertGradeNumToText(studentData.grade) : '',
+                school: studentData.school_name || '',
+                parentPhone: studentData.full_phone || '',
+                parentPhoneLast4: studentData.parent_phone_last4 || '',
+                memos: studentData.memos || [],
+                makeupTimes: studentData.makeup_times || [],
+                grades: studentData.grades || [],
+                feedbacks: studentData.feedbacks || []
             };
         } catch (error) {
-            console.error('[DataService] 학생 저장 실패:', error);
+            console.error('[DataService] saveStudent failed:', error);
             throw error;
         }
     },
 
-    // 학생 삭제 (RPC 사용)
+    // ?? ?? (RPC ??)
     deleteStudent: async function(studentId) {
         const sb = this.getSupabase();
         const userId = this.getCurrentUserId();
@@ -129,27 +144,27 @@ const DataService = {
         }
 
         try {
-            if (studentId && studentId.includes('-')) {
-                const { data, error } = await sb.rpc('admin_delete_student', {
+            if (this.isUuid(studentId)) {
+                const { error } = await sb.rpc('admin_delete_student', {
                     p_student_id: studentId
                 });
 
                 if (error) {
-                    console.error('[DataService] RPC 에러:', error);
+                    console.error('[DataService] RPC error:', error);
                     throw error;
                 }
             }
 
-            console.log('[DataService] 학생 삭제 성공');
+            console.log('[DataService] deleteStudent success');
             await this.loadStudents();
             return true;
         } catch (error) {
-            console.error('[DataService] 학생 삭제 실패:', error);
+            console.error('[DataService] deleteStudent failed:', error);
             throw error;
         }
     },
 
-    // 학년 변환 헬퍼 함수
+    // ?? ?? ?? ??
     convertGradeNumToText: function(gradeNum) {
         if (!gradeNum) return '';
         const gradeMap = {
