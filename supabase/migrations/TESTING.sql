@@ -30,8 +30,8 @@ GROUP BY p.id, p.academy_name
 ORDER BY active_token_count DESC;
 
 -- =====================================================
--- 2. 최근 fcm_messages 실패 코드 확인
--- 용도: 학부모 가입 신청 푸시 전송 결과 확인
+-- 2. 최근 학부모 가입 신청 푸시 결과 확인 (최근 10건)
+-- 용도: message_type='new_parent_registration' 전송 상태/실패 코드 점검
 -- =====================================================
 SELECT
     created_at,
@@ -47,18 +47,51 @@ ORDER BY created_at DESC
 LIMIT 10;
 
 -- =====================================================
--- 3. NO_ACTIVE_TOKEN 비율 확인
--- 용도: 토큰 등록 문제로 인한 실패 비율 파악
+-- 3. 실패 코드 분포 확인 (최근 7일, 실패 건만)
+-- 용도: 인증 실패/토큰 부재 등 실제 장애 원인 비율 파악
 -- =====================================================
 SELECT
-    error_code,
+    COALESCE(error_code, 'NO_ERROR_CODE') as error_code,
     COUNT(*) as count,
     ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 1) as percentage
 FROM fcm_messages
 WHERE created_at > NOW() - INTERVAL '7 days'
   AND message_type = 'new_parent_registration'
+  AND status = 'failed'
+GROUP BY COALESCE(error_code, 'NO_ERROR_CODE')
+ORDER BY count DESC;
+
+-- =====================================================
+-- 3-A. 인증 실패 코드 전용 점검 (최근 7일)
+-- 용도: INVALID_USER_JWT / MISSING_AUTH_HEADER 회귀 여부 확인
+-- =====================================================
+SELECT
+    error_code,
+    COUNT(*) as count,
+    MIN(created_at) as first_seen_at,
+    MAX(created_at) as last_seen_at
+FROM fcm_messages
+WHERE created_at > NOW() - INTERVAL '7 days'
+  AND message_type = 'new_parent_registration'
+  AND error_code IN ('INVALID_USER_JWT', 'MISSING_AUTH_HEADER')
 GROUP BY error_code
 ORDER BY count DESC;
+
+-- =====================================================
+-- 3-B. NO_ACTIVE_TOKEN 상세 점검 (최근 7일)
+-- 용도: 관리자 토큰 미등록/비활성 상태로 인한 실패 추적
+-- =====================================================
+SELECT
+    target_id as academy_admin_id,
+    COUNT(*) as no_active_token_count,
+    MIN(created_at) as first_seen_at,
+    MAX(created_at) as last_seen_at
+FROM fcm_messages
+WHERE created_at > NOW() - INTERVAL '7 days'
+  AND message_type = 'new_parent_registration'
+  AND error_code = 'NO_ACTIVE_TOKEN'
+GROUP BY target_id
+ORDER BY no_active_token_count DESC;
 
 -- =====================================================
 -- 4. 특정 메시지의 수신자 확인
@@ -171,5 +204,7 @@ SELECT public.register_admin_fcm_token(
 -- [ ] fcm_messages에 status='sent'인 레코드가 있는가?
 -- [ ] fcm_message_recipients에 해당 메시지의 수신자 레코드가 있는가?
 -- [ ] error_code가 null인가?
+-- [ ] 최근 10건에서 INVALID_USER_JWT / MISSING_AUTH_HEADER가 0건인가?
+-- [ ] 최근 10건에서 NO_ACTIVE_TOKEN 발생 시 admin_fcm_tokens 상태를 확인했는가?
 -- [ ] FCM 서비스 계정 키가 정상적으로 설정되어 있는가?
 -- [ ] Edge Function 환경 변수가 올바른가?

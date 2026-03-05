@@ -483,33 +483,56 @@ function isSessionExpiringSoon(session, secondsThreshold = 60) {
     return secondsLeft < secondsThreshold;
 }
 
+// Promise timeout wrapper
+function withTimeout(promise, ms = 2500) {
+    return new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+            reject(new Error('PUSH_TIMEOUT:' + ms));
+        }, ms);
+
+        promise
+            .then((result) => {
+                clearTimeout(timeoutId);
+                resolve(result);
+            })
+            .catch((error) => {
+                clearTimeout(timeoutId);
+                reject(error);
+            });
+    });
+}
+
 // =====================================================
 // 관리자 푸시 알림 전송
 // =====================================================
 
 // 관리자에게 학부모 가입 신청 푸시 알림 전송
 async function notifyAdminParentJoinRequest(studentName, studentId, academyId, parentId) {
-    console.log(`[PARENT_JOIN_PUSH] Starting: student=${studentName}, academy_id=${academyId}, student_id=${studentId}`);
+    const pushContext = {
+        academy_id: String(academyId),
+        student_id: String(studentId),
+        parent_id: String(parentId),
+        target_type: 'admin',
+        message_type: 'new_parent_registration'
+    };
+    console.log('[PARENT_JOIN_PUSH] Starting', pushContext);
 
     try {
         // handleSubmit에서 갱신된 세션 사용
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) {
-            console.error('[PARENT_JOIN_PUSH] No active session');
+            console.error('[PARENT_JOIN_PUSH] No active session', {
+                ...pushContext,
+                error_code: 'NO_SESSION'
+            });
             return { success: false, error_code: 'NO_SESSION', error: 'No active session' };
         }
 
         console.log('[PARENT_JOIN_PUSH] has_session=true, has_user_jwt=true');
-        console.log('[PARENT_JOIN_PUSH] Token preview:', session.access_token?.substring(0, 20) + '...');
 
-        // 헤더 전략: Authorization=anon key(Gateway 통과용), x-user-jwt=user token(실제 인증용)
+        // IMPORTANT: Authorization 헤더를 오버라이드하지 않는다.
+        // Supabase SDK가 현재 세션 JWT를 자동 전달한다.
         const { data, error } = await supabase.functions.invoke('fcm-send-notification', {
-            headers: {
-                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-                'x-user-jwt': session.access_token,
-                apikey: SUPABASE_ANON_KEY,
-                'Content-Type': 'application/json'
-            },
             body: {
                 recipient_id: academyId,
                 target_type: 'admin',
@@ -528,29 +551,66 @@ async function notifyAdminParentJoinRequest(studentName, studentId, academyId, p
 
         // Edge Function 호출 자체 실패
         if (error) {
-            console.error('[PARENT_JOIN_PUSH] Function error:', error.message);
-            console.error('[PARENT_JOIN_PUSH] error_code=FUNCTION_ERROR');
+            console.error('[PARENT_JOIN_PUSH] Function invoke failed', {
+                ...pushContext,
+                error_code: 'FUNCTION_ERROR',
+                error: error.message
+            });
             return { success: false, error_code: 'FUNCTION_ERROR', error: error.message };
         }
 
-        // API 응답 실패 (MISSING_USER_JWT, INVALID_USER_JWT, NO_ACTIVE_TOKEN 등)
+        // API 응답 실패 (MISSING_AUTH_HEADER, INVALID_USER_JWT, NO_ACTIVE_TOKEN 등)
         if (!data?.success) {
             const errorMsg = data?.error || '알 수 없는 오류';
             const errorCode = data?.error_code || 'API_ERROR';
-            console.error('[PARENT_JOIN_PUSH] API failed:', errorMsg);
-            console.error(`[PARENT_JOIN_PUSH] error_code=${errorCode}, target_type=admin, academy_id=${academyId}`);
-            return { success: false, error_code: errorCode, error: errorMsg };
+            const messageId = data?.message_id || data?.data?.message_id || null;
+
+            if (errorCode === 'NO_ACTIVE_TOKEN') {
+                console.warn('[PARENT_JOIN_PUSH] No active admin token', {
+                    ...pushContext,
+                    error_code: errorCode,
+                    message_id: messageId,
+                    error: errorMsg
+                });
+            } else if (errorCode === 'INVALID_USER_JWT' || errorCode === 'MISSING_AUTH_HEADER') {
+                console.error('[PARENT_JOIN_PUSH] Auth failure while sending push', {
+                    ...pushContext,
+                    error_code: errorCode,
+                    message_id: messageId,
+                    error: errorMsg
+                });
+            } else {
+                console.error('[PARENT_JOIN_PUSH] API failed', {
+                    ...pushContext,
+                    error_code: errorCode,
+                    message_id: messageId,
+                    error: errorMsg
+                });
+            }
+
+            return {
+                success: false,
+                error_code: errorCode,
+                error: errorMsg,
+                message_id: messageId
+            };
         }
 
         // 성공
-        const messageId = data?.data?.message_id;
-        console.log(`[PARENT_JOIN_PUSH] Success: message_id=${messageId}, target_type=admin, academy_id=${academyId}`);
+        const messageId = data?.data?.message_id || data?.message_id || null;
+        console.log('[PARENT_JOIN_PUSH] Success', {
+            ...pushContext,
+            message_id: messageId
+        });
         return { success: true, message_id: messageId };
 
     } catch (error) {
         // 푸시 실패해도 가입 신청은 성공 처리 (로그만 남김)
-        console.error('[PARENT_JOIN_PUSH] Exception:', error.message);
-        console.error('[PARENT_JOIN_PUSH] error_code=EXCEPTION, target_type=admin');
+        console.error('[PARENT_JOIN_PUSH] Exception', {
+            ...pushContext,
+            error_code: 'EXCEPTION',
+            error: error.message
+        });
         return { success: false, error_code: 'EXCEPTION', error: error.message };
     }
 }
@@ -611,28 +671,55 @@ async function handleSubmit(e) {
         // 3. 성공 UI 즉시 표시
         hideLoading();
         showToast('가입 신청이 완료되었습니다!\n승인 대기 페이지로 이동합니다.', 'success');
-
-        // 4. 백그라운드 FCM 전송 (non-blocking)
+        // 4. FCM 전송 시도 완료 후 이동 (중간 취소 방지)
         const { data: { user } } = await supabase.auth.getUser();
-        notifyAdminParentJoinRequest(
-            studentNameInput.value.trim(),
-            studentId,
-            selectedAcademy.id,
-            user.id
-        ).then(result => {
-            if (!result.success) {
-                console.log('[PARENT_JOIN_PUSH] Background push failed (signup already succeeded):', result.error);
-            } else {
-                console.log('[PARENT_JOIN_PUSH] Background push sent successfully');
-            }
-        }).catch(err => {
-            console.error('[PARENT_JOIN_PUSH] Background push exception:', err);
-        });
+        const pushMeta = {
+            academy_id: String(selectedAcademy.id),
+            student_id: String(studentId),
+            parent_id: String(user?.id || ''),
+            timeout_ms: 2500
+        };
 
-        // 5. 리다이렉트
-        setTimeout(() => {
-            window.location.href = 'parent-status.html';
-        }, 2000);
+        console.log('[PARENT_JOIN_PUSH] Attempting push before redirect', pushMeta);
+        try {
+            const result = await withTimeout(
+                notifyAdminParentJoinRequest(
+                    studentNameInput.value.trim(),
+                    studentId,
+                    selectedAcademy.id,
+                    user.id
+                ),
+                2500
+            );
+
+            if (!result?.success) {
+                console.log('[PARENT_JOIN_PUSH] Push attempt finished with failure', {
+                    ...pushMeta,
+                    error_code: result?.error_code || 'UNKNOWN',
+                    message_id: result?.message_id || null,
+                    error: result?.error || 'Unknown push error'
+                });
+            } else {
+                console.log('[PARENT_JOIN_PUSH] Push attempt finished with success', {
+                    ...pushMeta,
+                    message_id: result.message_id || null
+                });
+            }
+        } catch (pushError) {
+            const rawMessage = pushError?.message || String(pushError);
+            const timeout = rawMessage.startsWith('PUSH_TIMEOUT:');
+            const timeoutMs = timeout ? Number(rawMessage.split(':')[1] || 2500) : null;
+
+            console.error('[PARENT_JOIN_PUSH] Push attempt exception', {
+                ...pushMeta,
+                error_code: timeout ? 'PUSH_TIMEOUT' : 'EXCEPTION',
+                timeout_ms: timeoutMs || pushMeta.timeout_ms,
+                error: rawMessage
+            });
+        }
+
+        // 5. 푸시 시도 완료 후 즉시 이동
+        window.location.href = 'parent-status.html';
 
     } catch (error) {
         isSubmitting = false;

@@ -33,28 +33,35 @@ const DataService = {
 
         try {
             const { data, error } = await sb
-                .from('students')
+                .from('students')  // franchise_students → students 변경
                 .select('*')
-                .eq('academy_id', userId)
-                .eq('approval_status', 'approved')
+                .eq('academy_id', userId)  // owner_id → academy_id 변경
+                .eq('approval_status', 'approved')  // 승인된 학생만 조회
                 .order('name', { ascending: true });
 
             if (error) throw error;
 
+            // Supabase 데이터를 기존 형식으로 변환 (컬럼명 변경 반영)
             const students = (data || []).map(s => ({
                 id: s.id,
                 name: s.name,
-                grade: s.grade ? this.convertGradeNumToText(s.grade) : '',
-                school: s.school_name || '',
-                parentPhone: s.full_phone || '',
+                grade: s.grade ? convertGradeNumToText(s.grade) : '',  // 숫자 → 텍스트 변환
+                school: s.school_name || '',  // school_name → school 매핑
+                parentPhone: s.full_phone || '',  // full_phone → parentPhone 매핑
                 parentPhoneLast4: s.parent_phone_last4 || '',
+                weeklyClassMinutes: s.weekly_class_minutes || {},
+                weeklyClassSource: s.weekly_class_minutes_source || 'none',
+                weeklyClassSyncedAt: s.weekly_class_minutes_synced_at || null,
+                weeklyClassManualUpdatedAt: s.weekly_class_minutes_manual_updated_at || null,
                 memos: s.memos || [],
                 makeupTimes: s.makeup_times || [],
                 grades: s.grades || [],
                 feedbacks: s.feedbacks || []
             }));
 
+            // localStorage 캐시 업데이트
             localStorage.setItem('students', JSON.stringify(students));
+
             console.log(`[DataService] 학생 ${students.length}명 로드됨 (DB)`);
             return students;
         } catch (error) {
@@ -63,7 +70,7 @@ const DataService = {
         }
     },
 
-    // 학생 저장 (RPC 사용)
+    // 학생 저장 (RPC 사용 - 권한 검증 포함)
     saveStudent: async function(student) {
         const sb = this.getSupabase();
         const userId = this.getCurrentUserId();
@@ -82,11 +89,12 @@ const DataService = {
         }
 
         try {
+            // RPC 호출: admin_upsert_student (권한 검증, academy_id 강제)
             const { data, error } = await sb.rpc('admin_upsert_student', {
                 p_student_id: (student.id && student.id.includes('-')) ? student.id : null,
                 p_name: student.name,
                 p_school_name: student.school || null,
-                p_grade: this.convertGradeTextToNum(student.grade || ''),
+                p_grade: convertGradeTextToNum(student.grade || ''),
                 p_full_phone: student.parentPhone || null
             });
 
@@ -96,15 +104,21 @@ const DataService = {
             }
 
             console.log('[DataService] 학생 저장 성공:', data.name);
+
+            // 캐시 업데이트
             await this.loadStudents();
 
             return {
                 id: data.id,
                 name: data.name,
-                grade: data.grade ? this.convertGradeNumToText(data.grade) : '',
+                grade: data.grade ? convertGradeNumToText(data.grade) : '',
                 school: data.school_name || '',
                 parentPhone: data.full_phone || '',
                 parentPhoneLast4: data.parent_phone_last4 || '',
+                weeklyClassMinutes: data.weekly_class_minutes || {},
+                weeklyClassSource: data.weekly_class_minutes_source || 'none',
+                weeklyClassSyncedAt: data.weekly_class_minutes_synced_at || null,
+                weeklyClassManualUpdatedAt: data.weekly_class_minutes_manual_updated_at || null,
                 memos: data.memos || [],
                 makeupTimes: data.makeup_times || [],
                 grades: data.grades || [],
@@ -129,6 +143,7 @@ const DataService = {
         }
 
         try {
+            // RPC 호출: admin_delete_student (UUID 형식인 경우만)
             if (studentId && studentId.includes('-')) {
                 const { data, error } = await sb.rpc('admin_delete_student', {
                     p_student_id: studentId
@@ -141,7 +156,10 @@ const DataService = {
             }
 
             console.log('[DataService] 학생 삭제 성공');
+
+            // 캐시 업데이트
             await this.loadStudents();
+
             return true;
         } catch (error) {
             console.error('[DataService] 학생 삭제 실패:', error);
@@ -149,7 +167,7 @@ const DataService = {
         }
     },
 
-    // 학년 변환 헬퍼 함수
+    // 학년 숫자를 텍스트로 변환 (1 -> '초1')
     convertGradeNumToText: function(gradeNum) {
         if (!gradeNum) return '';
         const gradeMap = {
@@ -160,6 +178,7 @@ const DataService = {
         return gradeMap[gradeNum] || gradeNum;
     },
 
+    // 학년 텍스트를 숫자로 변환 ('초1' -> 1)
     convertGradeTextToNum: function(gradeText) {
         if (!gradeText) return null;
         const gradeMap = {
@@ -169,7 +188,7 @@ const DataService = {
             '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6
         };
         return gradeMap[gradeText.trim()] || null;
-    },
+    }
 
     // ========== 좌석 관리 ==========
 

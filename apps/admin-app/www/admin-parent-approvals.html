@@ -441,34 +441,24 @@
 
         // 학생 승인
         async function approveStudent(studentId) {
-            if (!confirm('이 학부모를 승인하시겠습니까?')) return;
+            if (!confirm('해당 학부모를 승인하시겠습니까?')) return;
 
             try {
-                // 소유권 검증
-                const { data: student, error: verifyError } = await supabase
-                    .from('students')
-                    .select('academy_id')
-                    .eq('id', studentId)
-                    .single();
-
-                if (verifyError || !student) {
-                    showToast('학생 정보를 찾을 수 없습니다.', 'error');
-                    return;
-                }
-
-                if (student.academy_id !== adminId) {
-                    showToast('권한이 없습니다.', 'error');
-                    console.error('Security: Attempted to approve student from different academy');
-                    return;
-                }
-
-                // 승인 처리
-                const { error } = await supabase
+                // 승인 처리: student_id + academy_id + pending 상태를 한 번에 검증
+                const { data: updatedRows, error } = await supabase
                     .from('students')
                     .update({ approval_status: 'approved' })
-                    .eq('id', studentId);
+                    .eq('id', studentId)
+                    .eq('academy_id', adminId)
+                    .eq('approval_status', 'pending')
+                    .select('id');
 
                 if (error) throw error;
+                if (!updatedRows || updatedRows.length === 0) {
+                    showToast('학생 정보를 찾을 수 없습니다.', 'error');
+                    console.warn('[approveStudent] No row updated', { studentId, adminId });
+                    return;
+                }
 
                 // 알림 읽음 처리
                 await supabase

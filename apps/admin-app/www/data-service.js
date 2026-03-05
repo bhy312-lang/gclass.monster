@@ -22,16 +22,6 @@ const DataService = {
     // 학생 데이터는 public.students 테이블을 원본으로 사용
 
     // 학생 목록 불러오기
-    isUuid: function(value) {
-        return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
-    },
-
-    normalizeAdminUpsertResult: function(rpcResult) {
-        if (!rpcResult || rpcResult.success === false) return null;
-        if (rpcResult.data && typeof rpcResult.data === 'object') return rpcResult.data;
-        return rpcResult;
-    },
-
     loadStudents: async function() {
         const sb = this.getSupabase();
         const userId = this.getCurrentUserId();
@@ -43,28 +33,35 @@ const DataService = {
 
         try {
             const { data, error } = await sb
-                .from('students')
+                .from('students')  // franchise_students → students 변경
                 .select('*')
-                .eq('academy_id', userId)
-                .eq('approval_status', 'approved')
+                .eq('academy_id', userId)  // owner_id → academy_id 변경
+                .eq('approval_status', 'approved')  // 승인된 학생만 조회
                 .order('name', { ascending: true });
 
             if (error) throw error;
 
+            // Supabase 데이터를 기존 형식으로 변환 (컬럼명 변경 반영)
             const students = (data || []).map(s => ({
                 id: s.id,
                 name: s.name,
-                grade: s.grade ? this.convertGradeNumToText(s.grade) : '',
-                school: s.school_name || '',
-                parentPhone: s.full_phone || '',
+                grade: s.grade ? convertGradeNumToText(s.grade) : '',  // 숫자 → 텍스트 변환
+                school: s.school_name || '',  // school_name → school 매핑
+                parentPhone: s.full_phone || '',  // full_phone → parentPhone 매핑
                 parentPhoneLast4: s.parent_phone_last4 || '',
+                weeklyClassMinutes: s.weekly_class_minutes || {},
+                weeklyClassSource: s.weekly_class_minutes_source || 'none',
+                weeklyClassSyncedAt: s.weekly_class_minutes_synced_at || null,
+                weeklyClassManualUpdatedAt: s.weekly_class_minutes_manual_updated_at || null,
                 memos: s.memos || [],
                 makeupTimes: s.makeup_times || [],
                 grades: s.grades || [],
                 feedbacks: s.feedbacks || []
             }));
 
+            // localStorage 캐시 업데이트
             localStorage.setItem('students', JSON.stringify(students));
+
             console.log(`[DataService] 학생 ${students.length}명 로드됨 (DB)`);
             return students;
         } catch (error) {
@@ -73,13 +70,13 @@ const DataService = {
         }
     },
 
-    // 학생 저장 (RPC 사용)
+    // 학생 저장 (RPC 사용 - 권한 검증 포함)
     saveStudent: async function(student) {
         const sb = this.getSupabase();
         const userId = this.getCurrentUserId();
 
         if (!sb || !userId) {
-            console.log('[DataService] localStorage fallback save');
+            console.log('[DataService] localStorage에 저장');
             const students = JSON.parse(localStorage.getItem('students') || '[]');
             const idx = students.findIndex(s => s.id === student.id);
             if (idx >= 0) {
@@ -92,46 +89,48 @@ const DataService = {
         }
 
         try {
+            // RPC 호출: admin_upsert_student (권한 검증, academy_id 강제)
             const { data, error } = await sb.rpc('admin_upsert_student', {
-                p_student_id: this.isUuid(student.id) ? student.id : null,
+                p_student_id: (student.id && student.id.includes('-')) ? student.id : null,
                 p_name: student.name,
                 p_school_name: student.school || null,
-                p_grade: this.convertGradeTextToNum(student.grade || ''),
+                p_grade: convertGradeTextToNum(student.grade || ''),
                 p_full_phone: student.parentPhone || null
             });
 
             if (error) {
-                console.error('[DataService] RPC error:', error);
+                console.error('[DataService] RPC 에러:', error);
                 throw error;
             }
 
-            const studentData = this.normalizeAdminUpsertResult(data);
-            if (!studentData) {
-                throw new Error(data?.error || data?.message || 'Invalid RPC response');
-            }
+            console.log('[DataService] 학생 저장 성공:', data.name);
 
-            console.log('[DataService] saveStudent success:', studentData.name);
+            // 캐시 업데이트
             await this.loadStudents();
 
             return {
-                id: studentData.id,
-                name: studentData.name,
-                grade: studentData.grade ? this.convertGradeNumToText(studentData.grade) : '',
-                school: studentData.school_name || '',
-                parentPhone: studentData.full_phone || '',
-                parentPhoneLast4: studentData.parent_phone_last4 || '',
-                memos: studentData.memos || [],
-                makeupTimes: studentData.makeup_times || [],
-                grades: studentData.grades || [],
-                feedbacks: studentData.feedbacks || []
+                id: data.id,
+                name: data.name,
+                grade: data.grade ? convertGradeNumToText(data.grade) : '',
+                school: data.school_name || '',
+                parentPhone: data.full_phone || '',
+                parentPhoneLast4: data.parent_phone_last4 || '',
+                weeklyClassMinutes: data.weekly_class_minutes || {},
+                weeklyClassSource: data.weekly_class_minutes_source || 'none',
+                weeklyClassSyncedAt: data.weekly_class_minutes_synced_at || null,
+                weeklyClassManualUpdatedAt: data.weekly_class_minutes_manual_updated_at || null,
+                memos: data.memos || [],
+                makeupTimes: data.makeup_times || [],
+                grades: data.grades || [],
+                feedbacks: data.feedbacks || []
             };
         } catch (error) {
-            console.error('[DataService] saveStudent failed:', error);
+            console.error('[DataService] 학생 저장 실패:', error);
             throw error;
         }
     },
 
-    // ?? ?? (RPC ??)
+    // 학생 삭제 (RPC 사용)
     deleteStudent: async function(studentId) {
         const sb = this.getSupabase();
         const userId = this.getCurrentUserId();
@@ -144,27 +143,31 @@ const DataService = {
         }
 
         try {
-            if (this.isUuid(studentId)) {
-                const { error } = await sb.rpc('admin_delete_student', {
+            // RPC 호출: admin_delete_student (UUID 형식인 경우만)
+            if (studentId && studentId.includes('-')) {
+                const { data, error } = await sb.rpc('admin_delete_student', {
                     p_student_id: studentId
                 });
 
                 if (error) {
-                    console.error('[DataService] RPC error:', error);
+                    console.error('[DataService] RPC 에러:', error);
                     throw error;
                 }
             }
 
-            console.log('[DataService] deleteStudent success');
+            console.log('[DataService] 학생 삭제 성공');
+
+            // 캐시 업데이트
             await this.loadStudents();
+
             return true;
         } catch (error) {
-            console.error('[DataService] deleteStudent failed:', error);
+            console.error('[DataService] 학생 삭제 실패:', error);
             throw error;
         }
     },
 
-    // ?? ?? ?? ??
+    // 학년 숫자를 텍스트로 변환 (1 -> '초1')
     convertGradeNumToText: function(gradeNum) {
         if (!gradeNum) return '';
         const gradeMap = {
@@ -175,6 +178,7 @@ const DataService = {
         return gradeMap[gradeNum] || gradeNum;
     },
 
+    // 학년 텍스트를 숫자로 변환 ('초1' -> 1)
     convertGradeTextToNum: function(gradeText) {
         if (!gradeText) return null;
         const gradeMap = {
@@ -184,7 +188,7 @@ const DataService = {
             '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6
         };
         return gradeMap[gradeText.trim()] || null;
-    },
+    }
 
     // ========== 좌석 관리 ==========
 

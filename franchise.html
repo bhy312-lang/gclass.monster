@@ -6328,7 +6328,17 @@
         }
 
         function normalizePhoneDigits(value) {
-            return (value || '').replace(/\D/g, '');
+            const digits = (value || '').replace(/\D/g, '');
+            if (!digits) return '';
+
+            // Normalize South Korea country code format: 82xxxxxxxxxx -> 0xxxxxxxxxx
+            if (digits.startsWith('82')) {
+                const local = digits.slice(2);
+                if (!local) return '';
+                return local.startsWith('0') ? local : `0${local}`;
+            }
+
+            return digits;
         }
 
         function setupStudentPhoneAutoFormat() {
@@ -6378,8 +6388,25 @@
                         const { data: appStatusResult, error: appStatusErr } = await window.supabase.rpc('admin_get_contact_app_install_status', {
                             p_phone_digits_list: phoneDigitsList
                         });
-                        if (!appStatusErr && appStatusResult?.success) {
+                        if (appStatusErr) {
+                            const msg = String(appStatusErr.message || '').toLowerCase();
+                            let reason = 'unknown';
+                            if (msg.includes('permission') || msg.includes('insufficient') || msg.includes('forbidden') || appStatusErr.code === '42501') {
+                                reason = 'permission';
+                            } else if (msg.includes('could not find the function') || msg.includes('schema cache') || appStatusErr.code === 'PGRST202') {
+                                reason = 'schema';
+                            } else if (msg.includes('network') || msg.includes('fetch') || msg.includes('failed to fetch')) {
+                                reason = 'network';
+                            }
+                            console.warn('[loadStudentNotificationContacts] app install status rpc failed:', {
+                                reason,
+                                code: appStatusErr.code || null,
+                                message: appStatusErr.message || null
+                            });
+                        } else if (appStatusResult?.success) {
                             appInstallMap = appStatusResult.data || {};
+                        } else if (appStatusResult?.success === false) {
+                            console.warn('[loadStudentNotificationContacts] app install status rpc returned error:', appStatusResult.error || 'UNKNOWN');
                         }
                     }
                 } catch (e) {
