@@ -3411,7 +3411,16 @@
         let alarmIntervals = {};
         let alarmAudioContext = null;
         let waitingAlarmState = {}; // 등원 목록 학생 알람 상태 (id: { alarming, alarmStopped })
+        let waitingAlarmCandidates = []; // 등원 알람 검사 대상 목록 (waiting + seated(without seat_id))
         let currentSeatId = null;
+
+        function getWaitingAlarmCandidatesFromList(attendanceList) {
+            if (!Array.isArray(attendanceList)) return [];
+            return attendanceList.filter((item) =>
+                item &&
+                (item.status === 'waiting' || (item.status === 'seated' && !item.seat_id))
+            );
+        }
 
         // ========== 학생관리 전역 변수 ==========
         let currentStudentId = null;
@@ -3953,13 +3962,9 @@
         // 등원 목록 학생 알람 체크
         function checkWaitingAlarms(now) {
             try {
-                const stored = localStorage.getItem('demo_attendance');
-                const demoAttendance = stored ? JSON.parse(stored) : [];
-                const waitingList = demoAttendance.filter(a => a.status === 'waiting');
-
                 const alarmingStudents = [];
 
-                for (const student of waitingList) {
+                for (const student of waitingAlarmCandidates) {
                     if (!student.alarm_time) continue;
 
                     const alarmDate = new Date(student.alarm_time);
@@ -5618,12 +5623,14 @@
                         const { data, error } = await window.supabase
                             .from('attendance')
                             .select('*')
-                            .eq('status', 'waiting')
+                            .in('status', ['waiting', 'seated'])
                             .order('check_in_time', { ascending: true });
 
                         if (error) throw error;
 
-                        const waitingList = data || [];
+                        const attendanceList = data || [];
+                        waitingAlarmCandidates = getWaitingAlarmCandidatesFromList(attendanceList);
+                        const waitingList = attendanceList.filter((a) => a.status === 'waiting');
                         console.log('[등원 목록] Supabase waiting 데이터:', waitingList);
                         renderCheckInList(waitingList);
                         return;
@@ -5634,11 +5641,12 @@
 
                 try {
                     const stored = localStorage.getItem('demo_attendance');
-                    const demoAttendance = stored ? JSON.parse(stored) : [];
-                    console.log('[등원 목록] localStorage 전체 데이터:', demoAttendance);
+                    const attendanceList = stored ? JSON.parse(stored) : [];
+                    console.log('[등원 목록] localStorage 전체 데이터:', attendanceList);
 
                     // waiting 상태인 학생만 표시 (좌석에 배정된 seated는 제외)
-                    const waitingList = demoAttendance.filter(a => a.status === 'waiting');
+                    waitingAlarmCandidates = getWaitingAlarmCandidatesFromList(attendanceList);
+                    const waitingList = attendanceList.filter(a => a.status === 'waiting');
                     console.log('[등원 목록] localStorage 필터링(waiting):', waitingList);
                     renderCheckInList(waitingList);
 

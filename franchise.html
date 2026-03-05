@@ -3434,6 +3434,7 @@
         let alarmIntervals = {};
         let alarmAudioContext = null;
         let waitingAlarmState = {}; // 등원 목록 학생 알람 상태 (id: { alarming, alarmStopped })
+        let waitingAlarmCandidates = []; // 등원 알람 검사 대상 목록 (waiting + seated(without seat_id))
         let currentSeatId = null;
         let saveSeatsSyncInFlight = null;
         let saveSeatsSyncQueued = false;
@@ -3459,6 +3460,14 @@
 
         function getSeatScopePrefix() {
             return `scope:${currentDataScopeId || 'guest'}::`;
+        }
+
+        function getWaitingAlarmCandidatesFromList(attendanceList) {
+            if (!Array.isArray(attendanceList)) return [];
+            return attendanceList.filter((item) =>
+                item &&
+                (item.status === 'waiting' || (item.status === 'seated' && !item.seat_id))
+            );
         }
 
         function toScopedSeatId(rawId) {
@@ -4179,13 +4188,9 @@
         // 등원 목록 학생 알람 체크
         function checkWaitingAlarms(now) {
             try {
-                const stored = localStorage.getItem('demo_attendance');
-                const demoAttendance = stored ? JSON.parse(stored) : [];
-                const waitingList = demoAttendance.filter(a => a.status === 'waiting');
-
                 const alarmingStudents = [];
 
-                for (const student of waitingList) {
+                for (const student of waitingAlarmCandidates) {
                     if (!student.alarm_time) continue;
 
                     const alarmDate = new Date(student.alarm_time);
@@ -5800,12 +5805,14 @@
                         const { data, error } = await window.supabase
                             .from('attendance')
                             .select('*')
-                            .eq('status', 'waiting')
+                            .in('status', ['waiting', 'seated'])
                             .order('check_in_time', { ascending: true });
 
                         if (error) throw error;
 
-                        const waitingList = filterAttendanceByScope(data || []);
+                        const attendanceList = filterAttendanceByScope(data || []);
+                        waitingAlarmCandidates = getWaitingAlarmCandidatesFromList(attendanceList);
+                        const waitingList = attendanceList.filter((a) => a.status === 'waiting');
                         console.log('[등원 목록] Supabase waiting 데이터:', waitingList);
                         renderCheckInList(waitingList);
                         return;
@@ -5816,11 +5823,12 @@
 
                 try {
                     const stored = localStorage.getItem('demo_attendance');
-                    const demoAttendance = stored ? JSON.parse(stored) : [];
-                    console.log('[등원 목록] localStorage 전체 데이터:', demoAttendance);
+                    const attendanceList = stored ? JSON.parse(stored) : [];
+                    console.log('[등원 목록] localStorage 전체 데이터:', attendanceList);
 
                     // waiting 상태인 학생만 표시 (좌석에 배정된 seated는 제외)
-                    const waitingList = demoAttendance.filter(a => a.status === 'waiting');
+                    waitingAlarmCandidates = getWaitingAlarmCandidatesFromList(attendanceList);
+                    const waitingList = attendanceList.filter(a => a.status === 'waiting');
                     console.log('[등원 목록] localStorage 필터링(waiting):', waitingList);
                     renderCheckInList(waitingList);
 
@@ -6138,13 +6146,29 @@
             grid.innerHTML = students.map(student => `
                 <div onclick="openStudentDetailModal('${student.id}')"
                     class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg hover:border-[#58d3d3] cursor-pointer transition group">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-12 h-12 bg-gradient-to-br from-[#58d3d3] to-[#45b8b8] rounded-full flex items-center justify-center text-white font-bold text-lg">
-                            ${student.name.charAt(0)}
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-12 h-12 bg-gradient-to-br from-[#58d3d3] to-[#45b8b8] rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0">
+                                ${student.name.charAt(0)}
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="font-semibold text-gray-800 group-hover:text-[#58d3d3] transition truncate">${student.name}</h4>
+                                <p class="text-sm text-gray-500 truncate">${student.grade || ''} ${student.school || ''}</p>
+                            </div>
                         </div>
-                        <div>
-                            <h4 class="font-semibold text-gray-800 group-hover:text-[#58d3d3] transition">${student.name}</h4>
-                            <p class="text-sm text-gray-500">${student.grade || ''} ${student.school || ''}</p>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button type="button"
+                                onclick="event.stopPropagation(); editStudentFromList('${student.id}')"
+                                class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-50 transition flex items-center justify-center"
+                                title="수정">
+                                <span class="material-symbols-outlined text-[18px]">edit</span>
+                            </button>
+                            <button type="button"
+                                onclick="event.stopPropagation(); requestDeleteStudentFromList('${student.id}')"
+                                class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-50 transition flex items-center justify-center"
+                                title="삭제">
+                                <span class="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
                         </div>
                     </div>
                     <div class="flex gap-2 text-xs">
@@ -6175,13 +6199,29 @@
             grid.innerHTML = filtered.map(student => `
                 <div onclick="openStudentDetailModal('${student.id}')"
                     class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg hover:border-[#58d3d3] cursor-pointer transition group">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-12 h-12 bg-gradient-to-br from-[#58d3d3] to-[#45b8b8] rounded-full flex items-center justify-center text-white font-bold text-lg">
-                            ${student.name.charAt(0)}
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-12 h-12 bg-gradient-to-br from-[#58d3d3] to-[#45b8b8] rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0">
+                                ${student.name.charAt(0)}
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="font-semibold text-gray-800 group-hover:text-[#58d3d3] transition truncate">${student.name}</h4>
+                                <p class="text-sm text-gray-500 truncate">${student.grade || ''} ${student.school || ''}</p>
+                            </div>
                         </div>
-                        <div>
-                            <h4 class="font-semibold text-gray-800 group-hover:text-[#58d3d3] transition">${student.name}</h4>
-                            <p class="text-sm text-gray-500">${student.grade || ''} ${student.school || ''}</p>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button type="button"
+                                onclick="event.stopPropagation(); editStudentFromList('${student.id}')"
+                                class="w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-50 transition flex items-center justify-center"
+                                title="수정">
+                                <span class="material-symbols-outlined text-[18px]">edit</span>
+                            </button>
+                            <button type="button"
+                                onclick="event.stopPropagation(); requestDeleteStudentFromList('${student.id}')"
+                                class="w-8 h-8 rounded-lg text-red-600 hover:bg-red-50 transition flex items-center justify-center"
+                                title="삭제">
+                                <span class="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
                         </div>
                     </div>
                     <div class="flex gap-2 text-xs">
@@ -6255,6 +6295,28 @@
         }
 
         // 학생 상세 모달 닫기
+        function editStudentFromList(studentId) {
+            openStudentDetailModal(studentId);
+            switchStudentTab('info');
+        }
+
+        async function requestDeleteStudentFromList(studentId) {
+            const students = JSON.parse(localStorage.getItem('students') || '[]');
+            const targetStudent = students.find(s => s.id === studentId);
+            const targetName = targetStudent?.name || '';
+
+            const confirmed = await showConfirmModal(
+                '학생 삭제',
+                `${targetName ? `<strong>${targetName}</strong> 학생을 삭제할까요?<br>` : ''}삭제 후에는 복구할 수 없습니다.`,
+                '삭제',
+                '삭제',
+                '취소'
+            );
+            if (!confirmed) return;
+
+            await deleteStudentById(studentId, { closeModalIfOpen: true });
+        }
+
         function closeStudentDetailModal() {
             document.getElementById('studentDetailModal').classList.add('hidden');
             document.getElementById('studentDetailModal').classList.remove('flex');
@@ -7146,6 +7208,48 @@
         }
 
         // switchTab 함수 수정 - 학생관리 탭 처리 추가
+        async function deleteStudentById(studentId, options = {}) {
+            const { closeModalIfOpen = false } = options;
+            if (!studentId) return;
+
+            if (window.supabase && studentId.includes('-')) {
+                const { error } = await window.supabase.rpc('admin_delete_student', {
+                    p_student_id: studentId
+                });
+
+                if (error) {
+                    console.error('[deleteStudentById] RPC 오류:', error);
+                    showAlertModal('삭제 실패', error.message || '학생 삭제에 실패했습니다.', '실패');
+                    return;
+                }
+            }
+
+            const students = JSON.parse(localStorage.getItem('students') || '[]');
+            const filtered = students.filter(s => s.id !== studentId);
+            localStorage.setItem('students', JSON.stringify(filtered));
+
+            if (closeModalIfOpen && currentStudentId === studentId) {
+                closeStudentDetailModal();
+            }
+
+            await loadStudents();
+            loadStudentManagementList();
+            showAlertModal('삭제 완료', '학생이 삭제되었습니다.', '완료');
+        }
+
+        async function deleteStudent() {
+            const confirmed = await showConfirmModal(
+                '학생 삭제',
+                '정말 이 학생을 삭제하시겠습니까?<br>모든 정보가 삭제됩니다.',
+                '삭제',
+                '삭제',
+                '취소'
+            );
+            if (!confirmed) return;
+
+            await deleteStudentById(currentStudentId, { closeModalIfOpen: true });
+        }
+
         const originalSwitchTab = switchTab;
         switchTab = function(tabId) {
             originalSwitchTab(tabId);
