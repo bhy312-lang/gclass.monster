@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 
 <head>
@@ -750,7 +750,7 @@
             const student = findStudentInManagement(studentId, studentName || (selectedStudent ? selectedStudent.name : null));
             if (!student || !student.makeupTimes) return 0;
 
-            const today = dateStr || new Date().toISOString().split('T')[0];
+            const today = dateStr || getLocalKstDate();
             const activeMakeup = student.makeupTimes.find(m => m.startDate <= today && m.endDate >= today);
             console.log(`[보강시간 조회] 학생: ${student.name}, 날짜: ${today}, 보강시간: ${activeMakeup ? activeMakeup.additionalMinutes : 0}분`);
             return activeMakeup ? activeMakeup.additionalMinutes : 0;
@@ -766,7 +766,7 @@
                 return [];
             }
 
-            const today = dateStr || new Date().toISOString().split('T')[0];
+            const today = dateStr || getLocalKstDate();
             const activeMemos = student.memos.filter(m => m.startDate <= today && m.endDate >= today);
             console.log(`[메모 조회] 날짜: ${today}, 전체 메모: ${student.memos.length}개, 활성 메모: ${activeMemos.length}개`);
             return activeMemos;
@@ -794,7 +794,7 @@
                 todos = {};
             }
 
-            const today = dateStr || new Date().toISOString().split('T')[0];
+            const today = dateStr || getLocalKstDate();
 
             // 해당 날짜의 할일 배열 초기화
             if (!todos[today]) {
@@ -1072,7 +1072,8 @@
             } else {
                 // 데모 모드 - localStorage에 저장
                 const now = new Date();
-                const today = now.toISOString().split('T')[0];
+                const today = getLocalKstDate(now);
+                await autoHealAttendanceState(selectedStudent.id, today, selectedStudent.name);
 
                 // 보강시간 조회 (기본 60분 + 보강시간) - 학생 이름으로도 매칭
                 const makeupMinutes = getMakeupMinutesForStudent(selectedStudent.id, today, selectedStudent.name);
@@ -1080,16 +1081,30 @@
                 const alarmTime = new Date(now.getTime() + totalMinutes * 60 * 1000);
                 console.log(`[Kiosk] 알람시간 계산: 60분 + 보강${makeupMinutes}분 = ${totalMinutes}분`);
 
-                // 이미 등원했는지 확인 (waiting 또는 seated 상태) - 오늘 날짜만
+                // 이미 하원된 경우(1일 1회 정책)
                 const existingAttendance = getLocalAttendance();
+                const completedRecord = existingAttendance.find(
+                    a => a.student_id === selectedStudent.id &&
+                        a.status === 'completed' &&
+                        a.date === today
+                );
+                if (completedRecord) {
+                    showAlert('info', '알림', `${selectedStudent.name}님은 오늘 이미 하원 처리되어 재등원이 불가합니다.`);
+                    kioskClearInput();
+                    return;
+                }
+
+                // 이미 등원했는지 확인 (waiting 또는 seated 상태)
                 const existingRecord = existingAttendance.find(
                     a => a.student_id === selectedStudent.id &&
                         (a.status === 'waiting' || a.status === 'seated') &&
-                        a.check_in_time && a.check_in_time.startsWith(today)
+                        a.date === today
                 );
 
                 if (existingRecord) {
-                    const statusText = existingRecord.status === 'seated' ? '이미 좌석에 배정되었습니다' : '이미 등원 처리되었습니다';
+                    const statusText = (existingRecord.status === 'seated' && isLocalSeatActuallyAssigned(existingRecord, selectedStudent.name))
+                        ? '이미 좌석에 배정되었습니다'
+                        : '이미 등원 처리되었습니다';
                     showAlert('info', '알림', `${selectedStudent.name}님은 ${statusText}.`);
                     kioskClearInput();
                     return;
@@ -1190,14 +1205,15 @@
                 }
             } else {
                 // 데모 모드 - localStorage 업데이트
+                const today = getLocalKstDate();
+                await autoHealAttendanceState(selectedStudent.id, today, selectedStudent.name);
                 const existingAttendance = getLocalAttendance();
-                const today = new Date().toISOString().split('T')[0];
 
-                // 이미 하원했는지 확인 (completed 상태) - 오늘 날짜만
+                // canonical 상태 판정: completed > active > none
                 const completedIndex = existingAttendance.findIndex(
                     a => a.student_id === selectedStudent.id &&
                         a.status === 'completed' &&
-                        a.check_in_time && a.check_in_time.startsWith(today)
+                        a.date === today
                 );
                 if (completedIndex !== -1) {
                     showAlert('info', '알림', `${selectedStudent.name}님은 이미 하원 처리되었습니다.`);
@@ -1208,7 +1224,7 @@
                 const attendanceIndex = existingAttendance.findIndex(
                     a => a.student_id === selectedStudent.id &&
                         (a.status === 'waiting' || a.status === 'seated') &&
-                        a.check_in_time && a.check_in_time.startsWith(today)
+                        a.date === today
                 );
 
                 if (attendanceIndex === -1) {
@@ -1225,42 +1241,7 @@
 
                 localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
 
-                // 좌석에 배정되어 있었다면 좌석 비우기 (seat_id 또는 학생 이름으로 찾기)
-                try {
-                    const seatsData = localStorage.getItem('seats');
-                    if (seatsData) {
-                        const seats = JSON.parse(seatsData);
-                        let seatIndex = -1;
-
-                        // 1. seat_id로 찾기
-                        if (attendance.seat_id) {
-                            seatIndex = seats.findIndex(s => s.id == attendance.seat_id);
-                        }
-
-                        // 2. seat_id가 없거나 못 찾으면 학생 이름으로 찾기
-                        if (seatIndex === -1) {
-                            seatIndex = seats.findIndex(s => s.name === selectedStudent.name);
-                        }
-
-                        if (seatIndex !== -1) {
-                            console.log(`[하원] 좌석 비우기: ${seats[seatIndex].name} -> 빈 좌석`);
-                            seats[seatIndex].name = '';
-                            seats[seatIndex].occupied = false;
-                            seats[seatIndex].alarmTime = null;
-                            seats[seatIndex].alarming = false;
-                            seats[seatIndex].alarmStopped = false;
-                            localStorage.setItem('seats', JSON.stringify(seats));
-
-                            // storage 이벤트 발생하여 다른 탭에 알림
-                            window.dispatchEvent(new StorageEvent('storage', {
-                                key: 'seats',
-                                newValue: JSON.stringify(seats)
-                            }));
-                        }
-                    }
-                } catch (e) {
-                    console.error('Error clearing seat:', e);
-                }
+                clearSeatLocalByAttendance(attendance, selectedStudent.name);
 
                 const now = new Date();
                 const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
@@ -1650,6 +1631,304 @@
             }
         }
 
+        function getLocalKstDate(dateObj = new Date()) {
+            return new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Seoul',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).format(dateObj);
+        }
+
+        function clearSeatLocalByAttendance(attendance, studentName) {
+            try {
+                const seatsData = localStorage.getItem('seats');
+                if (!seatsData) return 0;
+                const seats = JSON.parse(seatsData);
+                let seatIndex = -1;
+
+                if (attendance?.seat_id) {
+                    seatIndex = seats.findIndex(s => s.id == attendance.seat_id);
+                }
+                if (seatIndex === -1 && studentName) {
+                    seatIndex = seats.findIndex(s => s.name === studentName);
+                }
+                if (seatIndex === -1) return 0;
+
+                seats[seatIndex].name = '';
+                seats[seatIndex].occupied = false;
+                seats[seatIndex].alarmTime = null;
+                seats[seatIndex].alarmTimeISO = null;
+                seats[seatIndex].alarming = false;
+                seats[seatIndex].alarmStopped = false;
+                localStorage.setItem('seats', JSON.stringify(seats));
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'seats',
+                    newValue: JSON.stringify(seats)
+                }));
+                return 1;
+            } catch (e) {
+                console.error('[clearSeatLocalByAttendance] failed:', e);
+                return 0;
+            }
+        }
+
+        function isLocalSeatActuallyAssigned(attendance, studentName) {
+            try {
+                const seatsData = localStorage.getItem('seats');
+                if (!seatsData) return false;
+                const seats = JSON.parse(seatsData);
+                let seat = null;
+                if (attendance?.seat_id) {
+                    seat = seats.find(s => s.id == attendance.seat_id);
+                }
+                if (!seat && studentName) {
+                    seat = seats.find(s => s.name === studentName);
+                }
+                if (!seat) return false;
+                return !!seat.occupied && (!studentName || seat.name === studentName);
+            } catch (e) {
+                console.error('[isLocalSeatActuallyAssigned] failed:', e);
+                return false;
+            }
+        }
+
+        async function verifySeatedAssignment(attendance, student) {
+            if (!attendance?.seat_id) return false;
+
+            let serverValid = false;
+            try {
+                const { data: seatData, error } = await window.supabase
+                    .from('seats')
+                    .select('id, occupied, student_id, student_name')
+                    .eq('id', attendance.seat_id)
+                    .maybeSingle();
+
+                if (error) {
+                    console.warn('[Kiosk][SeatVerify] seat query failed:', {
+                        attendanceId: attendance.id,
+                        seatId: attendance.seat_id,
+                        error: error.message
+                    });
+                } else {
+                    serverValid = !!seatData &&
+                        !!seatData.occupied &&
+                        (
+                            (seatData.student_id && seatData.student_id === student?.id) ||
+                            (student?.name && seatData.student_name === student.name)
+                        );
+                }
+            } catch (e) {
+                console.warn('[Kiosk][SeatVerify] unexpected server verify error:', {
+                    attendanceId: attendance.id,
+                    seatId: attendance.seat_id,
+                    message: e?.message
+                });
+            }
+
+            const localValid = isLocalSeatActuallyAssigned(attendance, student?.name || '');
+            const verified = serverValid && localValid;
+
+            console.log('[Kiosk][SeatVerify] result:', {
+                attendanceId: attendance.id,
+                seatId: attendance.seat_id,
+                studentId: student?.id,
+                serverValid,
+                localValid,
+                verified
+            });
+
+            return verified;
+        }
+
+        async function healSingleAttendanceToWaiting(attendanceId) {
+            try {
+                const { error } = await window.supabase
+                    .from('attendance')
+                    .update({
+                        status: 'waiting',
+                        seat_id: null
+                    })
+                    .eq('id', attendanceId);
+
+                if (error) {
+                    console.warn('[Kiosk][HealSingle] failed:', { attendanceId, error: error.message });
+                    return;
+                }
+                console.log('[Kiosk][HealSingle] success:', { attendanceId });
+            } catch (e) {
+                console.warn('[Kiosk][HealSingle] unexpected error:', { attendanceId, message: e?.message });
+            }
+        }
+
+        async function autoHealAttendanceState(studentId, date, studentName = '') {
+            const result = {
+                fixedOrphanSeated: 0,
+                fixedActiveWithCompleted: 0,
+                clearedSeats: 0
+            };
+            const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured() && window.supabase;
+
+            if (sbOk) {
+                const { data: rows, error } = await window.supabase
+                    .from('attendance')
+                    .select('*')
+                    .eq('student_id', studentId)
+                    .eq('date', date)
+                    .in('status', ['waiting', 'seated', 'completed'])
+                    .order('check_in_time', { ascending: false });
+
+                if (error) {
+                    throw new Error(`상태 정정 조회 실패: ${error.message}`);
+                }
+
+                const completedRows = (rows || []).filter(r => r.status === 'completed');
+                const activeRows = (rows || []).filter(r => r.status === 'waiting' || r.status === 'seated');
+
+                for (const row of activeRows) {
+                    if (row.status !== 'seated') continue;
+
+                    const seatValid = await verifySeatedAssignment(row, { id: studentId, name: studentName });
+
+                    if (!seatValid) {
+                        console.warn('[Kiosk][AutoHeal] orphan seated detected:', {
+                            attendanceId: row.id,
+                            seatId: row.seat_id,
+                            studentId,
+                            date
+                        });
+                        const { error: fixError } = await window.supabase
+                            .from('attendance')
+                            .update({
+                                status: 'waiting',
+                                seat_id: null
+                            })
+                            .eq('id', row.id);
+
+                        if (!fixError) {
+                            result.fixedOrphanSeated += 1;
+                        } else {
+                            console.warn('[Kiosk][AutoHeal] orphan heal failed:', {
+                                attendanceId: row.id,
+                                seatId: row.seat_id,
+                                studentId,
+                                date,
+                                error: fixError.message
+                            });
+                        }
+
+                        if (row.seat_id) {
+                            const { error: seatError } = await window.supabase
+                                .from('seats')
+                                .update({
+                                    occupied: false,
+                                    student_id: null,
+                                    student_name: null,
+                                    alarm_time: null,
+                                    alarming: false,
+                                    alarm_stopped: false
+                                })
+                                .eq('id', row.seat_id);
+                            if (!seatError) result.clearedSeats += 1;
+                        }
+                        result.clearedSeats += clearSeatLocalByAttendance(row, studentName);
+                    }
+                }
+
+                if (completedRows.length > 0 && activeRows.length > 0) {
+                    for (const row of activeRows) {
+                        const { error: closeError } = await window.supabase
+                            .from('attendance')
+                            .update({
+                                type: 'check_out',
+                                status: 'completed',
+                                check_out: new Date().toISOString(),
+                                seat_id: null
+                            })
+                            .eq('id', row.id);
+
+                        if (!closeError) {
+                            result.fixedActiveWithCompleted += 1;
+                        }
+
+                        if (row.seat_id) {
+                            const { error: seatError } = await window.supabase
+                                .from('seats')
+                                .update({
+                                    occupied: false,
+                                    student_id: null,
+                                    student_name: null,
+                                    alarm_time: null,
+                                    alarming: false,
+                                    alarm_stopped: false
+                                })
+                                .eq('id', row.seat_id);
+                            if (!seatError) result.clearedSeats += 1;
+                        }
+                        result.clearedSeats += clearSeatLocalByAttendance(row, studentName);
+                    }
+                }
+
+                if (result.fixedOrphanSeated > 0 || result.fixedActiveWithCompleted > 0 || result.clearedSeats > 0) {
+                    console.warn('[Kiosk][AutoHeal] repaired:', {
+                        studentId,
+                        date,
+                        ...result
+                    });
+                }
+
+                return result;
+            }
+
+            const existingAttendance = getLocalAttendance();
+            const rows = existingAttendance.filter(r =>
+                r.student_id === studentId &&
+                r.date === date &&
+                (r.status === 'waiting' || r.status === 'seated' || r.status === 'completed')
+            );
+
+            const completedRows = rows.filter(r => r.status === 'completed');
+            const activeRows = rows.filter(r => r.status === 'waiting' || r.status === 'seated');
+
+            for (const row of activeRows) {
+                if (row.status !== 'seated') continue;
+                const seatValid = isLocalSeatActuallyAssigned(row, studentName);
+                if (!seatValid) {
+                    row.status = 'waiting';
+                    row.seat_id = null;
+                    result.fixedOrphanSeated += 1;
+                    result.clearedSeats += clearSeatLocalByAttendance(row, studentName);
+                }
+            }
+
+            if (completedRows.length > 0 && activeRows.length > 0) {
+                for (const row of activeRows) {
+                    row.status = 'completed';
+                    row.type = 'check_out';
+                    row.check_out = new Date().toISOString();
+                    row.seat_id = null;
+                    result.fixedActiveWithCompleted += 1;
+                    result.clearedSeats += clearSeatLocalByAttendance(row, studentName);
+                }
+            }
+
+            localStorage.setItem('demo_attendance', JSON.stringify(existingAttendance));
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: 'demo_attendance',
+                newValue: JSON.stringify(existingAttendance)
+            }));
+
+            if (result.fixedOrphanSeated > 0 || result.fixedActiveWithCompleted > 0 || result.clearedSeats > 0) {
+                console.warn('[Kiosk][AutoHeal] repaired(local):', {
+                    studentId,
+                    date,
+                    ...result
+                });
+            }
+
+            return result;
+        }
+
         function showAlert(type, title, message) {
             const modal = document.getElementById('alert-modal');
             const icon = document.getElementById('alert-icon');
@@ -1726,7 +2005,7 @@
             if (sbOk) {
                 // Supabase 모드 - 어제 및 그 이전 미완료 기록을 completed로 변경
                 try {
-                    const today = new Date().toISOString().split('T')[0];
+                    const today = getLocalKstDate();
 
                     // 어제 및 그 이전의 waiting/seated 상태 기록 찾기
                     const { data: oldRecords, error } = await sb
@@ -1790,12 +2069,12 @@
             } else {
                 // 데모 모드 - localStorage 정리
                 try {
-                    const today = new Date().toISOString().split('T')[0];
+                    const today = getLocalKstDate();
                     const existingAttendance = getLocalAttendance();
 
                     const needsUpdate = existingAttendance.some(a =>
                         (a.status === 'waiting' || a.status === 'seated') &&
-                        a.check_in_time && !a.check_in_time.startsWith(today)
+                        ((a.date && a.date < today) || (!a.date && a.check_in_time && !a.check_in_time.startsWith(today)))
                     );
 
                     if (needsUpdate) {
@@ -1803,7 +2082,7 @@
 
                         existingAttendance.forEach(a => {
                             if ((a.status === 'waiting' || a.status === 'seated') &&
-                                a.check_in_time && !a.check_in_time.startsWith(today)) {
+                                ((a.date && a.date < today) || (!a.date && a.check_in_time && !a.check_in_time.startsWith(today)))) {
                                 a.status = 'completed';
                                 a.type = 'check_out';
                             }
@@ -1865,7 +2144,23 @@
         async function performCheckInDirectFetch() {
             console.log('[performCheckInDirectFetch] window.supabase 클라이언트로 등원 처리 시도...');
             try {
-                const today = new Date().toISOString().split('T')[0];
+                const today = getLocalKstDate();
+                await autoHealAttendanceState(selectedStudent.id, today, selectedStudent.name);
+
+                const { data: completedRows, error: completedCheckError } = await window.supabase
+                    .from('attendance')
+                    .select('id')
+                    .eq('student_id', selectedStudent.id)
+                    .eq('date', today)
+                    .eq('status', 'completed')
+                    .limit(1);
+
+                if (completedCheckError) {
+                    return { success: false, error: `기존 하원 확인 실패: ${completedCheckError.message}` };
+                }
+                if (completedRows && completedRows.length > 0) {
+                    return { success: false, error: `${selectedStudent.name}님은 오늘 이미 하원 처리되어 재등원이 불가합니다.`, alreadyCheckedIn: true };
+                }
 
                 // 1. 기존 등원 확인
                 console.log('[performCheckInDirectFetch] 기존 등원 확인 요청:', {
@@ -1878,7 +2173,9 @@
                     .select('*')
                     .eq('student_id', selectedStudent.id)
                     .eq('date', today)
-                    .in('status', ['waiting', 'seated']);
+                    .in('status', ['waiting', 'seated'])
+                    .order('check_in_time', { ascending: false })
+                    .limit(5);
 
                 if (checkError) {
                     console.error('[performCheckInDirectFetch] 기존 등원 확인 실패:', checkError);
@@ -1887,8 +2184,29 @@
 
                 console.log('[performCheckInDirectFetch] 기존 등원 확인 응답:', existingData);
                 if (existingData && existingData.length > 0) {
-                    const statusText = existingData[0].status === 'seated' ? '이미 좌석에 배정되었습니다' : '이미 등원 처리되었습니다';
-                    console.log('[performCheckInDirectFetch] 기존 기록 발견:', existingData[0]);
+                    if (existingData.length > 1) {
+                        console.warn('[Kiosk][AutoHeal] multiple active rows after heal:', {
+                            studentId: selectedStudent.id,
+                            date: today,
+                            activeCount: existingData.length
+                        });
+                    }
+
+                    const latestActive = existingData[0];
+                    let statusText = '이미 등원 처리되었습니다';
+
+                    if (latestActive.status === 'seated' && latestActive.seat_id) {
+                        const isSeatedVerified = await verifySeatedAssignment(latestActive, selectedStudent);
+                        if (isSeatedVerified) {
+                            statusText = '이미 좌석에 배정되었습니다';
+                        } else {
+                            await healSingleAttendanceToWaiting(latestActive.id);
+                            latestActive.status = 'waiting';
+                            latestActive.seat_id = null;
+                        }
+                    }
+
+                    console.log('[performCheckInDirectFetch] 기존 기록 발견:', latestActive);
                     return { success: false, error: statusText, alreadyCheckedIn: true };
                 }
 
@@ -1962,60 +2280,35 @@
         async function performCheckOutDirectFetch() {
             console.log('[performCheckOutDirectFetch] window.supabase 클라이언트로 하원 처리 시도...');
             try {
-                const today = new Date().toISOString().split('T')[0];
+                const today = getLocalKstDate();
+                await autoHealAttendanceState(selectedStudent.id, today, selectedStudent.name);
 
-                // 1. 이미 하원했는지 확인 (completed 상태)
-                console.log('[performCheckOutDirectFetch] 하원 확인 요청:', {
-                    student_id: selectedStudent.id,
-                    date: today
-                });
-
-                const { data: completedData, error: completedError } = await window.supabase
+                const { data: canonicalRows, error: canonicalError } = await window.supabase
                     .from('attendance')
                     .select('*')
                     .eq('student_id', selectedStudent.id)
                     .eq('date', today)
-                    .eq('status', 'completed');
+                    .in('status', ['waiting', 'seated', 'completed'])
+                    .order('check_in_time', { ascending: false });
 
-                if (completedError) {
-                    console.error('[performCheckOutDirectFetch] 하원 확인 실패:', completedError);
-                    return { success: false, error: `하원 확인 실패: ${completedError.message}` };
+                if (canonicalError) {
+                    return { success: false, error: `상태 확인 실패: ${canonicalError.message}` };
                 }
 
-                console.log('[performCheckOutDirectFetch] 하원 확인 응답:', completedData);
-                if (completedData && completedData.length > 0) {
+                const completedRows = (canonicalRows || []).filter(r => r.status === 'completed');
+                if (completedRows.length > 0) {
                     return { success: false, error: `${selectedStudent.name}님은 이미 하원 처리되었습니다.`, alreadyCheckedOut: true };
                 }
 
-                // 2. 등원 기록 찾기 (waiting, seated 상태)
-                console.log('[performCheckOutDirectFetch] 등원 기록 찾기 요청:', {
-                    student_id: selectedStudent.id,
-                    date: today
-                });
-
-                const { data: attendanceData, error: attendanceError } = await window.supabase
-                    .from('attendance')
-                    .select('*')
-                    .eq('student_id', selectedStudent.id)
-                    .eq('date', today)
-                    .in('status', ['waiting', 'seated'])
-                    .order('check_in_time', { ascending: false })
-                    .limit(1);
-
-                if (attendanceError) {
-                    console.error('[performCheckOutDirectFetch] 등원 기록 찾기 실패:', attendanceError);
-                    return { success: false, error: `등원 기록 찾기 실패: ${attendanceError.message}` };
-                }
-
-                console.log('[performCheckOutDirectFetch] 등원 기록 응답:', attendanceData);
-                if (!attendanceData || attendanceData.length === 0) {
+                const activeRows = (canonicalRows || []).filter(r => r.status === 'waiting' || r.status === 'seated');
+                if (activeRows.length === 0) {
                     return { success: false, error: `${selectedStudent.name}님은 등원 기록이 없습니다.`, noCheckIn: true };
                 }
 
-                const attendance = attendanceData[0];
+                const attendance = activeRows[0];
                 console.log('[performCheckOutDirectFetch] 찾은 등원 기록:', attendance);
 
-                // 3. 하원 처리 (상태 업데이트)
+                // 1건 하원 처리 (canonical active)
                 const now = new Date();  // FCM 알림용
                 const { data: updateResult, error: updateError } = await window.supabase
                     .from('attendance')
@@ -2057,42 +2350,7 @@
                     }
                 }
 
-                // localStorage 좌석 비우기 (seat_id 또는 학생 이름으로 찾기)
-                try {
-                    const seatsData = localStorage.getItem('seats');
-                    if (seatsData) {
-                        const seats = JSON.parse(seatsData);
-                        let seatIndex = -1;
-
-                        // 1. seat_id로 찾기
-                        if (attendance.seat_id) {
-                            seatIndex = seats.findIndex(s => s.id == attendance.seat_id);
-                        }
-
-                        // 2. seat_id가 없거나 못 찾으면 학생 이름으로 찾기
-                        if (seatIndex === -1) {
-                            seatIndex = seats.findIndex(s => s.name === selectedStudent.name);
-                        }
-
-                        if (seatIndex !== -1) {
-                            console.log(`[performCheckOutDirectFetch] localStorage 좌석 비우기: ${seats[seatIndex].name}`);
-                            seats[seatIndex].name = '';
-                            seats[seatIndex].occupied = false;
-                            seats[seatIndex].alarmTime = null;
-                            seats[seatIndex].alarming = false;
-                            seats[seatIndex].alarmStopped = false;
-                            localStorage.setItem('seats', JSON.stringify(seats));
-
-                            // storage 이벤트 발생
-                            window.dispatchEvent(new StorageEvent('storage', {
-                                key: 'seats',
-                                newValue: JSON.stringify(seats)
-                            }));
-                        }
-                    }
-                } catch (e) {
-                    console.error('[performCheckOutDirectFetch] localStorage 좌석 비우기 실패:', e);
-                }
+                clearSeatLocalByAttendance(attendance, selectedStudent.name);
 
                 // 5. Web Push 알림 전송 (비동기 - 팝업 지연 방지)
                 sendWebPushNotification(selectedStudent, 'check_out').catch(err => {
