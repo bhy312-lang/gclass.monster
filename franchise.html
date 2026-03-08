@@ -699,6 +699,114 @@
             width: 100%;
             border-radius: 24px;
         }
+
+        /* 출결 관리 버튼 스타일 */
+        .att-btn-base {
+            min-width: 70px;
+            height: 40px;
+            border: 2px solid #ef4444; /* 빨간색 테두리 */
+            border-radius: 8px;
+            background-color: transparent;
+            color: #ef4444;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .att-btn-base:hover {
+            background-color: #fef2f2;
+        }
+
+        .att-btn-checkin-complete {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-color: #059669;
+            color: white;
+        }
+
+        .att-btn-checkin-complete:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+
+        .att-btn-checkout-complete {
+            background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+            border-color: #e11d48;
+            color: white;
+        }
+
+        .att-btn-checkout-complete:hover {
+            background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+        }
+
+        .att-btn-selected {
+            border-color: #dc2626;
+            border-width: 3px;
+            background-color: #fef2f2;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+        }
+
+        .att-btn-deselected {
+            border-color: #ef4444;
+            background-color: transparent;
+            opacity: 0.6;
+        }
+
+        /* 일 버튼 */
+        .att-day-button {
+            min-width: 44px;
+            height: 40px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background-color: white;
+            color: #475569;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .att-day-button:hover {
+            background-color: #f0fdfa;
+            border-color: #58d3d3;
+        }
+
+        .att-day-button.selected {
+            background: linear-gradient(135deg, #58d3d3 0%, #2dd4bf 100%);
+            color: white;
+            border-color: #2dd4bf;
+            font-weight: 700;
+        }
+
+        /* 시간 드롭다운 - 시간/분 분리 */
+        .att-time-select.hour {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 14px;
+            color: #1e293b;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .att-time-select.minute {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 14px;
+            color: #1e293b;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .att-time-select.hour:focus,
+        .att-time-select.minute:focus {
+            outline: none;
+            border-color: #58d3d3;
+            box-shadow: 0 0 0 3px rgba(88, 211, 211, 0.2);
+        }
     </style>
     <script>
         (g => { var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window; b = b[c] || (b[c] = {}); var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () => h || (h = new Promise(async (f, n) => { await (a = m.createElement("script")); e.set("libraries", [...r] + ""); for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]); e.set("callback", c + ".maps." + q); a.src = `https://maps.${c}apis.com/maps/api/js?` + e; d[q] = f; a.onerror = () => h = n(Error(p + " could not load.")); a.nonce = m.querySelector("script[nonce]")?.nonce || ""; m.head.append(a) })); d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n)) })({
@@ -2375,107 +2483,75 @@
         </section>
 
         <!-- 4. 출결현황 TAB -->
-        <section id="attendance" class="tab-content max-w-5xl mx-auto px-6 py-12">
-            <div class="bg-white rounded-[40px] p-10 shadow-xl border border-teal-50">
-                <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
-                    <div>
-                        <h2 class="text-3xl font-bold mb-2">실시간 출결 현황</h2>
-                        <p class="text-gray-400">현재 등원 중인 학생 리스트입니다.</p>
-                    </div>
+        <section id="attendance-tab" class="tab-content max-w-5xl mx-auto px-6 py-12">
+            <div class="bg-white rounded-[40px] p-8 shadow-xl border border-teal-50">
+                <!-- 상단 날짜 UI -->
+                <div class="flex items-center justify-center gap-4 mb-6">
+                    <button onclick="changeAttendanceMonth(-1)" class="w-12 h-12 rounded-full bg-teal-50 hover:bg-teal-100 text-teal-600 transition-colors">
+                        <span class="material-symbols-outlined text-2xl">chevron_left</span>
+                    </button>
+                    <div id="attendance-month-chip" class="min-w-[140px] text-center px-5 py-3 rounded-2xl bg-gradient-to-r from-teal-400 to-teal-500 text-white font-bold text-xl shadow-lg"></div>
+                    <button onclick="changeAttendanceMonth(1)" class="w-12 h-12 rounded-full bg-teal-50 hover:bg-teal-100 text-teal-600 transition-colors">
+                        <span class="material-symbols-outlined text-2xl">chevron_right</span>
+                    </button>
+                </div>
+                <div id="attendance-day-selector" class="flex gap-2 overflow-x-auto pb-3 mb-6 scroll-smooth"></div>
+
+                <!-- 검색바 -->
+                <div class="mb-5 flex items-center justify-between gap-3 flex-wrap">
+                    <div class="text-sm text-gray-600">선택 날짜: <span id="selected-attendance-date" class="font-semibold text-teal-700"></span></div>
                     <div class="flex gap-2">
-                        <input type="text" placeholder="학생 이름 검색"
+                        <input id="attendance-search-input" oninput="searchAttendanceStudents()" type="text" placeholder="학생 이름 검색"
                             class="px-5 py-2.5 rounded-full border border-gray-200 outline-none focus:ring-2 focus:ring-[#58d3d3]">
-                        <button class="bg-[#58d3d3] text-white px-6 py-2.5 rounded-full font-bold">검색</button>
+                        <button onclick="searchAttendanceStudents()" class="bg-[#58d3d3] text-white px-6 py-2.5 rounded-full font-bold">검색</button>
                     </div>
                 </div>
 
-                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" id="attendanceList">
-                    <div class="bg-gray-50 p-6 rounded-3xl flex justify-between items-center">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-bold text-lg">김민준</span>
-                                <span
-                                    class="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-600 rounded-full font-bold">학생</span>
-                            </div>
-                            <p class="text-xs text-gray-400">등원중 시각: 14:20</p>
+                <!-- 학생 리스트 테이블 -->
+                <div class="overflow-x-auto">
+                    <div class="min-w-[500px]">
+                        <!-- 테이블 헤더 -->
+                        <div class="grid grid-cols-5 gap-2 px-4 pb-3 border-b border-teal-100 text-sm text-gray-500 font-medium">
+                            <div>이름</div>
+                            <div class="text-center">등원</div>
+                            <div class="text-center">하원</div>
+                            <div class="text-center">등원시간</div>
+                            <div class="text-center">하원시간</div>
                         </div>
-                        <button class="bg-white p-2 rounded-2xl shadow-sm text-gray-400 hover:text-[#58d3d3]">
-                            <span class="material-symbols-outlined">more_vert</span>
-                        </button>
+                        <!-- 학생 리스트 (최대 높이 + 스크롤) -->
+                        <div id="attendance-student-list" class="max-h-[400px] overflow-y-auto"></div>
                     </div>
+                </div>
 
-                    <div class="bg-gray-50 p-6 rounded-3xl flex justify-between items-center">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-bold text-lg">이서윤</span>
-                                <span
-                                    class="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-600 rounded-full font-bold">학생</span>
-                            </div>
-                            <p class="text-xs text-gray-400">등원중 시각: 14:45</p>
-                        </div>
-                        <button class="bg-white p-2 rounded-2xl shadow-sm text-gray-400 hover:text-[#58d3d3]">
-                            <span class="material-symbols-outlined">more_vert</span>
-                        </button>
-                    </div>
-
-                    <div class="bg-gray-50 p-6 rounded-3xl flex justify-between items-center">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-bold text-lg">박하준</span>
-                                <span
-                                    class="text-[10px] px-2 py-0.5 bg-gray-200 text-gray-500 rounded-full font-bold">학생</span>
-                            </div>
-                            <p class="text-xs text-gray-400">하원 시각: 16:10</p>
-                        </div>
-                        <button class="bg-white p-2 rounded-2xl shadow-sm text-gray-400 hover:text-[#58d3d3]">
-                            <span class="material-symbols-outlined">more_vert</span>
-                        </button>
-                    </div>
-
-                    <div class="bg-gray-50 p-6 rounded-3xl flex justify-between items-center">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-bold text-lg">최지우</span>
-                                <span
-                                    class="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-600 rounded-full font-bold">학생</span>
-                            </div>
-                            <p class="text-xs text-gray-400">등원중 시각: 15:05</p>
-                        </div>
-                        <button class="bg-white p-2 rounded-2xl shadow-sm text-gray-400 hover:text-[#58d3d3]">
-                            <span class="material-symbols-outlined">more_vert</span>
-                        </button>
-                    </div>
-
-                    <div class="bg-gray-50 p-6 rounded-3xl flex justify-between items-center">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-bold text-lg">정우진</span>
-                                <span
-                                    class="text-[10px] px-2 py-0.5 bg-gray-200 text-gray-500 rounded-full font-bold">학생</span>
-                            </div>
-                            <p class="text-xs text-gray-400">하원 시각: 15:50</p>
-                        </div>
-                        <button class="bg-white p-2 rounded-2xl shadow-sm text-gray-400 hover:text-[#58d3d3]">
-                            <span class="material-symbols-outlined">more_vert</span>
-                        </button>
-                    </div>
-
-                    <div class="bg-gray-50 p-6 rounded-3xl flex justify-between items-center">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-bold text-lg">유나</span>
-                                <span
-                                    class="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-600 rounded-full font-bold">학생</span>
-                            </div>
-                            <p class="text-xs text-gray-400">등원중 시각: 15:30</p>
-                        </div>
-                        <button class="bg-white p-2 rounded-2xl shadow-sm text-gray-400 hover:text-[#58d3d3]">
-                            <span class="material-symbols-outlined">more_vert</span>
-                        </button>
-                    </div>
+                <!-- 저장 바 -->
+                <div class="mt-4 flex items-center justify-between gap-4 flex-wrap">
+                    <span id="attendance-save-summary" class="text-sm text-gray-600">저장할 항목이 없습니다</span>
+                    <button id="attendance-save-button" onclick="openAttendanceSaveModal()" class="bg-gradient-to-r from-teal-400 to-teal-500 text-white px-8 py-3 rounded-full font-bold disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        저장
+                    </button>
                 </div>
             </div>
         </section>
+
+        <!-- 시간 설정 모달 -->
+        <div id="attendance-time-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] hidden" onclick="handleAttendanceModalOverlay(event)">
+            <div class="bg-white rounded-3xl w-[94vw] max-w-[600px] max-h-[85vh] overflow-auto p-6 shadow-2xl" onclick="event.stopPropagation()">
+                <div class="flex items-center justify-between mb-5">
+                    <h3 class="text-xl font-bold text-gray-800">출결 시간 설정</h3>
+                    <button onclick="closeAttendanceModal()" class="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-colors">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <p id="attendance-modal-desc" class="text-sm text-gray-500 mb-4"></p>
+                <div id="attendance-modal-list" class="space-y-3 max-h-[320px] overflow-y-auto pr-2">
+                    <!-- 시간 선택기 (시간/분 분리) -->
+                </div>
+                <div class="mt-6 flex gap-3">
+                    <button onclick="closeAttendanceModal()" class="flex-1 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 font-medium text-gray-700 transition-colors">취소</button>
+                    <button onclick="saveAttendanceTime()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white font-medium transition-all shadow-lg shadow-teal-200">확인</button>
+                </div>
+            </div>
+        </div>
 
         <!-- 5. 좌석모니터링 TAB -->
         <section id="seats" class="tab-content max-w-6xl mx-auto px-3 lg:px-6 py-6 lg:py-12">
@@ -3429,7 +3505,8 @@
 
         // ========== 좌석 모니터링 시스템 ==========
         let seats = [];
-        // draggedAttendanceId는 app.js에서 전역 선언됨
+        // 드래그 중인 출결 ID (이 파일에서 관리)
+        window.draggedAttendanceId = null;
         let seatCounter = 1;
         let alarmIntervals = {};
         let alarmAudioContext = null;
@@ -3541,7 +3618,8 @@
 
         function filterAttendanceByScope(list) {
             if (!Array.isArray(list)) return [];
-            const allowedStudentIds = new Set((students || []).map((s) => String(s.id)));
+            if (!Array.isArray(attendanceStudents)) return [];
+            const allowedStudentIds = new Set(attendanceStudents.map((s) => String(s.id || '')));
             return list.filter((item) => allowedStudentIds.has(String(item.student_id)));
         }
 
@@ -3600,14 +3678,26 @@
         };
 
         // ========== 학생 출결 관리 ==========
-        let students = [
-            { name: "김민준", status: "present", checkInTime: "14:20", checkOutTime: "-", id: "0001" },
-            { name: "이서윤", status: "present", checkInTime: "14:45", checkOutTime: "-", id: "0002" },
-            { name: "박하준", status: "absent", checkInTime: "-", checkOutTime: "16:10", id: "0003" },
-            { name: "최지우", status: "present", checkInTime: "15:05", checkOutTime: "-", id: "0004" },
-            { name: "정우진", status: "absent", checkInTime: "-", checkOutTime: "15:50", id: "0005" },
-            { name: "유나", status: "present", checkInTime: "15:30", checkOutTime: "-", id: "0006" }
-        ];
+        // 출결 관리 상태 (기존 students 변수와 분리)
+        const ATT_KST_TZ = 'Asia/Seoul';
+
+        let attendanceStudents = [];        // 학생 목록
+        let attendanceData = [];           // 출결 데이터
+        let attendanceByStudent = {};      // 학생별 출결 인덱스
+
+        let attYear, attMonth, attDay;    // 선택 날짜
+        let attendanceSearchTerm = '';
+
+        // 대기 중인 선택
+        const attPending = {
+            checkin: new Set(),
+            checkout: new Set(),
+            checkinDeselect: new Set(),
+            checkoutDeselect: new Set()
+        };
+
+        let attSaveQueue = [];
+        let attendanceRealtimeChannel = null;
 
         // 로컬 스토리지에서 학생 목록 불러오기
         async function loadStudents() {
@@ -4814,7 +4904,7 @@
         // ========== 등원 학생 드래그 앤 드롭 ==========
         // 등원 학생 카드 드래그 시작
         function handleCheckInDragStart(event, attendanceId) {
-            draggedAttendanceId = attendanceId;
+            window.draggedAttendanceId = attendanceId;
             event.dataTransfer.setData('text/plain', attendanceId);
             event.dataTransfer.effectAllowed = 'move';
             event.target.classList.add('opacity-50', 'scale-95');
@@ -4823,8 +4913,23 @@
         // 드래그 종료
         function handleDragEnd(event) {
             event.target.classList.remove('opacity-50', 'scale-95');
-            draggedAttendanceId = null;
+            window.draggedAttendanceId = null;
         }
+
+        // 드래그 오버 처리 (좌석 컨테이너)
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+        }
+        window.handleDragOver = handleDragOver;
+
+        // 드롭 처리 (좌석 컨테이너 - 직접 좌석에 드롭하지 않았을 때)
+        function handleDropOnContainer(event) {
+            event.preventDefault();
+            // 좌석에 직접 드롭한 경우 각 좌석의 drop 이벤트에서 처리
+            // 컨테이너에 드롭한 경우는 무시
+        }
+        window.handleDropOnContainer = handleDropOnContainer;
 
         // 학생을 좌석에 배정
         async function assignStudentToSeat(attendanceId, seatId) {
@@ -5577,36 +5682,704 @@
             renderSeats();
         }
 
-        // 출결 현황 렌더링
-        function renderAttendance() {
-            const list = document.getElementById('attendanceList');
-            if (!list) return;
+        // ========== 출결 관리 함수 ==========
+        // KST 오늘 날짜
+        function getAttKstTodayParts() {
+            const now = new Date();
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: ATT_KST_TZ,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).formatToParts(now);
 
-            list.innerHTML = students.map(s => {
-                const statusText = s.status === 'present' ? '등원중' : '하원';
-                const statusClass = s.status === 'present' ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-200 text-gray-500';
-                const timeText = s.status === 'present' ? `등원: ${s.checkInTime}` : `하원: ${s.checkOutTime}`;
+            return {
+                year: Number(parts.find(p => p.type === 'year')?.value || now.getFullYear()),
+                month: Number(parts.find(p => p.type === 'month')?.value || (now.getMonth() + 1)),
+                day: Number(parts.find(p => p.type === 'day')?.value || now.getDate())
+            };
+        }
+
+        // 학생 목록 로드 (출결 관리용)
+        async function loadAttendanceStudents() {
+            const sbOk = typeof window.supabase !== 'undefined';
+            if (!sbOk) {
+                attendanceStudents = [
+                    { id: '1', name: '강지민', parent_id: null },
+                    { id: '2', name: '최이듬', parent_id: null }
+                ];
+                return;
+            }
+
+            try {
+                const { data, error } = await window.supabase
+                    .from('students')
+                    .select('id, name, parent_id, academy_id')
+                    .eq('approval_status', 'approved')
+                    .order('name', { ascending: true });
+
+                if (error) throw error;
+
+                const scopeId = currentDataScopeId || null;
+                attendanceStudents = (data || []).filter(s => {
+                    if (!scopeId) return true;
+                    return s.academy_id === scopeId;
+                });
+            } catch (error) {
+                console.error('[attendance] loadStudents failed:', error);
+                attendanceStudents = [];
+            }
+        }
+
+        // 출결 데이터 로드
+        async function loadAttendanceData() {
+            const dateKey = getAttendanceDateKey();
+            const sbOk = typeof window.supabase !== 'undefined';
+
+            if (!sbOk) {
+                attendanceData = [];
+                attendanceByStudent = {};
+                return;
+            }
+
+            try {
+                let query = window.supabase
+                    .from('attendance')
+                    .select('id, student_id, student_name, check_in_time, check_in, check_out_time, check_out, status, type, date')
+                    .eq('date', dateKey)
+                    .order('check_in_time', { ascending: false });
+
+                const scopeId = currentDataScopeId || null;
+                if (scopeId) {
+                    query = query.eq('academy_id', scopeId);
+                }
+
+                const { data, error } = await query;
+                if (error) throw error;
+
+                attendanceData = data || [];
+                rebuildAttendanceIndex();
+            } catch (error) {
+                console.error('[attendance] loadAttendanceData failed:', error);
+                attendanceData = [];
+                attendanceByStudent = {};
+            }
+        }
+
+        // 인덱스 재구축
+        function rebuildAttendanceIndex() {
+            attendanceByStudent = {};
+            for (const row of attendanceData) {
+                const sid = String(row.student_id || '');
+                if (!sid) continue;
+
+                const prev = attendanceByStudent[sid];
+                if (!prev) {
+                    attendanceByStudent[sid] = row;
+                    continue;
+                }
+
+                const prevTs = Date.parse(getAttRowCheckIn(prev) || 0);
+                const rowTs = Date.parse(getAttRowCheckIn(row) || 0);
+                if (rowTs >= prevTs) {
+                    attendanceByStudent[sid] = row;
+                }
+            }
+        }
+
+        // 월/일 렌더링
+        function renderAttendanceMonthAndDays() {
+            const monthChip = document.getElementById('attendance-month-chip');
+            const daySelector = document.getElementById('attendance-day-selector');
+            const dateLabel = document.getElementById('selected-attendance-date');
+            if (!monthChip || !daySelector || !dateLabel) return;
+
+            monthChip.textContent = `${attYear}년 ${attMonth}월`;
+            dateLabel.textContent = `${attYear}-${String(attMonth).padStart(2, '0')}-${String(attDay).padStart(2, '0')}`;
+
+            const daysInMonth = getAttDaysInMonth(attYear, attMonth);
+            const buttons = [];
+            for (let day = 1; day <= daysInMonth; day += 1) {
+                const selectedClass = day === attDay ? 'selected' : '';
+                buttons.push(`<button class="att-day-button ${selectedClass}" onclick="selectAttendanceDay(${day})">${day}</button>`);
+            }
+            daySelector.innerHTML = buttons.join('');
+        }
+
+        // 학생 리스트 렌더링
+        function renderAttendanceStudentList() {
+            const listEl = document.getElementById('attendance-student-list');
+            if (!listEl) return;
+
+            const filtered = attendanceStudents.filter(s => {
+                if (!attendanceSearchTerm) return true;
+                return String(s.name || '').toLowerCase().includes(attendanceSearchTerm);
+            });
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = '<div class="py-8 text-center text-gray-400">표시할 학생이 없습니다</div>';
+                return;
+            }
+
+            listEl.innerHTML = filtered.map(student => {
+                const sid = String(student.id);
+                const row = attendanceByStudent[sid] || null;
+                const checkIn = getAttRowCheckIn(row);
+                const checkOut = getAttRowCheckOut(row);
+
+                const checkInClass = checkIn ? 'att-btn-checkin-complete' : 'att-btn-base';
+                const checkOutClass = checkOut ? 'att-btn-checkout-complete' : 'att-btn-base';
+                const checkInSelected = attPending.checkin.has(sid) ? 'att-btn-selected' : '';
+                const checkOutSelected = attPending.checkout.has(sid) ? 'att-btn-selected' : '';
+                const checkInDeselected = attPending.checkinDeselect.has(sid) ? 'att-btn-deselected' : '';
+                const checkOutDeselected = attPending.checkoutDeselect.has(sid) ? 'att-btn-deselected' : '';
 
                 return `
-                <div class="bg-gray-50 p-6 rounded-3xl flex justify-between items-center">
-                    <div>
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="font-bold text-lg">${escapeHtml(s.name)}</span>
-                            <span class="text-[10px] px-2 py-0.5 ${statusClass} rounded-full font-bold">학생</span>
+                    <div class="grid grid-cols-5 gap-2 px-4 py-3 border-b border-gray-100 items-center hover:bg-teal-50 transition-colors">
+                        <div class="font-medium text-gray-800">${escapeHtml(student.name)}</div>
+                        <div class="flex justify-center">
+                            <button class="${checkInClass} ${checkInSelected} ${checkInDeselected} att-btn-base"
+                                onclick="toggleAttendanceCheckIn('${sid}')">등원</button>
                         </div>
-                        <p class="text-xs text-gray-400">${escapeHtml(timeText)}</p>
+                        <div class="flex justify-center">
+                            <button class="${checkOutClass} ${checkOutSelected} ${checkOutDeselected} att-btn-base"
+                                onclick="toggleAttendanceCheckOut('${sid}')">하원</button>
+                        </div>
+                        <div class="text-sm text-center ${checkIn ? 'text-teal-700 font-semibold' : 'text-gray-400'}">
+                            ${checkIn ? formatAttTime(checkIn) : '-'}
+                        </div>
+                        <div class="text-sm text-center ${checkOut ? 'text-teal-700 font-semibold' : 'text-gray-400'}">
+                            ${checkOut ? formatAttTime(checkOut) : '-'}
+                        </div>
                     </div>
-                    <button class="bg-white p-2 rounded-2xl shadow-sm text-gray-400 hover:text-[#58d3d3]">
-                        <span class="material-symbols-outlined">more_vert</span>
-                    </button>
-                </div>
                 `;
             }).join('');
+        }
+
+        // 버튼 토글
+        function toggleAttendanceCheckIn(studentId) {
+            toggleAttPending('checkin', String(studentId));
+        }
+
+        function toggleAttendanceCheckOut(studentId) {
+            toggleAttPending('checkout', String(studentId));
+        }
+
+        function toggleAttPending(type, studentId) {
+            const setRef = attPending[type];
+            const deselectRef = attPending[type + 'Deselect'];
+            if (!setRef || !deselectRef) return;
+
+            const sid = studentId;
+            if (setRef.has(sid)) {
+                setRef.delete(sid);
+                deselectRef.add(sid);
+            } else {
+                deselectRef.delete(sid);
+                setRef.add(sid);
+            }
+
+            renderAttendanceStudentList();
+            updateAttendanceSaveSummary();
+        }
+
+        // 저장 요약 업데이트
+        function updateAttendanceSaveSummary() {
+            const summaryEl = document.getElementById('attendance-save-summary');
+            const saveBtn = document.getElementById('attendance-save-button');
+            if (!summaryEl || !saveBtn) return;
+
+            const checkinCount = attPending.checkin.size;
+            const checkoutCount = attPending.checkout.size;
+            const totalCount = checkinCount + checkoutCount;
+
+            if (totalCount === 0) {
+                summaryEl.textContent = '저장할 항목이 없습니다';
+                saveBtn.textContent = '저장';
+                saveBtn.disabled = true;
+            } else {
+                const parts = [];
+                if (checkinCount > 0) parts.push(`등원 ${checkinCount}건`);
+                if (checkoutCount > 0) parts.push(`하원 ${checkoutCount}건`);
+                summaryEl.textContent = parts.join(' / ');
+                saveBtn.textContent = `저장 (${totalCount}건)`;
+                saveBtn.disabled = false;
+            }
+        }
+
+        // 저장 모달 열기
+        function openAttendanceSaveModal() {
+            const checkinIds = [...attPending.checkin];
+            const checkoutIds = [...attPending.checkout];
+
+            if (checkinIds.length === 0 && checkoutIds.length === 0) {
+                alert('저장할 학생을 먼저 선택해주세요.');
+                return;
+            }
+
+            attSaveQueue = [
+                ...checkinIds.map(id => ({ type: 'checkin', studentId: id })),
+                ...checkoutIds.map(id => ({ type: 'checkout', studentId: id }))
+            ];
+
+            const desc = document.getElementById('attendance-modal-desc');
+            const listEl = document.getElementById('attendance-modal-list');
+            const modal = document.getElementById('attendance-time-modal');
+            if (!desc || !listEl || !modal) return;
+
+            desc.textContent = `총 ${attSaveQueue.length}건의 시간을 선택해주세요.`;
+            listEl.innerHTML = attSaveQueue.map(item => {
+                const student = attendanceStudents.find(s => String(s.id) === item.studentId);
+                const label = item.type === 'checkin' ? '등원' : '하원';
+                const badgeClass = item.type === 'checkin' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700';
+
+                const existing = attendanceByStudent[item.studentId];
+                let defaultHour = '';
+                let defaultMinute = '';
+
+                if (existing) {
+                    const existingTime = item.type === 'checkin' ? getAttRowCheckIn(existing) : getAttRowCheckOut(existing);
+                    if (existingTime) {
+                        const kstTime = new Intl.DateTimeFormat('ko-KR', {
+                            timeZone: ATT_KST_TZ,
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false
+                        }).format(new Date(existingTime));
+                        const [hour, minute] = kstTime.split(':');
+                        defaultHour = hour;
+                        defaultMinute = minute;
+                    }
+                }
+
+                if (!defaultHour) {
+                    const now = getAttKstNow();
+                    defaultHour = String(now.hour).padStart(2, '0');
+                    defaultMinute = String(now.minute).padStart(2, '0');
+                }
+
+                return `
+                    <div class="flex items-center justify-between gap-3 bg-teal-50 rounded-xl px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-medium text-gray-700">${escapeHtml(student?.name || item.studentId)}</span>
+                            <span class="px-2 py-1 text-xs rounded-lg font-medium ${badgeClass}">${label}</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <select class="att-time-select hour att-per-hour" data-student-id="${item.studentId}" data-type="${item.type}">
+                                ${buildAttHourOptions(defaultHour)}
+                            </select>
+                            <span class="text-gray-400 font-semibold">:</span>
+                            <select class="att-time-select minute att-per-minute" data-student-id="${item.studentId}" data-type="${item.type}">
+                                ${buildAttMinuteOptions(defaultMinute)}
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            modal.classList.remove('hidden');
+        }
+
+        // 모달 닫기
+        function closeAttendanceModal() {
+            const modal = document.getElementById('attendance-time-modal');
+            if (modal) modal.classList.add('hidden');
+            attSaveQueue = [];
+        }
+
+        // 저장
+        async function saveAttendanceTime() {
+            if (attSaveQueue.length === 0) {
+                closeAttendanceModal();
+                return;
+            }
+
+            // 각 학생별 시간 선택 컨테이너 가져오기
+            const hourSelectors = Array.from(document.querySelectorAll('.att-per-hour'));
+            const minuteSelectors = Array.from(document.querySelectorAll('.att-per-minute'));
+
+            // 모든 드롭다운에 값이 있는지 확인
+            if (hourSelectors.some(el => !el.value) || minuteSelectors.some(el => !el.value)) {
+                alert('모든 항목의 시간을 선택해주세요.');
+                return;
+            }
+
+            const dateKey = getAttendanceDateKey();
+            const errors = [];
+            const successCount = { checkin: 0, checkout: 0 };
+
+            // studentId별로 hour와 minute 조합
+            for (const hourSelector of hourSelectors) {
+                const studentId = String(hourSelector.dataset.studentId || '');
+                const type = String(hourSelector.dataset.type || '');
+                const hour = String(hourSelector.value || '');
+
+                // 해당 studentId와 type을 가진 minute selector 찾기
+                const minuteSelector = minuteSelectors.find(
+                    el => String(el.dataset.studentId || '') === studentId &&
+                          String(el.dataset.type || '') === type
+                );
+
+                if (!minuteSelector) {
+                    errors.push(`${studentId}: 분 선택기를 찾을 수 없습니다.`);
+                    continue;
+                }
+
+                const minute = String(minuteSelector.value || '');
+                const hhmm = `${hour}:${minute}`;
+                const student = attendanceStudents.find(s => String(s.id) === studentId);
+
+                if (!student) {
+                    errors.push(`${studentId}: 학생 정보 없음`);
+                    continue;
+                }
+
+                const existing = attendanceByStudent[studentId] || null;
+
+                if (type === 'checkin') {
+                    const checkInIso = toAttIsoFromKst(dateKey, hhmm);
+                    const checkInTime = new Date(checkInIso);
+
+                    const existingCheckOut = getAttRowCheckOut(existing);
+                    if (existingCheckOut) {
+                        const outTime = new Date(existingCheckOut);
+                        if (outTime < checkInTime) {
+                            errors.push(`${student.name}: 기존 하원시간보다 늦은 등원시간은 저장할 수 없습니다.`);
+                            continue;
+                        }
+                    }
+
+                    try {
+                        await upsertAttCheckIn(student, existing, dateKey, checkInIso);
+                        attPending.checkin.delete(studentId);
+                        attPending.checkinDeselect.delete(studentId);
+                        successCount.checkin++;
+                        sendAttFcmNotification(student, 'check_in', checkInIso);
+                    } catch (error) {
+                        errors.push(`${student.name}: ${error.message || '등원 저장 실패'}`);
+                    }
+                } else if (type === 'checkout') {
+                    const existingCheckIn = getAttRowCheckIn(existing);
+                    if (!existingCheckIn) {
+                        errors.push(`${student.name}: 등원시간이 없어 하원을 저장할 수 없습니다.`);
+                        continue;
+                    }
+
+                    const checkOutIso = toAttIsoFromKst(dateKey, hhmm);
+                    const checkOutTime = new Date(checkOutIso);
+                    const checkInTime = new Date(existingCheckIn);
+
+                    if (checkOutTime < checkInTime) {
+                        errors.push(`${student.name}: 하원시간은 등원시간보다 빠를 수 없습니다.`);
+                        continue;
+                    }
+
+                    try {
+                        await upsertAttCheckOut(existing, checkOutIso);
+                        attPending.checkout.delete(studentId);
+                        attPending.checkoutDeselect.delete(studentId);
+                        successCount.checkout++;
+                        sendAttFcmNotification(student, 'check_out', checkOutIso);
+                    } catch (error) {
+                        errors.push(`${student.name}: ${error.message || '하원 저장 실패'}`);
+                    }
+                }
+            }
+
+            closeAttendanceModal();
+            await loadAttendanceData();
+            renderAttendanceStudentList();
+            updateAttendanceSaveSummary();
+
+            const messages = [];
+            if (successCount.checkin > 0) messages.push(`등원 ${successCount.checkin}건 저장 완료`);
+            if (successCount.checkout > 0) messages.push(`하원 ${successCount.checkout}건 저장 완료`);
+            if (errors.length > 0) messages.push(`[저장 실패]\n${errors.join('\n')}`);
+
+            if (messages.length > 0) alert(messages.join('\n\n'));
+        }
+
+        // Check-in upsert
+        async function upsertAttCheckIn(student, existing, dateKey, checkInIso) {
+            const checkInTime = new Date(checkInIso);
+            const alarmTime = new Date(checkInTime.getTime() + 60 * 60 * 1000);
+            const scopeId = currentDataScopeId || null;
+
+            if (typeof window.supabase === 'undefined') {
+                // Demo mode
+                return;
+            }
+
+            if (existing?.id) {
+                const payload = {
+                    check_in_time: checkInIso,
+                    check_in: checkInIso,
+                    alarm_time: alarmTime.toISOString(),
+                    status: getAttRowCheckOut(existing) ? 'completed' : 'waiting',
+                    type: 'check_in',
+                    student_name: student.name
+                };
+
+                const { error } = await window.supabase
+                    .from('attendance')
+                    .update(payload)
+                    .eq('id', existing.id);
+
+                if (error) throw error;
+            } else {
+                const insertPayload = {
+                    student_id: student.id,
+                    student_name: student.name,
+                    academy_id: scopeId,
+                    date: dateKey,
+                    type: 'check_in',
+                    check_in_time: checkInIso,
+                    check_in: checkInIso,
+                    alarm_time: alarmTime.toISOString(),
+                    status: 'waiting'
+                };
+
+                const { error } = await window.supabase
+                    .from('attendance')
+                    .insert(insertPayload);
+
+                if (error) throw error;
+            }
+        }
+
+        // Check-out upsert
+        async function upsertAttCheckOut(existingRow, checkOutIso) {
+            if (!existingRow?.id) {
+                throw new Error('기존 등원 기록 ID가 없습니다.');
+            }
+
+            const { error } = await window.supabase
+                .from('attendance')
+                .update({
+                    check_out_time: checkOutIso,
+                    check_out: checkOutIso,
+                    status: 'completed',
+                    type: 'check_out'
+                })
+                .eq('id', existingRow.id);
+
+            if (error) throw error;
+        }
+
+        // FCM 알림
+        async function sendAttFcmNotification(student, actionType, attendanceTimeIso) {
+            if (typeof window.supabase === 'undefined' || !student?.parent_id) return;
+
+            const isCheckIn = actionType === 'check_in';
+            const timeStr = new Intl.DateTimeFormat('ko-KR', {
+                timeZone: ATT_KST_TZ,
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            }).format(new Date(attendanceTimeIso));
+
+            const payload = {
+                recipient_id: student.parent_id,
+                type: isCheckIn ? 'attendance_check_in' : 'attendance_check_out',
+                title: isCheckIn ? '등원 알림' : '하원 알림',
+                body: isCheckIn
+                    ? `${student.name}님이 ${timeStr}에 등원했습니다`
+                    : `${student.name}님이 ${timeStr}에 하원했습니다`,
+                data: {
+                    student_id: student.id,
+                    student_name: student.name,
+                    attendance_time: attendanceTimeIso,
+                    time_display: timeStr,
+                    type: actionType,
+                    source: 'manual_attendance'
+                },
+                priority: 'high',
+                target_type: 'parent'
+            };
+
+            try {
+                await window.supabase.functions.invoke('fcm-send-notification', { body: payload });
+            } catch (e) {
+                console.warn('[attendance] FCM send error:', e);
+            }
+        }
+
+        // Realtime 설정
+        function setupAttendanceRealtime() {
+            if (typeof window.supabase === 'undefined') return;
+
+            if (attendanceRealtimeChannel) {
+                window.supabase.removeChannel(attendanceRealtimeChannel);
+            }
+
+            let refreshTimer = null;
+            attendanceRealtimeChannel = window.supabase
+                .channel('attendance-franchise-page')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, () => {
+                    if (refreshTimer) clearTimeout(refreshTimer);
+                    refreshTimer = setTimeout(async () => {
+                        await loadAttendanceData();
+                        renderAttendanceStudentList();
+                    }, 120);
+                })
+                .subscribe();
+        }
+
+        // 헬퍼 함수
+        function getAttRowCheckIn(row) {
+            return row?.check_in_time || row?.check_in || null;
+        }
+
+        function getAttRowCheckOut(row) {
+            return row?.check_out_time || row?.check_out || null;
+        }
+
+        function toAttIsoFromKst(dateKey, hhmm) {
+            const [year, month, day] = dateKey.split('-').map(v => Number(v));
+            const [hour, minute] = hhmm.split(':').map(v => Number(v));
+            const utcMillis = Date.UTC(year, month - 1, day, hour, minute, 0) - (9 * 60 * 60 * 1000);
+            return new Date(utcMillis).toISOString();
+        }
+
+        function getAttendanceDateKey() {
+            return `${attYear}-${String(attMonth).padStart(2, '0')}-${String(attDay).padStart(2, '0')}`;
+        }
+
+        function getAttDaysInMonth(year, month) {
+            return new Date(year, month, 0).getDate();
+        }
+
+        function getAttKstNow() {
+            const now = new Date();
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: ATT_KST_TZ,
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).formatToParts(now);
+
+            return {
+                hour: Number(parts.find(p => p.type === 'hour')?.value || 0),
+                minute: Number(parts.find(p => p.type === 'minute')?.value || 0)
+            };
+        }
+
+        function formatAttTime(isoString) {
+            return new Intl.DateTimeFormat('ko-KR', {
+                timeZone: ATT_KST_TZ,
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            }).format(new Date(isoString));
+        }
+
+        // 시간 옵션 생성 (00~23시)
+        function buildAttHourOptions(defaultHour = '') {
+            const now = getAttKstNow();
+            const defaultVal = defaultHour || String(now.hour).padStart(2, '0');
+            const options = [];
+            for (let hour = 0; hour < 24; hour++) {
+                const value = String(hour).padStart(2, '0');
+                const label = `${value}시`;
+                const selected = value === defaultVal ? ' selected' : '';
+                options.push(`<option value="${value}"${selected}>${label}</option>`);
+            }
+            return options.join('');
+        }
+
+        // 분 옵션 생성 (00~59분)
+        function buildAttMinuteOptions(defaultMinute = '') {
+            const now = getAttKstNow();
+            const defaultVal = defaultMinute || String(now.minute).padStart(2, '0');
+            const options = [];
+            for (let minute = 0; minute < 60; minute++) {
+                const value = String(minute).padStart(2, '0');
+                const label = `${value}분`;
+                const selected = value === defaultVal ? ' selected' : '';
+                options.push(`<option value="${value}"${selected}>${label}</option>`);
+            }
+            return options.join('');
+        }
+
+        // 달력 이동
+        function changeAttendanceMonth(delta) {
+            attMonth += delta;
+            if (attMonth > 12) {
+                attMonth = 1;
+                attYear++;
+            } else if (attMonth < 1) {
+                attMonth = 12;
+                attYear--;
+            }
+
+            const maxDay = getAttDaysInMonth(attYear, attMonth);
+            if (attDay > maxDay) attDay = maxDay;
+
+            clearAttPending();
+            loadAttendanceData().then(() => {
+                renderAttendanceMonthAndDays();
+                renderAttendanceStudentList();
+                updateAttendanceSaveSummary();
+            });
+        }
+
+        function selectAttendanceDay(day) {
+            attDay = Number(day);
+            clearAttPending();
+            loadAttendanceData().then(() => {
+                renderAttendanceMonthAndDays();
+                renderAttendanceStudentList();
+                updateAttendanceSaveSummary();
+            });
+        }
+
+        function searchAttendanceStudents() {
+            attendanceSearchTerm = String(document.getElementById('attendance-search-input')?.value || '').trim().toLowerCase();
+            renderAttendanceStudentList();
+        }
+
+        function clearAttPending() {
+            attPending.checkin.clear();
+            attPending.checkout.clear();
+            attPending.checkinDeselect.clear();
+            attPending.checkoutDeselect.clear();
+        }
+
+        function handleAttendanceModalOverlay(event) {
+            if (event.target.id === 'attendance-time-modal') {
+                closeAttendanceModal();
+            }
+        }
+
+        // 출결 관리 초기화
+        async function initAttendanceSection() {
+            const todayKst = getAttKstTodayParts();
+            attYear = todayKst.year;
+            attMonth = todayKst.month;
+            attDay = todayKst.day;
+
+            await loadAttendanceStudents();
+            await loadAttendanceData();
+            renderAttendanceMonthAndDays();
+            renderAttendanceStudentList();
+            updateAttendanceSaveSummary();
+            setupAttendanceRealtime();
         }
 
         // Tab switching logic
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+
+            // attendance 탭은 특별 처리: ID가 attendance-tab인 요소 찾기
+            if (tabId === 'attendance') {
+                const attendanceSection = document.getElementById('attendance-tab');
+                if (attendanceSection) {
+                    attendanceSection.classList.add('active');
+                }
+                window.scrollTo(0, 0);
+                return;
+            }
+
             document.getElementById(tabId).classList.add('active');
             window.scrollTo(0, 0);
 
@@ -5771,7 +6544,8 @@
 
             await initializeDataScope();
             await loadStudents();
-            renderAttendance();
+            // 출결 관리 초기화
+            await initAttendanceSection();
             await loadSeats();
             renderSeats();
 
@@ -5795,7 +6569,146 @@
             // 1초마다 시험 알람 카운트다운 업데이트
             setInterval(updateExamCountdowns, 1000);
 
+            // 페이지 로드 시 출결현황 섹션 활성화
+            switchTab('attendance');
+
             // ========== 등원 목록 실시간 업데이트 ==========
+            function setupAttendanceRealtime() {
+                if (typeof window.supabase === 'undefined' || !window.supabase) return;
+                if (typeof window.isSupabaseConfigured !== 'function' || !window.isSupabaseConfigured()) return;
+
+                // 기존 채널 제거
+                if (attendanceRealtimeChannel) {
+                    window.supabase.removeChannel(attendanceRealtimeChannel);
+                }
+
+                let refreshTimer = null;
+                attendanceRealtimeChannel = window.supabase
+                    .channel('franchise-attendance-live')
+                    .on('postgres_changes', {
+                        event: '*',  // INSERT, UPDATE, DELETE 모두 감지
+                        schema: 'public',
+                        table: 'attendance'
+                    }, () => {
+                        // 디바운스 처리 (과도한 호출 방지)
+                        if (refreshTimer) {
+                            clearTimeout(refreshTimer);
+                        }
+                        refreshTimer = setTimeout(async () => {
+                            await loadCheckInList();
+                        }, 200);  // 200ms 디바운스
+
+                })
+                .subscribe();
+
+                console.log('[franchise] attendance realtime subscription started');
+            }
+
+            // 페이지 언로드 시 채널 제거
+            window.addEventListener('beforeunload', () => {
+                if (attendanceRealtimeChannel) {
+                    window.supabase.removeChannel(attendanceRealtimeChannel);
+                    attendanceRealtimeChannel = null;
+                }
+            });
+
+            // loadCheckInList 전역 노출 (app.js 로드 후에도 접근 가능하도록)
+            window.loadCheckInList = loadCheckInList;
+
+            console.log('[DOMContentLoaded 초기화 완료]');
+
+            // 출결현황 탭용 렌더링 함수
+            function renderAttendanceTabList(list) {
+                const container = document.getElementById('attendanceList');
+                if (!container) return;
+
+                // 새로고침 아이콘에 업데이트 효과
+                const refreshIcon = document.getElementById('refresh-icon');
+                if (refreshIcon) {
+                    refreshIcon.style.color = '#10b981';
+                    setTimeout(() => {
+                        refreshIcon.style.color = '';
+                    }, 500);
+                }
+
+                if (!list || list.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-gray-400 text-sm py-8">
+                            <span class="material-symbols-outlined text-4xl mb-2 block">hourglass_empty</span>
+                            등원한 학생이 없습니다
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = list.map(item => {
+                    const checkInTime = new Date(item.check_in_time);
+                    const alarmTime = new Date(item.alarm_time);
+                    const checkInStr = checkInTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+                    const alarmStr = alarmTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+                    return `
+                        <div class="check-in-card bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-4 cursor-grab border-2 border-transparent hover:border-pink-300 transition-all"
+                            draggable="true"
+                            ondragstart="handleCheckInDragStart(event, '${item.id}')"
+                            ondragend="handleDragEnd(event)"
+                            data-attendance-id="${item.id}"
+                            data-alarm-time="${alarmTime.toISOString()}">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gradient-to-br from-pink-400 to-purple-400 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                    ${item.student_name?.charAt(0) || '?'}
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-bold text-gray-800">${item.student_name}</div>
+                                    <div class="text-xs text-gray-500">등원 ${checkInStr}</div>
+                                </div>
+                            </div>
+                            <div class="mt-2 flex items-center justify-between text-xs">
+                                <span class="text-pink-500 font-semibold flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-sm">alarm</span>
+                                    ${alarmStr}
+                                </span>
+                                <span class="text-orange-500 font-bold flex items-center gap-1 countdown-badge">
+                                    <span class="material-symbols-outlined text-sm">schedule</span>
+                                    <span class="countdown-timer" data-attendance-id="${item.id}">--:--:--</span>
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                // 카운트다운 초기 업데이트
+                updateCheckInCountdowns();
+                // 알람 상태 UI 업데이트
+                updateWaitingAlarmUI();
+            }
+
+            // 등원 목록 카운트다운 업데이트
+            function updateCheckInCountdowns() {
+                const countdowns = document.querySelectorAll('.countdown-timer');
+                const now = new Date();
+
+                countdowns.forEach(el => {
+                    const attendanceId = el.dataset.attendanceId;
+                    const card = document.querySelector(`[data-attendance-id="${attendanceId}"]`);
+                    if (!card) return;
+
+                    const alarmTime = new Date(card.dataset.alarmTime);
+                    const diff = alarmTime - now;
+
+                    if (diff <= 0) {
+                        el.textContent = '00:00:00';
+                        return;
+                    }
+
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                    el.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                });
+            }
+
             // 등원 목록 로드 함수
             async function loadCheckInList() {
                 const sbOk = typeof window.isSupabaseConfigured === 'function' && window.isSupabaseConfigured() && typeof window.supabase !== 'undefined';
@@ -5810,10 +6723,18 @@
 
                         if (error) throw error;
 
+                        // attendanceStudents가 비어있으면 한 번 로드
+                        if (!attendanceStudents || attendanceStudents.length === 0) {
+                            await loadAttendanceStudents();
+                        }
+
                         const attendanceList = filterAttendanceByScope(data || []);
                         waitingAlarmCandidates = getWaitingAlarmCandidatesFromList(attendanceList);
-                        const waitingList = attendanceList.filter((a) => a.status === 'waiting');
-                        console.log('[등원 목록] Supabase waiting 데이터:', waitingList);
+
+                        // 두 렌더 함수 모두 호출 (renderAttendanceTabList는 전체, renderCheckInList는 waiting만)
+                        renderAttendanceTabList(attendanceList);
+                        const waitingList = attendanceList.filter(a => a.status === 'waiting');
+                        console.log('[등원 목록] Supabase 필터링(waiting):', waitingList);
                         renderCheckInList(waitingList);
                         return;
                     } catch (error) {
@@ -5828,6 +6749,9 @@
 
                     // waiting 상태인 학생만 표시 (좌석에 배정된 seated는 제외)
                     waitingAlarmCandidates = getWaitingAlarmCandidatesFromList(attendanceList);
+
+                    // 두 렌더 함수 모두 호출 (renderAttendanceTabList는 전체, renderCheckInList는 waiting만)
+                    renderAttendanceTabList(attendanceList);
                     const waitingList = attendanceList.filter(a => a.status === 'waiting');
                     console.log('[등원 목록] localStorage 필터링(waiting):', waitingList);
                     renderCheckInList(waitingList);
@@ -5858,7 +6782,7 @@
                 }
             }
 
-            // 등원 목록 렌더링 함수
+            // 좌석모니터링 탭용 렌더링 함수
             function renderCheckInList(list) {
                 const container = document.getElementById('check-in-list');
                 if (!container) return;
